@@ -133,11 +133,6 @@ export const secretStoreBindingsForGeneratedSite = ({ envName, projectId, storeI
   projectIdHexForSecretStore(projectId);
   return [
     {
-      binding: integrationSecretBundleBinding,
-      store_id: storeId,
-      secret_name: secretStoreBundleSecretName({ envName, projectId }),
-    },
-    {
       binding: platformGooglePlacesSecretBinding,
       store_id: storeId,
       secret_name: platformGooglePlacesSecretName,

@@ -24,17 +24,16 @@ Generated-site Worker runtime secrets are:
 - `EMDASH_ENCRYPTION_KEY`
 - `ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN`
 
-Provider credentials are not copied into the workflow environment or Worker
-secrets file. The generated config binds the existing Cloudflare Secret Store
-integration bundle as `ASTROPAGES_INTEGRATION_SECRETS_JSON` and the platform
-Places Secret Store value
+Provider credentials are not copied into the workflow environment or generated
+Worker secrets file. The control plane synchronizes them directly as individual
+Worker secrets. The generated config binds only the platform Places Secret Store value
 `ASTROPAGES_PLATFORM_GOOGLE_PLACES_GOOGLE_PLACES_API_KEY` as the runtime binding
 `ASTROPAGES_PLATFORM_GOOGLE_PLACES_API_KEY`. Therefore
 `CLOUDFLARE_SECRETS_STORE_ID` is required whenever `ASTROPAGES_PROJECT_ID` is
 set.
 
-The Vera integration bundle contains only the credentials used by this
-template:
+The Vera individual Worker-secret set contains only the credentials used by
+this template:
 
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`

@@ -138,7 +138,6 @@
         "ASTROPAGES_SITE_ENVIRONMENT",
         "ASTROPAGES_SSO_PUBLIC_JWK"
       ],
-      "secretStoreBundleBinding": "ASTROPAGES_INTEGRATION_SECRETS_JSON",
       "platformGooglePlacesBinding": "ASTROPAGES_PLATFORM_GOOGLE_PLACES_API_KEY"
     },
     "valuesAllowedInSource": false,
