@@ -4660,26 +4660,8 @@ body:not([data-builder-edit-mode]) [data-calendly-preview][data-live-runtime] {
   margin: 0;
 }
 
-.vera-account-payment-line {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  margin-top: 24px;
-  border-top: 2px dashed #6e8c81;
-  padding-top: 18px;
-}
-
 .vera-account-dashboard [data-account-action-required] {
   margin-top: 16px;
-}
-
-.vera-account-dashboard [data-account-balance-payment] {
-  max-width: 720px;
-  margin-top: 22px;
-}
-
-.vera-account-dashboard [data-account-balance-submit] {
-  margin-top: 18px;
 }
 
 .vera-account-cancelled {
@@ -5649,8 +5631,7 @@ body:not([data-builder-edit-mode]) [data-calendly-preview][data-live-runtime] {
     width: 100%;
   }
 
-  .vera-account-section-heading,
-  .vera-account-payment-line {
+  .vera-account-section-heading {
     align-items: flex-start;
     flex-direction: column;
   }

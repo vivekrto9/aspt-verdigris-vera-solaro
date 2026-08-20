@@ -6,6 +6,7 @@
   --va-rule: #b6bfaf;
   --va-rule-strong: #c6cebf;
   --va-berry: #8e2f53;
+  --va-on-berry: #fff;
   --va-jade: #3e8c77;
   --va-mint: #7fcbb1;
   --va-night: #16352c;
@@ -101,7 +102,7 @@
   grid-template-columns: minmax(60px, 1fr) auto minmax(60px, 1fr);
   align-items: center;
   gap: 26px;
-  padding: 28px var(--va-gutter) 20px;
+  padding: 30px var(--va-gutter) 22px;
   border-top: 6px solid var(--va-ink);
   border-bottom: 6px double var(--va-ink);
   text-align: center;
@@ -113,38 +114,27 @@
 }
 
 .verdigris-masthead .vera-brand {
+  display: flex;
+  width: clamp(280px, 30vw, 360px);
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.verdigris-masthead .vera-brand__logo {
   display: block;
+  width: 100%;
+  height: auto;
+}
+
+.verdigris-masthead .vera-brand-fallback {
   color: var(--va-ink);
   font-family: "Rye", Georgia, serif;
   font-size: clamp(38px, 4vw, 58px);
-  letter-spacing: 0.01em;
   line-height: 1;
-  text-align: center;
-  text-decoration: none;
   text-shadow: 2px 2px 0 var(--va-rule-strong), 4px 4px 0 rgb(142 47 83 / 32%);
-}
-
-.verdigris-masthead p,
-.verdigris-masthead > span {
-  grid-column: 1 / -1;
-  margin: 0;
-  font-family: var(--vera-font-label);
-  text-transform: uppercase;
-}
-
-.verdigris-masthead p {
-  margin-top: -12px;
-  color: var(--va-muted);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.42em;
-}
-
-.verdigris-masthead > span {
-  margin-top: -15px;
-  color: var(--va-berry);
-  font-size: 12px;
-  letter-spacing: 0.35em;
 }
 
 .verdigris-nav-row {
@@ -182,6 +172,53 @@
 
 .verdigris-nav-row .vera-header__actions {
   gap: 12px;
+}
+
+.vera-header__account,
+.vera-nav__account {
+  align-items: center;
+  gap: 9px;
+  color: var(--va-ink);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.vera-header__account {
+  display: inline-flex;
+  min-height: 42px;
+  border: 1px solid var(--va-rule-strong);
+  padding: 6px 12px 6px 8px;
+  background: transparent;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.vera-header__account:hover,
+.vera-header__account[aria-current="page"] {
+  border-color: var(--va-ink);
+  background: var(--va-paper-deep);
+  color: var(--va-berry);
+}
+
+.vera-header__account svg,
+.vera-nav__account svg {
+  width: 27px;
+  height: 27px;
+  flex: none;
+  border: 1px solid currentcolor;
+  padding: 4px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.vera-nav__account {
+  display: none;
 }
 
 .verdigris-nav-row .vera-account-identity {
@@ -225,10 +262,18 @@
   box-shadow: 1px 1px 0 var(--va-berry);
 }
 
-.vera-button--burnt {
+.vera-button--burnt,
+a.vera-button--burnt,
+button.vera-button--burnt {
   border-color: var(--va-berry);
   background: var(--va-berry);
-  color: var(--va-paper);
+  color: var(--va-on-berry);
+}
+
+.vera-button--burnt:hover,
+.vera-button--burnt:focus-visible,
+.vera-button--burnt:active {
+  color: var(--va-on-berry);
 }
 
 .vera-button--mustard {
@@ -1103,11 +1148,17 @@
   padding: 48px var(--va-gutter) 30px;
 }
 
-.vera-footer__wordmark {
-  color: var(--va-paper);
-  font-family: "Rye", Georgia, serif;
-  font-size: 25px;
+.vera-footer__brand {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
   text-decoration: none;
+}
+
+.vera-footer__brand .vera-footer__logo {
+  width: auto;
+  max-width: 100%;
+  height: 64px;
 }
 
 .vera-footer__about p {
@@ -1212,6 +1263,18 @@
   }
 }
 
+@keyframes va-nav-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 760px) {
   .verdigris-folio {
     display: flex;
@@ -1234,67 +1297,133 @@
   }
 
   .verdigris-masthead .vera-brand {
-    font-size: clamp(34px, 11vw, 48px);
-  }
-
-  .verdigris-masthead p {
-    margin-top: -5px;
-    font-size: 9px;
-    letter-spacing: 0.24em;
-  }
-
-  .verdigris-masthead > span {
-    margin-top: -7px;
+    width: min(78vw, 460px);
   }
 
   .verdigris-nav-row {
-    grid-template-columns: auto 1fr;
-    min-height: 58px;
-    padding: 9px 18px;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    min-height: 60px;
+    padding: 8px 14px;
   }
 
   .verdigris-nav-row .vera-nav-toggle {
+    position: relative;
+    grid-column: 1;
+    grid-row: 1;
     display: inline-grid;
+    place-content: center;
+    width: 44px;
+    height: 42px;
+    padding: 0;
+    transition: border-color 160ms ease, background 160ms ease;
+  }
+
+  .verdigris-nav-row .vera-nav-toggle:hover,
+  .verdigris-nav-row .vera-nav-toggle[aria-expanded="true"] {
+    border-color: var(--va-berry);
+    background: var(--va-paper-deep);
+  }
+
+  .verdigris-nav-row .vera-nav-toggle span {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    width: 18px;
+    margin: 0;
+    transition: opacity 150ms ease, transform 180ms ease;
+  }
+
+  .verdigris-nav-row .vera-nav-toggle span:nth-child(1) {
+    transform: translateY(-7px);
+  }
+
+  .verdigris-nav-row .vera-nav-toggle span:nth-child(2) {
+    transform: translateY(-1px);
+  }
+
+  .verdigris-nav-row .vera-nav-toggle span:nth-child(3) {
+    transform: translateY(5px);
+  }
+
+  .verdigris-nav-row .vera-nav-toggle[aria-expanded="true"] span:nth-child(1) {
+    transform: translateY(-1px) rotate(45deg);
+  }
+
+  .verdigris-nav-row .vera-nav-toggle[aria-expanded="true"] span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .verdigris-nav-row .vera-nav-toggle[aria-expanded="true"] span:nth-child(3) {
+    transform: translateY(-1px) rotate(-45deg);
   }
 
   .verdigris-nav-row .vera-nav {
     position: absolute;
-    top: calc(100% + 3px);
+    top: 100%;
     right: 0;
     left: 0;
     z-index: 70;
     display: none;
-    padding: 18px;
+    gap: 0;
+    padding: 8px 14px 14px;
     border-bottom: 3px solid var(--va-ink);
     background: var(--va-paper);
   }
 
   .verdigris-nav-row .vera-nav[data-open] {
     display: grid;
+    animation: va-nav-reveal 180ms ease-out both;
   }
 
   .verdigris-nav-row .vera-nav a {
-    padding: 11px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 52px;
+    padding: 8px 12px;
     border-bottom: 1px dotted var(--va-rule);
+    text-align: left;
   }
 
-  .verdigris-nav-row .vera-nav__book {
-    display: block;
+  .verdigris-nav-row .vera-nav a[aria-current="page"] {
+    background: var(--va-paper-deep);
+  }
+
+  .verdigris-nav-row .vera-nav a.vera-nav__account {
+    display: flex;
+    justify-content: flex-start;
+    gap: 11px;
+  }
+
+  .verdigris-nav-row .vera-nav a.vera-nav__book {
+    display: flex;
+    justify-content: center;
+    min-height: 48px;
+    margin-top: 10px;
     border: 1px solid var(--va-ink) !important;
+    border-bottom: 1px solid var(--va-ink) !important;
     border-radius: 0;
     background: var(--va-ink);
     color: var(--va-paper) !important;
     text-align: center;
   }
 
-  .verdigris-nav-row .vera-header__actions,
-  .verdigris-nav-row .vera-account-identity {
+  .verdigris-nav-row .vera-header__actions {
+    grid-column: 3;
+    grid-row: 1;
+    display: flex;
     justify-self: end;
   }
 
-  .verdigris-nav-row .vera-header__actions .vera-button {
-    padding-inline: 12px;
-    font-size: 10px;
+  .verdigris-nav-row .vera-header__actions > .vera-button,
+  .verdigris-nav-row .vera-header__help {
+    display: none;
+  }
+
+  .verdigris-nav-row .vera-header__account {
+    min-height: 42px;
+    padding: 6px 10px 6px 7px;
   }
 
   .va-home-hero {
@@ -1424,10 +1553,24 @@
     grid-template-columns: 1fr;
   }
 
-  .verdigris-masthead .vera-brand,
-  .verdigris-masthead p,
-  .verdigris-masthead > span {
+  .verdigris-masthead .vera-brand {
     grid-column: 1;
+    width: min(92vw, 420px);
+  }
+
+  .verdigris-nav-row .vera-header__account {
+    width: 44px;
+    justify-content: center;
+    padding: 6px;
+  }
+
+  .verdigris-nav-row .vera-header__account > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
 
   .va-reading__meta,
@@ -1516,6 +1659,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .verdigris-nav-row .vera-nav[data-open] {
+    animation: none;
+  }
+
   .verdigris-masthead__rule,
   .va-home-kicker,
   .va-home-hero h1,

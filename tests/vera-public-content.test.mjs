@@ -51,6 +51,15 @@ test("every Vera Content Studio collection remains below the 84 editable-field c
   }
 });
 
+test("home surfaces the published journal with Verdigris-specific cards", () => {
+  const source = read("src/pages/index.astro");
+  assert.match(source, /listBlogPosts\(locale\)/);
+  assert.match(source, /posts\.slice\(0, 3\)/);
+  assert.match(source, /class="va-section va-journal"/);
+  assert.match(source, /href="\/writing"/);
+  assert.match(source, /class="va-journal-entry"/);
+});
+
 test("all canonical public routes mount the Vera frame and editable page content", () => {
   const routes = [
     "src/pages/index.astro",
@@ -372,6 +381,10 @@ test("account, letters, and forms expose source-faithful integration states", as
   assert.match(account, /\/cancel/);
   assert.match(account, /\/account\/messages/);
   assert.match(account, /\/account\/files\//);
+  assert.doesNotMatch(account, /data-account-payment-(?:paid|balance)/);
+  assert.doesNotMatch(account, /data-account-balance-(?:payment|card|submit|status)/);
+  assert.doesNotMatch(account, /kind: "balance"/);
+  assert.match(account, /numberValue\(booking, "paid_cents", "paidCents"\) > 0/);
   assert.doesNotMatch(account, /<nav class="vera-account-nav"/);
   assert.doesNotMatch(account, /<button[^>]+data-account-nav-button/);
   assert.match(account, /window\.location\.hash\.replace/);
@@ -502,6 +515,17 @@ test("account signup copy opens the room immediately", async () => {
   );
   assert.equal(authDefaults.verification_success_status, "You're in the book");
   assert.equal(authDefaults.verification_invalid_status, "Wrong address? Start over");
+});
+
+test("shared header and footer render the locked raster logo", () => {
+  for (const component of [
+    read("src/components/vera/VeraHeader.astro"),
+    read("src/components/vera/VeraFooter.astro"),
+  ]) {
+    assert.match(component, /data-vera-brand-logo/);
+    assert.match(component, /logo\.webp/);
+    assert.doesNotMatch(component, /logo\.svg/);
+  }
 });
 
 test("Vera typography has no remote font stylesheet", () => {

@@ -52,21 +52,7 @@ const recordingMeta = String(content.recording_meta ?? "").split("\n");
               <span data-account-upcoming-when {...builderEdit("upcoming_when")}>{content.upcoming_when}</span><br />
               <span data-account-upcoming-where {...builderEdit("upcoming_where")}>{content.upcoming_where}</span>
             </p>
-            <div class="vera-account-payment-line">
-              <span data-account-payment-paid {...builderEdit("upcoming_paid")}>{content.upcoming_paid}</span>
-              <span data-account-payment-balance {...builderEdit("upcoming_balance")}>{content.upcoming_balance}</span>
-            </div>
             <p class="vera-form-note" data-account-action-required aria-live="polite" hidden {...builderEdit("reschedule_error")}>{content.reschedule_error}</p>
-          </article>
-
-          <article class="vera-info-card" data-account-balance-payment hidden aria-live="polite">
-            <h2 {...builderEdit("balance_payment_title")}>{content.balance_payment_title}</h2>
-            <p class="vera-card-meta" {...builderEdit("balance_payment_card_label")}>{content.balance_payment_card_label}</p>
-            <div class="vera-stripe-mount" data-account-balance-card></div>
-            <p data-account-balance-status="processing" hidden {...builderEdit("balance_payment_processing")}>{content.balance_payment_processing}</p>
-            <p data-account-balance-status="error" hidden {...builderEdit("balance_payment_error")}>{content.balance_payment_error}</p>
-            <p data-account-balance-status="success" hidden {...builderEdit("balance_payment_success")}>{content.balance_payment_success}</p>
-            <button class="vera-button vera-button--burnt vera-button--small" type="button" data-account-balance-submit {...builderEdit("balance_payment_submit_template")}>{content.balance_payment_submit_template}</button>
           </article>
 
           <article class="vera-account-empty" data-account-empty hidden>
@@ -452,8 +438,6 @@ const recordingMeta = String(content.recording_meta ?? "").split("\n");
 </VeraFrame>
 
 <script>
-  import { loadStripe, type Stripe, type StripeCardElement } from "@stripe/stripe-js";
-
   type VeraRow = Record<string, unknown>;
   type VeraPortal = {
     account?: VeraRow;
@@ -484,15 +468,11 @@ const recordingMeta = String(content.recording_meta ?? "").split("\n");
   const manageToken = storedManageToken;
 
   let portal: VeraPortal | null = null;
-  let catalog: VeraRow = {};
   let selectedBooking: VeraRow | null = null;
-  let balanceBooking: VeraRow | null = null;
   let selectedStartAt = "";
   let selectedStartLabel = "";
   let activeThread: VeraRow | null = null;
   let preparedRescheduleBookingId = "";
-  let balanceStripe: Stripe | null = null;
-  let balanceCardElement: StripeCardElement | null = null;
   const serviceBySlug = new Map<string, VeraRow>();
 
   function query<T extends Element>(selector: string) {
@@ -542,10 +522,6 @@ const recordingMeta = String(content.recording_meta ?? "").split("\n");
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(Math.max(0, Number(cents) || 0) / 100);
-  const replaceFirstToken = (source: string, value: string) => {
-    const splitAt = source.indexOf(" ");
-    return splitAt < 0 ? value : `${value}${source.slice(splitAt)}`;
-  };
   const readyData = async (response: Response) => {
     const body = await response.json().catch(() => null) as {
       status?: string;
@@ -559,11 +535,8 @@ const recordingMeta = String(content.recording_meta ?? "").split("\n");
   const sourceCopy = {
     accountTitle: sourceText("[data-account-title]"),
     upcomingWhere: sourceText("[data-account-upcoming-where]"),
-    paid: sourceText("[data-account-payment-paid]"),
-    balance: sourceText("[data-account-payment-balance]"),
     cancelledKicker: "",
     rescheduleMode: "",
-    balanceSubmit: sourceText("[data-account-balance-submit]"),
   };
 
   const accountLoading = document.querySelector<HTMLElement>("[data-account-loading]");
@@ -675,39 +648,6 @@ const recordingMeta = String(content.recording_meta ?? "").split("\n");
     setText("[data-account-past-note]", String(past.length));
   };
 
-  const showBalanceStatus = (kind: "processing" | "error" | "success" | null) => {
-    document.querySelectorAll<HTMLElement>("[data-account-balance-status]").forEach((status) => {
-      status.hidden = status.dataset.accountBalanceStatus !== kind;
-    });
-  };
-
-  const renderBalancePayment = (bookings: VeraRow[]) => {
-    const panel = query<HTMLElement>("[data-account-balance-payment]");
-    balanceBooking = bookings
-      .filter((booking) =>
-        numberValue(booking, "balance_cents", "balanceCents") > 0 &&
-        !["cancelled", "expired", "refunded"].includes(stringValue(booking, "status"))
-      )
-      .sort((left, right) => (validDate(bookingStart(right))?.getTime() ?? 0) -
-        (validDate(bookingStart(left))?.getTime() ?? 0))[0] ?? null;
-    if (panel) panel.hidden = !balanceBooking;
-    if (!balanceBooking) return;
-    const balance = formatMoney(
-      numberValue(balanceBooking, "balance_cents", "balanceCents"),
-      bookingCurrency(balanceBooking),
-    );
-    const submit = query<HTMLButtonElement>("[data-account-balance-submit]");
-    if (submit) {
-      submit.hidden = false;
-      submit.disabled = false;
-      submit.textContent = sourceCopy.balanceSubmit.replace(/\{\{\s*balance\s*\}\}/g, balance);
-    }
-    const cardMount = query<HTMLElement>("[data-account-balance-card]");
-    if (cardMount) cardMount.hidden = false;
-    showBalanceStatus(null);
-    void mountBalanceCard();
-  };
-
   const renderOverview = () => {
     if (!portal) return;
     const bookings = rows(portal.bookings);
@@ -715,7 +655,12 @@ const recordingMeta = String(content.recording_meta ?? "").split("\n");
     const upcoming = bookings
       .filter((booking) => {
         const start = validDate(bookingStart(booking))?.getTime() ?? 0;
-        return start > now && !["cancelled", "expired", "completed", "refunded"].includes(stringValue(booking, "status"));
+        const status = stringValue(booking, "status");
+        const paymentState = stringValue(booking, "payment_state", "paymentState");
+        return start > now &&
+          ["confirmed", "reschedule_pending"].includes(status) &&
+          ["deposit_paid", "paid"].includes(paymentState) &&
+          numberValue(booking, "paid_cents", "paidCents") > 0;
       })
       .sort((left, right) => (validDate(bookingStart(left))?.getTime() ?? 0) -
         (validDate(bookingStart(right))?.getTime() ?? 0))[0] ?? null;
@@ -744,14 +689,6 @@ const recordingMeta = String(content.recording_meta ?? "").split("\n");
         stringValue(upcoming, "mode") === "in_person"
           ? sourceCopy.upcomingWhere
           : stringValue(upcoming, "calendly_meeting_url", "calendlyMeetingUrl"),
-      );
-      setText(
-        "[data-account-payment-paid]",
-        replaceFirstToken(sourceCopy.paid, formatMoney(numberValue(upcoming, "paid_cents", "paidCents"), bookingCurrency(upcoming))),
-      );
-      setText(
-        "[data-account-payment-balance]",
-        replaceFirstToken(sourceCopy.balance, formatMoney(numberValue(upcoming, "balance_cents", "balanceCents"), bookingCurrency(upcoming))),
       );
       upcomingCard?.querySelectorAll<HTMLElement>("[data-open-account-panel], [data-account-add-calendar]").forEach((button) => {
         button.dataset.bookingId = bookingId(upcoming);
@@ -792,7 +729,6 @@ const recordingMeta = String(content.recording_meta ?? "").split("\n");
       }
     }
 
-    renderBalancePayment(bookings);
     renderPastBookings(bookings, upcoming);
     const birthCard = query<HTMLElement>("[data-account-birth-card]");
     const intake = selectedBooking?.intake && typeof selectedBooking.intake === "object"
@@ -831,84 +767,6 @@ const recordingMeta = String(content.recording_meta ?? "").split("\n");
       ...(portal?.csrfToken ? { "x-csrf-token": portal.csrfToken } : {}),
     },
     body: JSON.stringify(body),
-  });
-
-  const mountBalanceCard = async (publishableKey = stringValue(catalog, "stripePublishableKey")) => {
-    const mount = query<HTMLElement>("[data-account-balance-card]");
-    if (!publishableKey || !mount || balanceCardElement) return Boolean(balanceCardElement);
-    balanceStripe = await loadStripe(publishableKey);
-    if (!balanceStripe) return false;
-    balanceCardElement = balanceStripe.elements().create("card", {
-      hidePostalCode: false,
-      style: {
-        base: {
-          color: "#2C1810",
-          fontFamily: "Georgia, serif",
-          fontSize: "16px",
-          "::placeholder": { color: "#7A5A44" },
-        },
-        invalid: { color: "#C6491F" },
-      },
-    });
-    balanceCardElement.mount(mount);
-    return true;
-  };
-
-  const refreshAccountPortal = async () => {
-    const refreshed = await readyData(await fetch(accountEndpoint, { credentials: "same-origin" }));
-    if (!refreshed) return null;
-    portal = refreshed as VeraPortal;
-    return portal;
-  };
-
-  const waitForBalanceSettlement = async (id: string) => {
-    for (let attempt = 0; attempt < 40; attempt += 1) {
-      await new Promise((resolve) => window.setTimeout(resolve, 1_500));
-      const refreshed = await refreshAccountPortal();
-      const booking = rows(refreshed?.bookings).find((entry) => bookingId(entry) === id);
-      if (!booking || numberValue(booking, "balance_cents", "balanceCents") > 0) continue;
-      selectedBooking = booking;
-      renderOverview();
-      const panel = query<HTMLElement>("[data-account-balance-payment]");
-      const mount = query<HTMLElement>("[data-account-balance-card]");
-      const submit = query<HTMLButtonElement>("[data-account-balance-submit]");
-      if (panel) panel.hidden = false;
-      if (mount) mount.hidden = true;
-      if (submit) submit.hidden = true;
-      showBalanceStatus("success");
-      return true;
-    }
-    return false;
-  };
-
-  query<HTMLButtonElement>("[data-account-balance-submit]")?.addEventListener("click", async (event) => {
-    if (!balanceBooking || !portal?.csrfToken) return;
-    const button = event.currentTarget as HTMLButtonElement;
-    button.disabled = true;
-    showBalanceStatus("processing");
-    try {
-      const id = bookingId(balanceBooking);
-      const intentData = await readyData(await fetch(
-        `/api/astropages/generated-site/vera/bookings/${encodeURIComponent(id)}/payment-intent`,
-        mutationOptions({ kind: "balance" }),
-      ));
-      const payment = intentData?.payment && typeof intentData.payment === "object"
-        ? intentData.payment as VeraRow
-        : null;
-      if (!payment || !await mountBalanceCard(stringValue(payment, "publishableKey"))) {
-        throw new Error("stripe");
-      }
-      const clientSecret = stringValue(payment, "clientSecret");
-      if (!clientSecret || !balanceStripe || !balanceCardElement) throw new Error("stripe");
-      const confirmed = await balanceStripe.confirmCardPayment(clientSecret, {
-        payment_method: { card: balanceCardElement },
-      });
-      if (confirmed.error) throw new Error("stripe");
-      if (!await waitForBalanceSettlement(id)) return;
-    } catch {
-      showBalanceStatus("error");
-      button.disabled = false;
-    }
   });
 
   const rescheduleSubmit = document.querySelector<HTMLButtonElement>("[data-account-reschedule-submit]");
@@ -1490,7 +1348,6 @@ const recordingMeta = String(content.recording_meta ?? "").split("\n");
       ]);
       if (!accountData) return;
       portal = accountData as VeraPortal;
-      catalog = catalogData ?? {};
       if (requestedBookingId && manageToken) {
         let claimed = rows(portal.bookings).some((booking) => bookingId(booking) === requestedBookingId);
         if (!claimed && portal.csrfToken) {

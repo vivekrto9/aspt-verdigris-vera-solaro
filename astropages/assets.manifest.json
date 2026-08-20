@@ -107,18 +107,18 @@
       "alias": "favicon",
       "displayName": "Favicon",
       "mimeType": "image/svg+xml",
-      "contentHash": "sha256:e68f2e38b0b7070d0b07b3b193d9c6452133268d82d2345786645a1344204227",
+      "contentHash": "sha256:2c09cbca2d2a742cc1a78e0e449e5feb2b7a8ac794485c33197466bfec4a1c88",
       "visibility": "customer",
       "protected": true,
       "replaceable": true
     },
     {
-      "seedKey": "logo.svg",
-      "source": "logo.svg",
+      "seedKey": "logo.webp",
+      "source": "logo.webp",
       "alias": "logo",
       "displayName": "Logo",
-      "mimeType": "image/svg+xml",
-      "contentHash": "sha256:741cc403f4ac8f89f86cb1605657a91e630a95439358fc885849e433ab4a713f",
+      "mimeType": "image/webp",
+      "contentHash": "sha256:0e3327295750083258aeb1114d2fc50b870938e9516e3a5174b43a0d1ce9898f",
       "visibility": "customer",
       "protected": true,
       "replaceable": true

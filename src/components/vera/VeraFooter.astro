@@ -1,4 +1,5 @@
 ---
+import logoAssetUrl from "../../../astropages/assets/logo.webp?url";
 import { isOfferedReading } from "../../data/vera/offered-readings.ts";
 type Edit = (field: string) => Record<string, unknown>;
 
@@ -27,6 +28,7 @@ const elsewhereLinks = [
   { href: "/contact", field: "footer_elsewhere_2" },
   { href: "tel:+390405550112", field: "footer_elsewhere_3" },
 ];
+const logoSrc = import.meta.env.DEV ? logoAssetUrl : "/_assets/aliases/logo/logo.webp";
 ---
 
 <footer class="vera-footer">
@@ -41,8 +43,18 @@ const elsewhereLinks = [
   </div>
   <div class="vera-footer__grid">
     <div class="vera-footer__about">
-      <a class="vera-footer__wordmark" href="/" {...chromeEdit("footer_brand_name")}>
-        {content.footer_brand_name}
+      <a class="vera-footer__brand" href="/" aria-label={content.footer_brand_name} {...chromeEdit("footer_brand_name")}>
+        <img
+          class="vera-footer__logo"
+          data-vera-brand-logo
+          src={logoSrc}
+          alt={content.footer_brand_name}
+          width="760"
+          height="230"
+        />
+        <span class="vera-brand-fallback" data-vera-brand-fallback hidden aria-hidden="true">
+          {content.footer_brand_name}
+        </span>
       </a>
       <p {...chromeEdit("footer_about")}>{content.footer_about}</p>
     </div>

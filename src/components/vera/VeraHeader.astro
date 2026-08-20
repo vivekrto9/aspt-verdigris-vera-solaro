@@ -1,5 +1,5 @@
 ---
-import VeraImage from "./VeraImage.astro";
+import logoAssetUrl from "../../../astropages/assets/logo.webp?url";
 
 type Edit = (field: string) => Record<string, unknown>;
 
@@ -13,7 +13,6 @@ const links = [
   { href: "/readings", field: "nav_readings" },
   { href: "/about", field: "nav_about" },
   { href: "/writing", field: "nav_writing" },
-  { href: "/account", field: "nav_account" },
 ];
 
 const active = (href: string) =>
@@ -28,6 +27,7 @@ const dateline = new Intl.DateTimeFormat("en-GB", {
   year: "numeric",
   timeZone: "Europe/Rome",
 }).format(new Date());
+const logoSrc = import.meta.env.DEV ? logoAssetUrl : "/_assets/aliases/logo/logo.webp";
 ---
 
 <header class="vera-header">
@@ -43,12 +43,21 @@ const dateline = new Intl.DateTimeFormat("en-GB", {
 
   <div class="verdigris-masthead">
     <div class="verdigris-masthead__rule" aria-hidden="true"></div>
-    <a class="vera-brand" href="/" aria-label={content.brand_name} {...chromeEdit("brand_name")}>
-      {content.brand_name}
+    <a class="vera-brand" href="/" aria-label={`${content.brand_name} — ${content.brand_role}`} {...chromeEdit("brand_name")}>
+      <img
+        class="vera-brand__logo"
+        data-vera-brand-logo
+        src={logoSrc}
+        alt={`${content.brand_name} — ${content.brand_role}`}
+        width="760"
+        height="230"
+      />
+      <span class="vera-brand-fallback" data-vera-brand-fallback hidden aria-hidden="true">
+        {content.brand_name}
+      </span>
     </a>
     <div class="verdigris-masthead__rule" aria-hidden="true"></div>
-    <p {...chromeEdit("brand_role")}>{content.brand_role}</p>
-    <span aria-hidden="true">✦ ❦ ✦</span>
+    <span class="vera-visually-hidden" {...chromeEdit("brand_role")}>{content.brand_role}</span>
   </div>
 
   <div class="verdigris-nav-row">
@@ -80,6 +89,18 @@ const dateline = new Intl.DateTimeFormat("en-GB", {
           {content[link.field]}
         </a>
       ))}
+      <a
+        class="vera-nav__account"
+        href="/account"
+        aria-current={isAccount ? "page" : undefined}
+        {...chromeEdit("nav_account")}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="8" r="3.5"></circle>
+          <path d="M5.5 19c.8-3.3 3-5 6.5-5s5.7 1.7 6.5 5"></path>
+        </svg>
+        <span>{content.nav_account}</span>
+      </a>
       {!isAccount ? (
         <a class="vera-nav__book" href="/booking" {...chromeEdit("book_cta")}>
           {content.book_cta}
@@ -87,22 +108,23 @@ const dateline = new Intl.DateTimeFormat("en-GB", {
       ) : null}
     </nav>
 
-    {isAccount ? (
-      <div class="vera-account-identity" data-account-header-identity hidden>
-        <VeraImage
-          alt={content.account_avatar_alt}
-          altField="account_avatar_alt"
-          edit={chromeEdit}
-          shape="circle"
-        />
-        <div>
-          <span data-account-header-name>{content.profile_name}</span><br />
-          <span data-account-header-ref>{content.profile_ref}</span>
-        </div>
-      </div>
-    ) : (
-      <div class="vera-header__actions">
-        {isBooking ? (
+    <div class="vera-header__actions">
+      <a
+        class="vera-header__account"
+        href="/account"
+        aria-current={isAccount ? "page" : undefined}
+        aria-label={content.nav_account}
+        title={content.nav_account}
+        {...chromeEdit("nav_account")}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="8" r="3.5"></circle>
+          <path d="M5.5 19c.8-3.3 3-5 6.5-5s5.7 1.7 6.5 5"></path>
+        </svg>
+        <span>{content.nav_account}</span>
+      </a>
+      {!isAccount ? (
+        isBooking ? (
           <a class="vera-header__help" href="tel:+390405550112" {...chromeEdit("booking_help")}>
             {content.booking_help}
           </a>
@@ -110,9 +132,9 @@ const dateline = new Intl.DateTimeFormat("en-GB", {
           <a class="vera-button vera-button--burnt vera-button--small" href="/booking" {...chromeEdit("book_cta")}>
             {content.book_cta}
           </a>
-        )}
-      </div>
-    )}
+        )
+      ) : null}
+    </div>
   </div>
 </header>
 
@@ -125,6 +147,18 @@ const dateline = new Intl.DateTimeFormat("en-GB", {
 ) : null}
 
 <script>
+  document.querySelectorAll<HTMLImageElement>("[data-vera-brand-logo]").forEach((logo) => {
+    const revealFallback = () => {
+      logo.hidden = true;
+      const fallback = logo.nextElementSibling;
+      if (fallback instanceof HTMLElement && fallback.matches("[data-vera-brand-fallback]")) {
+        fallback.hidden = false;
+      }
+    };
+    if (logo.complete && logo.naturalWidth === 0) revealFallback();
+    else logo.addEventListener("error", revealFallback, { once: true });
+  });
+
   const headerToggle = document.querySelector<HTMLButtonElement>("[data-vera-nav-toggle]");
   const headerNav = document.querySelector<HTMLElement>("[data-vera-nav]");
   const setHeaderNav = (expanded: boolean, moveFocus = false) => {
@@ -143,7 +177,10 @@ const dateline = new Intl.DateTimeFormat("en-GB", {
     setHeaderNav(!expanded, !expanded);
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") setHeaderNav(false);
+    if (event.key === "Escape" && headerNav?.hasAttribute("data-open")) {
+      setHeaderNav(false);
+      headerToggle?.focus();
+    }
   });
   document.addEventListener("click", (event) => {
     if (!headerNav?.hasAttribute("data-open")) return;

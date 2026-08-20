@@ -1,5 +1,5 @@
 ---
-import logoAssetUrl from "../../../astropages/assets/logo.svg?url";
+import logoAssetUrl from "../../../astropages/assets/logo.webp?url";
 
 type Edit = (field: string) => Record<string, unknown>;
 
@@ -16,11 +16,11 @@ const {
 };
 
 const editAttrs = field && edit ? edit(field) : {};
-const logoSrc = import.meta.env.DEV ? logoAssetUrl : "/_assets/aliases/logo/logo.svg";
+const logoSrc = import.meta.env.DEV ? logoAssetUrl : "/_assets/aliases/logo/logo.webp";
 ---
 
 <figure class:list={["vera-brand-mark", className]}>
-  <img data-vera-brand-logo src={logoSrc} alt={alt} width="260" height="64" />
+  <img data-vera-brand-logo src={logoSrc} alt={alt} width="760" height="230" />
   <span class="vera-brand-fallback" data-vera-brand-fallback hidden aria-hidden="true">{alt}</span>
   <figcaption class="vera-visually-hidden" {...editAttrs}>{alt}</figcaption>
 </figure>
