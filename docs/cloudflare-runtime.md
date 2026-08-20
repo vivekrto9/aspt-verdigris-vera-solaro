@@ -47,6 +47,8 @@ Google Places is supplied through the separate platform binding. Do not place
 any of these values in `wrangler.jsonc`, a manifest, a workflow command, or a
 committed dotenv file.
 
+`ASTROPAGES_INTEGRATION_SECRETS_JSON` is retained only as a legacy read fallback when an individual Worker secret is absent; generated Wrangler configuration must not bind it.
+
 Generated-site deployments require generic resource variables only:
 
 - `PREVIEW_SITE_URL`

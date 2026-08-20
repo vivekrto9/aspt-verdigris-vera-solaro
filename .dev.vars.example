@@ -13,7 +13,7 @@ ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL=https://astropages.example
 ASTROPAGES_SITE_URL=http://127.0.0.1:4321
 
 # Vera integrations for local runtime checks. Generated preview/production sites
-# receive provider credentials through the existing Secret Store bindings.
+# receive provider credentials as individual Worker secrets. The legacy JSON bundle is fallback-only.
 STRIPE_SECRET_KEY=replace-with-stripe-secret-key
 STRIPE_WEBHOOK_SECRET=replace-with-stripe-webhook-secret
 PUBLIC_STRIPE_PUBLISHABLE_KEY=replace-with-stripe-publishable-key

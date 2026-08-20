@@ -80,9 +80,9 @@ export const resolveSecretBinding = async (
       if (platformValue) return platformValue;
     }
   }
-  const bundled = await resolveBundledSecretBinding(env, bindingName);
-  if (bundled) return bundled;
-  return resolveRuntimeBinding(env[bindingName]);
+  const direct = await resolveRuntimeBinding(env[bindingName]);
+  if (direct) return direct;
+  return resolveBundledSecretBinding(env, bindingName);
 };
 
 export const hasSecretBinding = async (env: Record<string, unknown>, bindingName: string) =>

@@ -50,6 +50,8 @@ Deliberate source limits:
   SES credentials, the platform Google Places binding, encryption, and the
   environment-specific Cloudflare resources declared by the existing manifests.
 
+Project credentials are synchronized as individual Worker secrets. Google Places uses the shared platform Secrets Store binding; `ASTROPAGES_INTEGRATION_SECRETS_JSON` remains a legacy read fallback only.
+
 ## EmDash Contract
 
 Generated sites must materialize editable content explicitly through:
