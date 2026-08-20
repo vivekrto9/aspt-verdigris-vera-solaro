@@ -134,8 +134,7 @@
       "secrets": {
         "required": [
           "EMDASH_ENCRYPTION_KEY",
-          "BUILDER_MCP_TOKEN",
-          "BUILDER_MCP_PROVISION_SECRET"
+          "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN"
         ],
       },
       "worker_loaders": [
@@ -209,8 +208,7 @@
       "secrets": {
         "required": [
           "EMDASH_ENCRYPTION_KEY",
-          "BUILDER_MCP_TOKEN",
-          "BUILDER_MCP_PROVISION_SECRET"
+          "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN"
         ],
       },
       "worker_loaders": [

@@ -1,5 +1,7 @@
 # Safe example only. Copy to .dev.vars locally and replace placeholders.
 
+# Deployments use EMDASH_ENCRYPTION_KEY plus the generated/control-plane callback
+# token. Builder values below are legacy/local editor compatibility only.
 EMDASH_ENCRYPTION_KEY=replace-with-local-development-key
 BUILDER_MCP_TOKEN=ec_pat_replace-with-builder-mcp-token
 BUILDER_MCP_PROVISION_SECRET=replace-with-builder-mcp-provision-secret

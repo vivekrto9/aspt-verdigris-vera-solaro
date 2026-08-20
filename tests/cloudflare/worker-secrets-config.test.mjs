@@ -41,9 +41,10 @@ test("generated-site secret file contains only generated-site Worker secrets", (
   }
 });
 
-test("template-source secret file retains Builder bootstrap secrets", () => {
+test("template-source secret file uses the generated callback token and excludes stale Builder secrets", () => {
   const { result, runnerTemp } = runWriter({
     EMDASH_ENCRYPTION_KEY: "test-emdash-key",
+    ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN: "test-callback-token",
     BUILDER_MCP_TOKEN: "test-builder-token",
     BUILDER_MCP_PROVISION_SECRET: "test-provision-secret",
   });
@@ -52,9 +53,23 @@ test("template-source secret file retains Builder bootstrap secrets", () => {
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(JSON.parse(readFileSync(join(runnerTemp, outputName), "utf8")), {
       EMDASH_ENCRYPTION_KEY: "test-emdash-key",
-      BUILDER_MCP_TOKEN: "test-builder-token",
-      BUILDER_MCP_PROVISION_SECRET: "test-provision-secret",
+      ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN: "test-callback-token",
     });
+  } finally {
+    rmSync(runnerTemp, { recursive: true, force: true });
+  }
+});
+
+test("template-source secret file rejects Builder-only deployment credentials", () => {
+  const { result, runnerTemp } = runWriter({
+    EMDASH_ENCRYPTION_KEY: "test-emdash-key",
+    BUILDER_MCP_TOKEN: "test-builder-token",
+    BUILDER_MCP_PROVISION_SECRET: "test-provision-secret",
+  });
+
+  try {
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN is required/);
   } finally {
     rmSync(runnerTemp, { recursive: true, force: true });
   }

@@ -34,6 +34,11 @@ test("template deployments create a process-local callback token without logging
   assert.match(source, /randomBytes\(32\)\.toString\("hex"\)/);
   assert.match(source, /process\.env\.ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN/);
   assert.doesNotMatch(source, /console\.log\([^\n]*ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN/);
+  assert.ok(
+    source.indexOf('randomBytes(32).toString("hex")') <
+      source.indexOf('run("node", ["scripts/write-worker-secrets-file.mjs"]'),
+    "template callback token must be generated before the Worker secrets file is written",
+  );
 });
 
 test("template deployment preserves verification, migration, deploy, and portable smoke-check stages", () => {

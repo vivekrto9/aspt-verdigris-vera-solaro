@@ -76,6 +76,13 @@ test("template manifest declares core platform metadata without generated-site a
   }
   assert.equal(manifest.secrets.requiredForGeneratedSiteDeployment.includes("BUILDER_MCP_TOKEN"), false);
   assert.equal(manifest.secrets.requiredForGeneratedSiteDeployment.includes("BUILDER_MCP_PROVISION_SECRET"), false);
+  assert.equal(manifest.secrets.requiredForTemplateDeployment.includes("BUILDER_MCP_TOKEN"), false);
+  assert.equal(manifest.secrets.requiredForTemplateDeployment.includes("BUILDER_MCP_PROVISION_SECRET"), false);
+  assert.equal(manifest.secrets.deploymentMapping.workerSecrets.includes("BUILDER_MCP_TOKEN"), false);
+  assert.equal(manifest.secrets.deploymentMapping.workerSecrets.includes("BUILDER_MCP_PROVISION_SECRET"), false);
+  assert.equal(manifest.secrets.deploymentMapping.workerSecrets.includes("ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN"), true);
+  assert.equal(manifest.secrets.requiredForGeneratedSiteDeployment.includes("CLOUDFLARE_SECRETS_STORE_ID"), false);
+  assert.equal(manifest.secrets.deploymentVariables.includes("CLOUDFLARE_SECRETS_STORE_ID"), true);
 });
 
 test("AstroPages keeps the six standard manifests without parallel sidecar contracts", () => {

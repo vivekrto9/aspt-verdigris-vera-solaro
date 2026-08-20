@@ -90,17 +90,13 @@
   },
   "secrets": {
     "requiredNow": [
-      "EMDASH_ENCRYPTION_KEY",
-      "BUILDER_MCP_TOKEN",
-      "BUILDER_MCP_PROVISION_SECRET"
+      "EMDASH_ENCRYPTION_KEY"
     ],
     "requiredForTemplateDeployment": [
       "CLOUDFLARE_API_TOKEN",
       "CLOUDFLARE_ACCOUNT_ID",
       "CLOUDFLARE_DEV_WORKERS_SUBDOMAIN",
-      "EMDASH_ENCRYPTION_KEY",
-      "BUILDER_MCP_TOKEN",
-      "BUILDER_MCP_PROVISION_SECRET"
+      "EMDASH_ENCRYPTION_KEY"
     ],
     "requiredForGeneratedSiteDeployment": [
       "CLOUDFLARE_API_TOKEN",
@@ -109,8 +105,7 @@
       "EMDASH_ENCRYPTION_KEY",
       "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN",
       "ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL",
-      "ASTROPAGES_SSO_PUBLIC_JWK",
-      "CLOUDFLARE_SECRETS_STORE_ID"
+      "ASTROPAGES_SSO_PUBLIC_JWK"
     ],
     "deploymentVariables": [
       "GH_REPOSITORY_VARIABLES_TOKEN",
@@ -126,8 +121,7 @@
       "workerSecretsFile": "aspt-verdigris-vera-solaro-worker-secrets.json",
       "workerSecrets": [
         "EMDASH_ENCRYPTION_KEY",
-        "BUILDER_MCP_TOKEN",
-        "BUILDER_MCP_PROVISION_SECRET"
+        "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN"
       ],
       "generatedSiteWorkerSecrets": [
         "EMDASH_ENCRYPTION_KEY",

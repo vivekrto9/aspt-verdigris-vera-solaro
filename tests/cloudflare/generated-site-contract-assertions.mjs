@@ -104,11 +104,12 @@ const assertTemplateWorkflowOrder = (root) => {
   for (const { path, envName, configPath } of cases) {
     const databaseName = parseRuntimeResourceValue(root, envName, "d1DatabaseName");
     const workflow = read(root, path);
-    assert.doesNotMatch(workflow, /ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN/);
     assert.doesNotMatch(workflow, /ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL/);
+    assert.doesNotMatch(workflow, /BUILDER_MCP_TOKEN|BUILDER_MCP_PROVISION_SECRET/);
     const schemaCheck = workflow.indexOf("pnpm run d1:schema:check");
     const ensureResources = workflow.indexOf(`node scripts/ensure-cloudflare-resources.mjs ${envName}`);
     const renderConfig = workflow.indexOf(`node scripts/render-wrangler-config.mjs ${envName}`);
+    const generateCallbackToken = workflow.indexOf("Generate template deploy callback token");
     const writeSecrets = workflow.indexOf("node scripts/write-worker-secrets-file.mjs");
     const applyMigrations = workflow.indexOf(
       `pnpm exec wrangler d1 migrations apply ${databaseName} --env ${envName} --remote --config ${configPath}`,
@@ -122,6 +123,7 @@ const assertTemplateWorkflowOrder = (root) => {
       schemaCheck,
       ensureResources,
       renderConfig,
+      generateCallbackToken,
       writeSecrets,
       applyMigrations,
       deploy,
@@ -132,7 +134,8 @@ const assertTemplateWorkflowOrder = (root) => {
 
     assert.ok(schemaCheck < ensureResources, `${path} must validate schema before provisioning`);
     assert.ok(ensureResources < renderConfig, `${path} must provision before rendering wrangler config`);
-    assert.ok(renderConfig < writeSecrets, `${path} must render config before writing secrets`);
+    assert.ok(renderConfig < generateCallbackToken, `${path} must render config before generating template callback token`);
+    assert.ok(generateCallbackToken < writeSecrets, `${path} must generate template callback token before writing secrets`);
     assert.ok(writeSecrets < applyMigrations, `${path} must write secrets before migrations`);
     assert.ok(applyMigrations < deploy, `${path} must apply D1 migrations before deploy`);
     assert.ok(deploy < prepareEmdash, `${path} must deploy before preparing EmDash`);
@@ -325,9 +328,11 @@ export const assertWranglerRuntimeContract = (root = defaultRoot) => {
 
   assert.deepEqual(requiredSecretNames, [
     "EMDASH_ENCRYPTION_KEY",
-    "BUILDER_MCP_TOKEN",
-    "BUILDER_MCP_PROVISION_SECRET",
+    "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN",
   ]);
+  assert.doesNotMatch(contractSource, /"BUILDER_MCP_TOKEN"|"BUILDER_MCP_PROVISION_SECRET"/);
+  const wranglerSource = exists(root, "wrangler.jsonc") ? read(root, "wrangler.jsonc") : "";
+  assert.doesNotMatch(wranglerSource, /"BUILDER_MCP_TOKEN"|"BUILDER_MCP_PROVISION_SECRET"/);
   const generatedSiteMarker = "generatedSiteRequiredSecretNames:";
   const generatedSiteMarkerIndex = contractSource.indexOf(generatedSiteMarker);
   assert.notEqual(

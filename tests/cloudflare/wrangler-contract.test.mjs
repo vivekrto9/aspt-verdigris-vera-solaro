@@ -7,6 +7,7 @@ import test from "node:test";
 
 import {
   platformGooglePlacesSecretBinding,
+  platformGooglePlacesSecretName,
   secretStoreBindingsForGeneratedSite,
   loadWranglerConfig,
   runtimeContract,
@@ -98,6 +99,10 @@ test("preview and production resource names match the approved contract", () => 
 
 test("worker secret contract and generated-site Secret Store bindings match platform contract", () => {
   assertWranglerRuntimeContract();
+  assert.deepEqual(runtimeContract.requiredSecretNames, [
+    "EMDASH_ENCRYPTION_KEY",
+    "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN",
+  ]);
   assert.deepEqual(runtimeContract.generatedSiteRequiredSecretNames, [
     "EMDASH_ENCRYPTION_KEY",
     "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN",
@@ -190,6 +195,13 @@ test("generated-site config omits Queue bindings forbidden by the trusted deploy
     assert.equal(rendered.env.preview.queues, undefined);
     assert.equal(rendered.env.production.queues, undefined);
     assert.deepEqual(rendered.env.preview.triggers.crons, runtimeContract.cronSchedules);
+    assert.equal(rendered.secrets_store_secrets, undefined);
+    assert.deepEqual(rendered.env.preview.secrets_store_secrets, [{
+      binding: platformGooglePlacesSecretBinding,
+      store_id: "store-123",
+      secret_name: platformGooglePlacesSecretName,
+    }]);
+    assert.deepEqual(rendered.env.preview.secrets.required, runtimeContract.generatedSiteRequiredSecretNames);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

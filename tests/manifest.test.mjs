@@ -128,8 +128,15 @@ test("manifest method declarations include implemented multi-method Vera routes"
 });
 
 test("manifest distinguishes template deploy secrets from generated-site deploy secrets", () => {
-  assert.equal(manifest.secrets.requiredForTemplateDeployment.includes("BUILDER_MCP_TOKEN"), true);
-  assert.equal(manifest.secrets.requiredForTemplateDeployment.includes("BUILDER_MCP_PROVISION_SECRET"), true);
+  assert.equal(manifest.secrets.requiredNow.includes("BUILDER_MCP_TOKEN"), false);
+  assert.equal(manifest.secrets.requiredNow.includes("BUILDER_MCP_PROVISION_SECRET"), false);
+  assert.equal(manifest.secrets.requiredForTemplateDeployment.includes("BUILDER_MCP_TOKEN"), false);
+  assert.equal(manifest.secrets.requiredForTemplateDeployment.includes("BUILDER_MCP_PROVISION_SECRET"), false);
+  assert.equal(
+    manifest.secrets.requiredForTemplateDeployment.includes("ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN"),
+    false,
+    "template deployment generates its callback token inside the pipeline",
+  );
 
   assert.equal(manifest.secrets.requiredForGeneratedSiteDeployment.includes("EMDASH_ENCRYPTION_KEY"), true);
   assert.equal(
@@ -138,7 +145,12 @@ test("manifest distinguishes template deploy secrets from generated-site deploy 
   );
   assert.equal(manifest.secrets.requiredForGeneratedSiteDeployment.includes("BUILDER_MCP_TOKEN"), false);
   assert.equal(manifest.secrets.requiredForGeneratedSiteDeployment.includes("BUILDER_MCP_PROVISION_SECRET"), false);
-  assert.equal(manifest.secrets.requiredForGeneratedSiteDeployment.includes("CLOUDFLARE_SECRETS_STORE_ID"), true);
+  assert.equal(manifest.secrets.requiredForGeneratedSiteDeployment.includes("CLOUDFLARE_SECRETS_STORE_ID"), false);
+  assert.equal(manifest.secrets.deploymentVariables.includes("CLOUDFLARE_SECRETS_STORE_ID"), true);
+  assert.deepEqual(manifest.secrets.deploymentMapping.workerSecrets, [
+    "EMDASH_ENCRYPTION_KEY",
+    "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN",
+  ]);
   assert.deepEqual(manifest.secrets.deploymentMapping.generatedSiteWorkerSecrets, [
     "EMDASH_ENCRYPTION_KEY",
     "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN",

@@ -1,6 +1,5 @@
 import { getManagedEmailTemplate } from "../aggregator/notifications/email-template-store.ts";
 import {
-  integrationSecretBundleBinding,
   platformGooglePlacesSecretBinding,
   resolveRuntimeBinding,
   resolveSecretBinding,
@@ -487,13 +486,15 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
     EMAIL_QUEUE: callable(env.EMAIL_QUEUE, "send"),
     IMAGES: callable(env.IMAGES, "input") && callable(env.IMAGES, "info"),
   };
+  const requiredResourceBindingNames = new Set(
+    Object.keys(resourceBindings).filter((name) => !generated || name !== "EMAIL_QUEUE"),
+  );
   const missingBindingNames = Object.entries(resourceBindings)
-    .filter(([, configured]) => !configured)
+    .filter(([name, configured]) => requiredResourceBindingNames.has(name) && !configured)
     .map(([name]) => name);
 
   const [
     encryptionKey,
-    integrationSecretBundle,
     platformGooglePlacesKey,
     stripeSecretKey,
     stripeWebhookSecret,
@@ -504,7 +505,6 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
     fallbackGooglePlacesKey,
   ] = await Promise.all([
     resolveRuntimeBinding(env.EMDASH_ENCRYPTION_KEY),
-    resolveRuntimeBinding(env[integrationSecretBundleBinding]),
     resolveRuntimeBinding(env[platformGooglePlacesSecretBinding]),
     resolveSecretBinding(env, "STRIPE_SECRET_KEY"),
     resolveSecretBinding(env, "STRIPE_WEBHOOK_SECRET"),
@@ -515,8 +515,7 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
     resolveSecretBinding(env, "GOOGLE_PLACES_API_KEY"),
   ]);
   const googlePlacesKey = generated ? platformGooglePlacesKey : fallbackGooglePlacesKey;
-  const secretStoreConfigured = !generated || Boolean(integrationSecretBundle && platformGooglePlacesKey);
-  if (generated && !integrationSecretBundle) missingBindingNames.push(integrationSecretBundleBinding);
+  const secretStoreConfigured = !generated || Boolean(platformGooglePlacesKey);
   if (generated && !platformGooglePlacesKey) missingBindingNames.push(platformGooglePlacesSecretBinding);
 
   const requiredSecrets = new Map<string, string>([

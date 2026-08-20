@@ -82,12 +82,12 @@ POST /api/astropages/generated-site/content-release/export
 POST /api/astropages/generated-site/content-release/import
 ```
 
-Generated-site Worker deploys use only:
+Worker deploys use only:
 
 - `EMDASH_ENCRYPTION_KEY`
 - `ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN`
 
-Template-source preview/production workflows may still use Builder MCP template secrets for template release bootstrapping.
+Template-source preview/production pipelines generate the callback token in memory before writing the Worker secrets file. Neither template-source nor generated-site deploys require `BUILDER_MCP_TOKEN` or `BUILDER_MCP_PROVISION_SECRET`.
 
 ## Commands
 
@@ -116,9 +116,10 @@ parallel sidecar manifests.
   Stripe secret/webhook values through the existing secrets manifest.
 - Configure SES sender settings plus AWS credentials, and provision both the
   email queue and its dead-letter queue.
-- Provide `CLOUDFLARE_SECRETS_STORE_ID`; generated deployments bind the existing
-  integration bundle and platform Google Places key rather than copying Vera
-  credentials into workflow environment variables.
+- Provide `CLOUDFLARE_SECRETS_STORE_ID` as a deployment variable so generated
+  deployments can bind the shared platform Google Places key. Vera project
+  credentials are synchronized separately as individual Worker secrets; the
+  legacy JSON bundle is never rendered as a new Secrets Store binding.
 - Keep `PREVIEW_SITE_URL` and `PRODUCTION_SITE_URL` as absolute HTTPS origins.
   Deployment renders the selected value into `ASTROPAGES_SITE_URL` for Stripe,
   account, newsletter, report, and email links.

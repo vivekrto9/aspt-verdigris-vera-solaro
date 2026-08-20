@@ -4,13 +4,15 @@ The Vera Solaro template supports two repository modes.
 
 ## Template Source Mode
 
-This repo keeps template release workflows:
+Template CI and release deployments run through the signed AstroPages
+Woodpecker extension using:
 
-- `.github/workflows/deploy-template-preview.yml`
-- `.github/workflows/deploy-production.yml`
-- `.astropages/generated-site-workflows/*`
+- `pnpm run astropages:pipeline`
+- `template_ci`, `template_preview`, and `template_production` purposes
 
-Template release workflows may use template deployment secrets such as `BUILDER_MCP_TOKEN` and `BUILDER_MCP_PROVISION_SECRET` because they validate and release the source template itself.
+Preview and production template pipelines generate an ephemeral control-plane
+callback token in process before the Worker secrets file is written. No
+preconfigured Builder MCP deployment secrets are required.
 
 ## Generated-Site Mode
 
@@ -23,6 +25,9 @@ Generated-site Worker runtime secrets are:
 
 - `EMDASH_ENCRYPTION_KEY`
 - `ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN`
+
+The template-source Worker uses the same two secrets. Neither repository mode
+requires `BUILDER_MCP_TOKEN` or `BUILDER_MCP_PROVISION_SECRET` for deployment.
 
 Provider credentials are not copied into the workflow environment or generated
 Worker secrets file. The control plane synchronizes them directly as individual
@@ -63,7 +68,9 @@ origin and exposes it to the Worker as `ASTROPAGES_SITE_URL`. This is the
 canonical origin for Stripe return URLs, booking/account links, newsletter
 confirmation, reports, and lifecycle email links.
 
-Generated-site deployments must not require Builder MCP deploy secrets. MCP access is provisioned through generated-site editor/token endpoints and EmDash, not by Worker deploy secrets.
+Builder MCP values remain legacy/local endpoint compatibility inputs only. MCP
+access is provisioned through generated-site editor/token endpoints and EmDash,
+not by Worker deployment secrets.
 
 ## Vera Runtime Configuration
 
@@ -92,8 +99,8 @@ signing secret. After creating or rotating those endpoints, the authenticated
 control plane must call `POST /api/astropages/generated-site/vera/operations`
 with action `validate_provider_webhooks` and SHA-256 fingerprints of the two
 creation-time signing secrets. The Worker compares those fingerprints with its
-Secret Store values and persists one aggregate, origin- and provider-bound
-proof; no token, signing secret, individual secret fingerprint, endpoint
+resolved individual Worker secret values and persists one aggregate, origin-
+and provider-bound proof; no token, signing secret, individual secret fingerprint, endpoint
 identifier, or provider payload is stored or returned. Secret, origin, or
 provider-account rotation invalidates that proof. Readiness rechecks the live
 registrations with bounded calls and a short KV cache, so a stale proof cannot

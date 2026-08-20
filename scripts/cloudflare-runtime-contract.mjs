@@ -37,7 +37,7 @@ export const runtimeContract = {
       emailDeadLetterQueueName: "aspt-verdigris-vera-solaro-production-email-dlq",
     },
   },
-  requiredSecretNames: ["EMDASH_ENCRYPTION_KEY", "BUILDER_MCP_TOKEN", "BUILDER_MCP_PROVISION_SECRET"],
+  requiredSecretNames: ["EMDASH_ENCRYPTION_KEY", "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN"],
   generatedSiteRequiredSecretNames: ["EMDASH_ENCRYPTION_KEY", "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN"],
   sensitiveProviderSecretBindings: [
     { binding: "STRIPE_SECRET_KEY", provider: "STRIPE" },

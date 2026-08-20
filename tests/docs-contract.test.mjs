@@ -46,16 +46,22 @@ test("lead documentation is an agent-ready integration reference", () => {
   assert.doesNotMatch(Object.values(docs).join("\n"), /product-interest|Northstar|lead-generation-demo/i);
 });
 
-test("docs keep template and generated-site secret contracts separate", () => {
+test("docs keep template and generated-site deploys on callback-token secrets", () => {
   assert.match(
     docs.cloudflare,
     /Generated-site Worker runtime secrets are:\s*\n\s*-\s*`EMDASH_ENCRYPTION_KEY`\s*\n\s*-\s*`ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN`/m,
   );
   assert.match(docs.agents, /Generated-site Worker deploys must not require `BUILDER_MCP_TOKEN` or `BUILDER_MCP_PROVISION_SECRET`/);
+  assert.match(
+    docs.readme,
+    /Neither template-source nor generated-site deploys require `BUILDER_MCP_TOKEN` or `BUILDER_MCP_PROVISION_SECRET`/,
+  );
+  assert.match(docs.cloudflare, /No\s+preconfigured Builder MCP deployment secrets are required/);
   assert.doesNotMatch(
     `${docs.cloudflare}\n${docs.agents}\n${docs.openhands}`,
     /Generated-site deployments require:[\s\S]*BUILDER_MCP_(?:TOKEN|PROVISION_SECRET)/,
   );
+  assert.doesNotMatch(docs.readme, /template-source[^\n]+may still use Builder MCP/i);
 });
 
 test("deployment docs enumerate only Vera's wired provider configuration", () => {
