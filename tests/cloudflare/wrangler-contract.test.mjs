@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import {
@@ -155,4 +158,39 @@ test("rendered deployments expose the canonical environment URL to Vera runtime 
   assert.match(renderWranglerSource, /const siteUrlVariable = `\$\{variablePrefix\}_SITE_URL`/);
   assert.match(renderWranglerSource, /ASTROPAGES_SITE_URL: siteUrl/);
   assert.match(renderWranglerSource, /must be an absolute HTTPS origin/);
+});
+
+test("generated-site config omits Queue bindings forbidden by the trusted deployer", () => {
+  const root = mkdtempSync(join(tmpdir(), "vera-generated-wrangler-"));
+  try {
+    writeFileSync(join(root, "wrangler.jsonc"), readFileSync("wrangler.jsonc", "utf8"));
+    const result = spawnSync(
+      process.execPath,
+      [new URL("../../scripts/render-wrangler-config.mjs", import.meta.url).pathname, "preview"],
+      {
+        cwd: root,
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          ASTROPAGES_PROJECT_ID: "11111111-1111-4111-8111-111111111111",
+          ASTROPAGES_SSO_PUBLIC_JWK: '{"kty":"OKP","crv":"Ed25519","x":"test"}',
+          ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL: "https://control.example.test",
+          CLOUDFLARE_SECRETS_STORE_ID: "store-123",
+          PREVIEW_SITE_D1_DATABASE_ID: "d1-preview",
+          PREVIEW_SITE_SESSION_KV_NAMESPACE_ID: "kv-preview",
+          PREVIEW_SITE_URL: "https://aspt-verdigris-vera-solaro-preview.example.test",
+        },
+      },
+    );
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const rendered = JSON.parse(
+      readFileSync(join(root, ".wrangler", "generated", "wrangler.preview.jsonc"), "utf8"),
+    );
+    assert.equal(rendered.queues, undefined);
+    assert.equal(rendered.env.preview.queues, undefined);
+    assert.equal(rendered.env.production.queues, undefined);
+    assert.deepEqual(rendered.env.preview.triggers.crons, runtimeContract.cronSchedules);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

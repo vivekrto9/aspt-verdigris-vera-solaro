@@ -17,7 +17,8 @@ const sourceConfig = loadWranglerConfig();
 const config = loadDeployConfig();
 const section = structuredClone(sourceConfig.env?.[envName]);
 if (!section) fail(`wrangler.jsonc is missing env.${envName}`);
-const requiredSecretNames = requiredWorkerSecretNames();
+const generatedSiteMode = isGeneratedSiteMode();
+const requiredSecretNames = requiredWorkerSecretNames(generatedSiteMode);
 
 const d1Id = requiredEnv(`${variablePrefix}_SITE_D1_DATABASE_ID`);
 const kvId = requiredEnv(`${variablePrefix}_SITE_SESSION_KV_NAMESPACE_ID`);
@@ -54,6 +55,9 @@ config.env = {
   ...(config.env ?? {}),
   [envName]: section,
 };
+if (generatedSiteMode) {
+  stripGeneratedSiteQueueBindings(config);
+}
 
 const outputPath = join(".wrangler", "generated", `wrangler.${envName}.jsonc`);
 mkdirSync(dirname(outputPath), { recursive: true });
@@ -212,11 +216,25 @@ function normalizeSiteUrl(value, variableName) {
   return parsed.origin;
 }
 
-function requiredWorkerSecretNames() {
-  if (process.env.ASTROPAGES_PROJECT_ID || process.env.ASTROPAGES_GENERATED_SITE_MODE === "1") {
+function isGeneratedSiteMode() {
+  return Boolean(process.env.ASTROPAGES_PROJECT_ID) ||
+    process.env.ASTROPAGES_GENERATED_SITE_MODE === "1";
+}
+
+function requiredWorkerSecretNames(generatedSiteMode) {
+  if (generatedSiteMode) {
     return runtimeContract.generatedSiteRequiredSecretNames ?? runtimeContract.requiredSecretNames;
   }
   return runtimeContract.requiredSecretNames;
+}
+
+function stripGeneratedSiteQueueBindings(config) {
+  delete config.queues;
+  for (const environment of Object.values(config.env ?? {})) {
+    if (environment && typeof environment === "object") {
+      delete environment.queues;
+    }
+  }
 }
 
 function fail(message) {
