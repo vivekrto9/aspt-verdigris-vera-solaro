@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="Moon phases arching over rooftops at night">
+  <defs>
+    <pattern id="ns-dots" width="14" height="14" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.6" fill="#e6ebdf" opacity=".08"/>
+    </pattern>
+    <clipPath id="ns-frame"><rect width="1200" height="720"/></clipPath>
+  </defs>
+  <g clip-path="url(#ns-frame)">
+    <rect width="1200" height="720" fill="#082b22"/>
+    <g fill="#123f34">
+      <circle cx="600" cy="470" r="470"/>
+      <circle cx="600" cy="470" r="360" fill="#184c3f"/>
+    </g>
+    <g fill="#e6ebdf" opacity=".9">
+      <circle cx="140" cy="120" r="4"/><circle cx="300" cy="70" r="3"/><circle cx="470" cy="140" r="3.5"/>
+      <circle cx="740" cy="90" r="3"/><circle cx="900" cy="150" r="4.5"/><circle cx="1070" cy="80" r="3"/>
+      <circle cx="1130" cy="230" r="3.5"/><circle cx="70" cy="260" r="3"/>
+    </g>
+    <!-- moon phase arc -->
+    <g>
+      <path d="M180 430 A 420 420 0 0 1 1020 430" fill="none" stroke="#6fb89f" stroke-width="5" stroke-dasharray="14 16"/>
+      <g stroke="#0b3026" stroke-width="8">
+        <circle cx="180" cy="430" r="46" fill="#082b22"/>
+        <circle cx="1020" cy="430" r="46" fill="#082b22"/>
+        <circle cx="390" cy="243" r="52" fill="#082b22"/>
+        <circle cx="810" cy="243" r="52" fill="#082b22"/>
+        <circle cx="600" cy="180" r="60" fill="#7fcbb1"/>
+      </g>
+      <g fill="#e6ebdf">
+        <path d="M390 195 a48 48 0 0 1 0 96 Z"/>
+        <path d="M810 195 a48 48 0 0 0 0 96 Z"/>
+        <path d="M180 386 a44 44 0 0 1 0 88 a22 44 0 0 0 0 -88"/>
+      </g>
+      <g fill="none" stroke="#0b3026" stroke-width="8">
+        <circle cx="390" cy="243" r="52"/><circle cx="810" cy="243" r="52"/>
+        <circle cx="180" cy="430" r="46"/><circle cx="1020" cy="430" r="46"/>
+      </g>
+      <g stroke="#9d2c60" stroke-width="6" stroke-linecap="round">
+        <path d="M600 100 v-32 M600 260 v32 M520 180 h-32 M680 180 h32"/>
+      </g>
+    </g>
+    <!-- rooftops -->
+    <g fill="#0b3026">
+      <path d="M0 720 V560 h130 v-60 h110 v60 h90 V520 h150 v40 h120 v-90 h140 v90 h130 v-50 h110 v50 h120 V720 Z"/>
+    </g>
+    <g fill="#7fcbb1">
+      <rect x="60" y="596" width="26" height="34"/><rect x="150" y="596" width="26" height="34"/>
+      <rect x="300" y="560" width="26" height="34"/><rect x="470" y="600" width="26" height="34"/>
+      <rect x="700" y="510" width="26" height="34"/><rect x="760" y="510" width="26" height="34"/>
+      <rect x="960" y="600" width="26" height="34"/><rect x="1090" y="596" width="26" height="34"/>
+    </g>
+    <path d="M0 560 h1200" stroke="#6fb89f" stroke-width="0" fill="none"/>
+    <rect width="1200" height="720" fill="url(#ns-dots)"/>
+  </g>
+</svg>

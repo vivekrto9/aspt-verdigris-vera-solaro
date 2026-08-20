@@ -1,0 +1,154 @@
+---
+import VeraImage from "./VeraImage.astro";
+
+type Edit = (field: string) => Record<string, unknown>;
+
+const { content, chromeEdit, currentPath } = Astro.props as {
+  content: Record<string, string>;
+  chromeEdit: Edit;
+  currentPath: string;
+};
+
+const links = [
+  { href: "/readings", field: "nav_readings" },
+  { href: "/about", field: "nav_about" },
+  { href: "/writing", field: "nav_writing" },
+  { href: "/account", field: "nav_account" },
+];
+
+const active = (href: string) =>
+  href === "/" ? currentPath === href : currentPath === href || currentPath.startsWith(`${href}/`);
+const isClosed = currentPath === "/closed";
+const isAccount = currentPath === "/account" || currentPath.startsWith("/account/");
+const isBooking = currentPath === "/booking";
+const dateline = new Intl.DateTimeFormat("en-GB", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "Europe/Rome",
+}).format(new Date());
+---
+
+<header class="vera-header">
+  <div class="verdigris-folio" aria-label="Almanac edition details">
+    <span>Vol. LII · No. 7 · Trieste</span>
+    <span>{dateline} · Europe/Rome</span>
+    {!isClosed ? (
+      <span class="vera-books-status" {...chromeEdit("books_status")}>
+        <i aria-hidden="true"></i>{content.books_status}
+      </span>
+    ) : <span aria-hidden="true">✦ Desk notice ✦</span>}
+  </div>
+
+  <div class="verdigris-masthead">
+    <div class="verdigris-masthead__rule" aria-hidden="true"></div>
+    <a class="vera-brand" href="/" aria-label={content.brand_name} {...chromeEdit("brand_name")}>
+      {content.brand_name}
+    </a>
+    <div class="verdigris-masthead__rule" aria-hidden="true"></div>
+    <p {...chromeEdit("brand_role")}>{content.brand_role}</p>
+    <span aria-hidden="true">✦ ❦ ✦</span>
+  </div>
+
+  <div class="verdigris-nav-row">
+    <button
+      class="vera-nav-toggle"
+      type="button"
+      aria-label={content.nav_menu_label}
+      aria-expanded="false"
+      aria-controls="vera-primary-nav"
+      data-vera-nav-toggle
+      data-open-label={content.nav_menu_label}
+      data-close-label={content.nav_close_label}
+    >
+      <span></span><span></span><span></span>
+    </button>
+
+    <nav
+      class="vera-nav"
+      id="vera-primary-nav"
+      aria-label={content.nav_primary_label}
+      data-vera-nav
+    >
+      {links.map((link) => (
+        <a
+          href={link.href}
+          aria-current={active(link.href) ? "page" : undefined}
+          {...chromeEdit(link.field)}
+        >
+          {content[link.field]}
+        </a>
+      ))}
+      {!isAccount ? (
+        <a class="vera-nav__book" href="/booking" {...chromeEdit("book_cta")}>
+          {content.book_cta}
+        </a>
+      ) : null}
+    </nav>
+
+    {isAccount ? (
+      <div class="vera-account-identity" data-account-header-identity hidden>
+        <VeraImage
+          alt={content.account_avatar_alt}
+          altField="account_avatar_alt"
+          edit={chromeEdit}
+          shape="circle"
+        />
+        <div>
+          <span data-account-header-name>{content.profile_name}</span><br />
+          <span data-account-header-ref>{content.profile_ref}</span>
+        </div>
+      </div>
+    ) : (
+      <div class="vera-header__actions">
+        {isBooking ? (
+          <a class="vera-header__help" href="tel:+390405550112" {...chromeEdit("booking_help")}>
+            {content.booking_help}
+          </a>
+        ) : (
+          <a class="vera-button vera-button--burnt vera-button--small" href="/booking" {...chromeEdit("book_cta")}>
+            {content.book_cta}
+          </a>
+        )}
+      </div>
+    )}
+  </div>
+</header>
+
+{isClosed ? (
+  <div class="vera-holiday-bar" {...chromeEdit("closed_notice")}>
+    <span aria-hidden="true">✷</span>
+    <span>{content.closed_notice}</span>
+    <span aria-hidden="true">✷</span>
+  </div>
+) : null}
+
+<script>
+  const headerToggle = document.querySelector<HTMLButtonElement>("[data-vera-nav-toggle]");
+  const headerNav = document.querySelector<HTMLElement>("[data-vera-nav]");
+  const setHeaderNav = (expanded: boolean, moveFocus = false) => {
+    if (!headerToggle || !headerNav) return;
+    headerToggle.setAttribute("aria-expanded", String(expanded));
+    headerToggle.setAttribute(
+      "aria-label",
+      expanded ? headerToggle.dataset.closeLabel || "" : headerToggle.dataset.openLabel || "",
+    );
+    headerNav.toggleAttribute("data-open", expanded);
+    if (expanded && moveFocus) headerNav.querySelector<HTMLElement>("a")?.focus();
+  };
+
+  headerToggle?.addEventListener("click", () => {
+    const expanded = headerToggle.getAttribute("aria-expanded") === "true";
+    setHeaderNav(!expanded, !expanded);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") setHeaderNav(false);
+  });
+  document.addEventListener("click", (event) => {
+    if (!headerNav?.hasAttribute("data-open")) return;
+    const target = event.target;
+    if (!(target instanceof Node)) return;
+    if (!headerNav.contains(target) && !headerToggle?.contains(target)) setHeaderNav(false);
+  });
+</script>

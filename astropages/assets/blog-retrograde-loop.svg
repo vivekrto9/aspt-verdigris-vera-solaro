@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="A planet tracing a retrograde loop across a striped sky">
+  <defs>
+    <pattern id="rl-dots" width="15" height="15" patternUnits="userSpaceOnUse">
+      <circle cx="3.5" cy="3.5" r="1.7" fill="#0b3026" opacity=".14"/>
+    </pattern>
+    <clipPath id="rl-frame"><rect width="1200" height="720"/></clipPath>
+  </defs>
+  <g clip-path="url(#rl-frame)">
+    <rect width="1200" height="720" fill="#f1f3ec"/>
+    <g>
+      <rect y="0" width="1200" height="120" fill="#9d2c60"/>
+      <rect y="120" width="1200" height="90" fill="#7fcbb1"/>
+      <rect y="210" width="1200" height="60" fill="#6fb89f"/>
+      <rect y="270" width="1200" height="30" fill="#d8ded2"/>
+    </g>
+    <g stroke="#0b3026" stroke-width="5" opacity=".5">
+      <path d="M0 120 H1200 M0 210 H1200 M0 270 H1200 M0 300 H1200"/>
+    </g>
+    <!-- loop path -->
+    <path d="M60 540 C 240 500 330 430 430 380 C 530 330 610 360 600 430 C 590 505 470 505 445 430 C 415 340 520 300 640 320 C 830 352 900 452 1140 410"
+          fill="none" stroke="#082b22" stroke-width="10" stroke-linecap="round" stroke-dasharray="24 18"/>
+    <g fill="#3e8c77" stroke="#0b3026" stroke-width="6">
+      <circle cx="60" cy="520" r="20"/>
+      <circle cx="1140" cy="420" r="20"/>
+    </g>
+    <g transform="translate(900 540)">
+      <circle r="76" fill="#7fcbb1" stroke="#0b3026" stroke-width="9"/>
+      <path d="M-76 -16 a76 76 0 0 0 152 0 a76 76 0 0 0 -152 0" fill="#9d2c60" opacity=".35"/>
+      <g stroke="#0b3026" stroke-width="6" stroke-linecap="round" opacity=".7">
+        <path d="M-60 -36 h120 M-74 4 h148 M-56 42 h112"/>
+      </g>
+      <circle r="76" fill="none" stroke="#0b3026" stroke-width="9"/>
+    </g>
+    <g stroke="#0b3026" stroke-width="6" stroke-linecap="round">
+      <path d="M950 190 v-34 M950 258 v34 M882 224 h-34 M1018 224 h34"/>
+      <path d="M240 400 v-26 M240 452 v26 M188 426 h-26 M292 426 h26"/>
+    </g>
+    <path d="M0 640 h1200" stroke="#0b3026" stroke-width="8"/>
+    <rect y="648" width="1200" height="72" fill="#082b22"/>
+    <rect width="1200" height="720" fill="url(#rl-dots)"/>
+  </g>
+</svg>

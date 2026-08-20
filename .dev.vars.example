@@ -1,0 +1,44 @@
+# Safe example only. Copy to .dev.vars locally and replace placeholders.
+
+EMDASH_ENCRYPTION_KEY=replace-with-local-development-key
+BUILDER_MCP_TOKEN=ec_pat_replace-with-builder-mcp-token
+BUILDER_MCP_PROVISION_SECRET=replace-with-builder-mcp-provision-secret
+
+# Generated-site SSO/runtime plumbing used by content studio integrations.
+ASTROPAGES_PROJECT_ID=replace-with-project-id
+ASTROPAGES_SITE_ENVIRONMENT=preview
+ASTROPAGES_SSO_PUBLIC_JWK=replace-with-control-plane-public-jwk
+ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN=replace-with-control-plane-callback-token
+ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL=https://astropages.example
+ASTROPAGES_SITE_URL=http://127.0.0.1:4321
+
+# Vera integrations for local runtime checks. Generated preview/production sites
+# receive provider credentials through the existing Secret Store bindings.
+STRIPE_SECRET_KEY=replace-with-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=replace-with-stripe-webhook-secret
+PUBLIC_STRIPE_PUBLISHABLE_KEY=replace-with-stripe-publishable-key
+CALENDLY_API_TOKEN=replace-with-calendly-api-token
+CALENDLY_WEBHOOK_SIGNING_KEY=replace-with-calendly-webhook-signing-key
+SES_SENDER_EMAIL=verified-sender@example.com
+SES_SENDER_NAME=Vera Solaro
+AWS_REGION=eu-west-1
+AWS_ACCESS_KEY_ID=replace-with-ses-access-key-id
+AWS_SECRET_ACCESS_KEY=replace-with-ses-secret-access-key
+GOOGLE_PLACES_API_KEY=replace-with-google-places-api-key
+POSTHOG_PROJECT_API_KEY=replace-with-posthog-project-api-key
+POSTHOG_HOST=https://us.i.posthog.com
+POSTHOG_PROJECT_ID=replace-with-posthog-project-id
+POSTHOG_PERSONAL_API_KEY=replace-with-optional-posthog-personal-api-key
+
+# Cloudflare deployment/resource helpers.
+CLOUDFLARE_ACCOUNT_ID=replace-with-cloudflare-account-id
+CLOUDFLARE_API_TOKEN=replace-with-cloudflare-api-token
+CLOUDFLARE_DEV_WORKERS_SUBDOMAIN=replace-with-workers-dev-subdomain
+CLOUDFLARE_SECRETS_STORE_ID=replace-with-cloudflare-secret-store-id
+GH_REPOSITORY_VARIABLES_TOKEN=replace-with-github-token
+PREVIEW_SITE_D1_DATABASE_ID=replace-with-preview-d1-id
+PREVIEW_SITE_SESSION_KV_NAMESPACE_ID=replace-with-preview-kv-id
+PREVIEW_SITE_URL=https://aspt-verdigris-vera-solaro-preview.example.workers.dev
+PRODUCTION_SITE_D1_DATABASE_ID=replace-with-production-d1-id
+PRODUCTION_SITE_SESSION_KV_NAMESPACE_ID=replace-with-production-kv-id
+PRODUCTION_SITE_URL=https://aspt-verdigris-vera-solaro-production.example.workers.dev

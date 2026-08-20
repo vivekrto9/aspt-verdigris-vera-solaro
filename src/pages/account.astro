@@ -1,0 +1,1538 @@
+---
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import VeraFrame from "../components/vera/VeraFrame.astro";
+import VeraImage from "../components/vera/VeraImage.astro";
+import VeraPortalNav from "../components/vera/VeraPortalNav.astro";
+
+export const prerender = false;
+
+if (Astro.url.searchParams.has("booking") || Astro.url.searchParams.has("manage")) {
+  const cleanUrl = new URL(Astro.url);
+  cleanUrl.searchParams.delete("booking");
+  cleanUrl.searchParams.delete("manage");
+  return Astro.redirect(`${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`, 303);
+}
+
+const page = await loadPublicPageContent(Astro, "account");
+const { content, builderEdit, chromeEdit } = page;
+const recordingMeta = String(content.recording_meta ?? "").split("\n");
+---
+
+<VeraFrame {...page} currentPath="/account">
+  <VeraPortalNav content={content} chromeEdit={chromeEdit} active="dashboard" />
+
+  <section class="vera-placeholder-page" data-account-loading aria-live="polite" aria-busy="true">
+    <div class="vera-placeholder-page__inner">
+      <span class="vera-booking-spinner" aria-hidden="true"></span>
+      <h1 class="vera-heading" style="margin-top: 24px" {...builderEdit("account_eyebrow")}>
+        {content.account_eyebrow}
+      </h1>
+    </div>
+  </section>
+
+  <div class="vera-account-panel" data-account-panel="overview" data-account-overview hidden>
+    <section class="vera-section vera-section--paper vera-account-dashboard">
+      <header class="vera-account-dashboard__heading">
+        <div>
+          <h1 class="vera-heading" data-account-title {...builderEdit("account_title")}>{content.account_title}</h1>
+          <span class="vera-visually-hidden" data-account-profile-name {...builderEdit("profile_name")}>{content.profile_name}</span>
+          <span class="vera-visually-hidden" data-account-profile-ref {...builderEdit("profile_ref")}>{content.profile_ref}</span>
+        </div>
+        <a class="vera-button vera-button--burnt vera-button--small" href="/booking" {...builderEdit("empty_cta")}>{content.empty_cta}</a>
+      </header>
+
+      <div class="vera-account-dashboard__content">
+        <section aria-labelledby="account-upcoming-heading">
+          <h2 class="vera-account-section-title" id="account-upcoming-heading" {...builderEdit("account_eyebrow")}>{content.account_eyebrow}</h2>
+
+          <article class="vera-upcoming" data-account-upcoming>
+            <div class="vera-card-meta" data-account-upcoming-kicker {...builderEdit("upcoming_kicker")}>{content.upcoming_kicker}</div>
+            <h3 data-account-upcoming-title>{content.upcoming_title}</h3>
+            <p>
+              <span data-account-upcoming-when {...builderEdit("upcoming_when")}>{content.upcoming_when}</span><br />
+              <span data-account-upcoming-where {...builderEdit("upcoming_where")}>{content.upcoming_where}</span>
+            </p>
+            <div class="vera-account-payment-line">
+              <span data-account-payment-paid {...builderEdit("upcoming_paid")}>{content.upcoming_paid}</span>
+              <span data-account-payment-balance {...builderEdit("upcoming_balance")}>{content.upcoming_balance}</span>
+            </div>
+            <p class="vera-form-note" data-account-action-required aria-live="polite" hidden {...builderEdit("reschedule_error")}>{content.reschedule_error}</p>
+          </article>
+
+          <article class="vera-info-card" data-account-balance-payment hidden aria-live="polite">
+            <h2 {...builderEdit("balance_payment_title")}>{content.balance_payment_title}</h2>
+            <p class="vera-card-meta" {...builderEdit("balance_payment_card_label")}>{content.balance_payment_card_label}</p>
+            <div class="vera-stripe-mount" data-account-balance-card></div>
+            <p data-account-balance-status="processing" hidden {...builderEdit("balance_payment_processing")}>{content.balance_payment_processing}</p>
+            <p data-account-balance-status="error" hidden {...builderEdit("balance_payment_error")}>{content.balance_payment_error}</p>
+            <p data-account-balance-status="success" hidden {...builderEdit("balance_payment_success")}>{content.balance_payment_success}</p>
+            <button class="vera-button vera-button--burnt vera-button--small" type="button" data-account-balance-submit {...builderEdit("balance_payment_submit_template")}>{content.balance_payment_submit_template}</button>
+          </article>
+
+          <article class="vera-account-empty" data-account-empty hidden>
+            <span class="vera-account-empty__symbol" aria-hidden="true" {...builderEdit("empty_symbol")}>{content.empty_symbol}</span>
+            <h2 {...builderEdit("empty_title")}>{content.empty_title}</h2>
+            <p {...builderEdit("empty_body")}>{content.empty_body}</p>
+            <a class="vera-button vera-button--burnt vera-button--small" href="/booking" {...builderEdit("empty_cta")}>{content.empty_cta}</a>
+          </article>
+
+        </section>
+
+        <section aria-labelledby="account-past-heading">
+          <div class="vera-account-section-heading" data-account-past-header>
+            <h2 class="vera-account-section-title" id="account-past-heading" {...builderEdit("past_title")}>{content.past_title}</h2>
+            <p class="vera-card-meta" data-account-past-note {...builderEdit("past_note")}>{content.past_note}</p>
+          </div>
+          <div class="vera-list vera-account-history" data-account-past-list>
+            {[1, 2].map((index) => (
+              <article class="vera-list-item" data-account-past-row>
+                <div>
+                  <div class="vera-list-item__number" data-account-past-date {...builderEdit(`past_${index}_date`)}>{content[`past_${index}_date`]}</div>
+                  <div class="vera-card-meta" data-account-past-ref {...builderEdit(`past_${index}_ref`)}>{content[`past_${index}_ref`]}</div>
+                </div>
+                <div>
+                  <h3 data-account-past-title {...builderEdit(`past_${index}_title`)}>{content[`past_${index}_title`]}</h3>
+                  <p data-account-past-body {...builderEdit(`past_${index}_body`)}>{content[`past_${index}_body`]}</p>
+                </div>
+                <button class="vera-button vera-button--paper vera-button--small" type="button" data-open-account-panel="room" data-account-past-open {...builderEdit(`past_${index}_cta`)}>{content[`past_${index}_cta`]}</button>
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  {false && <div class="vera-account-panel" data-account-panel="reschedule" hidden>
+    <section class="vera-page-hero">
+      <button class="vera-button vera-button--paper vera-button--small" type="button" data-open-account-panel="overview" {...builderEdit("back_sittings_cta")}>
+        {content.back_sittings_cta}
+      </button>
+    </section>
+    <section class="vera-section vera-section--paper" data-account-reschedule-open>
+      <div class="vera-page-grid">
+        <div>
+          <h1 class="vera-display" {...builderEdit("reschedule_title")}>{content.reschedule_title}</h1>
+          <p class="vera-lede" {...builderEdit("reschedule_intro")}>{content.reschedule_intro}</p>
+          <div class="vera-info-card" style="margin-top: 26px">
+            <div class="vera-card-meta" {...builderEdit("reschedule_current_label")}>
+              {content.reschedule_current_label}
+            </div>
+            <h2 data-account-reschedule-current {...builderEdit("reschedule_current_when")}>
+              {content.reschedule_current_when}
+            </h2>
+            <p data-account-reschedule-mode {...builderEdit("reschedule_current_mode")}>
+              {content.reschedule_current_mode}
+            </p>
+          </div>
+          <div class="vera-label" style="margin-top: 34px" {...builderEdit("reschedule_slots_label")}>
+            {content.reschedule_slots_label}
+          </div>
+          <div
+            class="vera-info-card"
+            style="margin-top: 12px"
+            data-account-reschedule-slot-mount
+            data-empty-copy={content.reschedule_empty}
+            data-error-copy={content.reschedule_error}
+            aria-live="polite"
+          >
+            <p data-account-reschedule-status {...builderEdit("reschedule_loading")}>
+              {content.reschedule_loading}
+            </p>
+            <div class="vera-calendar-slots" data-account-reschedule-slots></div>
+            <span class="vera-visually-hidden" {...builderEdit("reschedule_empty")}>{content.reschedule_empty}</span>
+            <span class="vera-visually-hidden" {...builderEdit("reschedule_error")}>{content.reschedule_error}</span>
+          </div>
+          <label class="vera-field" style="margin-top: 30px">
+            <span class="vera-label" {...builderEdit("reschedule_note_label")}>
+              {content.reschedule_note_label}
+            </span>
+            <textarea
+              class="vera-textarea"
+              name="reschedule-note"
+              placeholder={content.reschedule_note_placeholder}
+              {...builderEdit("reschedule_note_placeholder")}
+            ></textarea>
+          </label>
+        </div>
+        <aside class="vera-sidebar-card vera-sidebar-card--dark">
+          <div class="vera-card-meta" {...builderEdit("reschedule_moving_label")}>
+            {content.reschedule_moving_label}
+          </div>
+          <h2 data-account-reschedule-selected></h2>
+          <ul class="vera-feature-list">
+            {[1, 2, 3].map((index) => (
+              <li {...builderEdit(`reschedule_check_${index}`)}>{content[`reschedule_check_${index}`]}</li>
+            ))}
+          </ul>
+          <button class="vera-button vera-button--mustard" style="width: 100%" type="button" data-account-reschedule-submit disabled {...builderEdit("reschedule_submit")}>
+            {content.reschedule_submit}
+          </button>
+          <p class="vera-form-note" style="margin-top: 12px" {...builderEdit("reschedule_hint")}>
+            {content.reschedule_hint}
+          </p>
+          <button class="vera-button vera-button--paper vera-button--small" style="width: 100%; margin-top: 20px" type="button" data-open-account-panel="cancel" {...builderEdit("reschedule_cancel_cta")}>
+            {content.reschedule_cancel_cta}
+          </button>
+        </aside>
+      </div>
+    </section>
+    <section class="vera-section vera-section--paper vera-placeholder-page" data-account-rescheduled hidden aria-live="polite">
+      <div class="vera-placeholder-page__inner">
+        <p class="vera-status-pill" {...builderEdit("rescheduled_kicker")}>
+          <span aria-hidden="true">✓</span>{content.rescheduled_kicker}
+        </p>
+        <h1 class="vera-display" style="margin-top: 22px" {...builderEdit("rescheduled_title")}>
+          {content.rescheduled_title}
+        </h1>
+        <p class="vera-lede" style="margin-inline: auto" {...builderEdit("rescheduled_body")}>
+          {content.rescheduled_body}
+        </p>
+        <dl class="vera-booking-summary vera-info-card" style="text-align: left">
+          <div>
+            <dt {...builderEdit("rescheduled_was_label")}>{content.rescheduled_was_label}</dt>
+            <dd data-account-rescheduled-was {...builderEdit("rescheduled_was_value")}>
+              {content.rescheduled_was_value}
+            </dd>
+          </div>
+          <div>
+            <dt {...builderEdit("rescheduled_now_label")}>{content.rescheduled_now_label}</dt>
+            <dd data-account-rescheduled-now></dd>
+          </div>
+        </dl>
+        <p class="vera-form-note" {...builderEdit("rescheduled_note")}>{content.rescheduled_note}</p>
+        <button class="vera-button vera-button--burnt vera-button--shadow" style="margin-top: 26px" type="button" data-open-account-panel="overview" {...builderEdit("rescheduled_back_cta")}>
+          {content.rescheduled_back_cta}
+        </button>
+      </div>
+    </section>
+  </div>}
+
+  {false && <div class="vera-account-panel" data-account-panel="cancel" hidden>
+    <section class="vera-page-hero">
+      <button class="vera-button vera-button--paper vera-button--small" type="button" data-open-account-panel="overview" {...builderEdit("back_sittings_cta")}>
+        {content.back_sittings_cta}
+      </button>
+    </section>
+    <section class="vera-section vera-section--paper vera-page-grid">
+      <form data-account-cancel-form>
+        <h1 class="vera-display" {...builderEdit("cancel_title")}>{content.cancel_title}</h1>
+        <p class="vera-lede" {...builderEdit("cancel_intro")}>{content.cancel_intro}</p>
+        <aside class="vera-info-card" style="margin-top: 28px">
+          <h2 {...builderEdit("cancel_move_title")}>{content.cancel_move_title}</h2>
+          <p {...builderEdit("cancel_move_body")}>{content.cancel_move_body}</p>
+          <button class="vera-button vera-button--mustard vera-button--small" style="margin-top: 16px" type="button" data-open-account-panel="reschedule" {...builderEdit("cancel_move_cta")}>
+            {content.cancel_move_cta}
+          </button>
+        </aside>
+        <fieldset class="vera-form-section" style="margin-top: 34px">
+          <legend {...builderEdit("cancel_reason_label")}>{content.cancel_reason_label}</legend>
+          <div class="vera-filter-pills">
+            {[1, 2, 3, 4, 5].map((index) => (
+              <label class="vera-pill">
+                <input type="radio" name="cancel-reason" value={content[`cancel_reason_${index}`]} />
+                <span {...builderEdit(`cancel_reason_${index}`)}>{content[`cancel_reason_${index}`]}</span>
+              </label>
+            ))}
+          </div>
+          <textarea
+            class="vera-textarea"
+            name="cancel-note"
+            placeholder={content.cancel_note_placeholder}
+            {...builderEdit("cancel_note_placeholder")}
+          ></textarea>
+        </fieldset>
+      </form>
+      <aside class="vera-sidebar-card">
+        <h2 {...builderEdit("cancel_summary_title")}>{content.cancel_summary_title}</h2>
+        <dl class="vera-booking-summary">
+          {[
+            ["deposit", "cancel_deposit_label", "cancel_deposit_value"],
+            ["refund", "cancel_refund_label", "cancel_refund_value"],
+            ["card", "cancel_card_label", "cancel_card_value"],
+            ["arrives", "cancel_arrives_label", "cancel_arrives_value"],
+          ].map(([hook, label, value]) => (
+            <div>
+              <dt {...builderEdit(label)}>{content[label]}</dt>
+              <dd data-account-cancel-value={hook} {...builderEdit(value)}>{content[value]}</dd>
+            </div>
+          ))}
+        </dl>
+        <p {...builderEdit("cancel_file_note")}>{content.cancel_file_note}</p>
+        <p
+          class="vera-form-note"
+          data-account-cancel-status
+          aria-live="polite"
+          hidden
+          {...builderEdit("reschedule_error")}
+        >
+          {content.reschedule_error}
+        </p>
+        <button class="vera-button vera-button--burnt" style="width: 100%; margin-top: 22px" type="button" data-account-cancel-submit {...builderEdit("cancel_submit")}>
+          {content.cancel_submit}
+        </button>
+        <button class="vera-button vera-button--paper vera-button--small" style="width: 100%; margin-top: 14px" type="button" data-open-account-panel="overview" {...builderEdit("cancel_keep_cta")}>
+          {content.cancel_keep_cta}
+        </button>
+      </aside>
+    </section>
+  </div>}
+
+  <div class="vera-account-panel" data-account-panel="receipt" hidden>
+    <section class="vera-page-hero" style="display: flex; justify-content: space-between; align-items: center; gap: 24px">
+      <button class="vera-button vera-button--paper vera-button--small" type="button" data-open-account-panel="overview" {...builderEdit("back_sittings_cta")}>
+        {content.back_sittings_cta}
+      </button>
+      <div class="vera-actions">
+        <button class="vera-button vera-button--mustard vera-button--small" type="button" data-account-receipt-download {...builderEdit("receipt_download_cta")}>
+          {content.receipt_download_cta}
+        </button>
+        <button class="vera-button vera-button--paper vera-button--small" type="button" data-account-receipt-email {...builderEdit("receipt_email_cta")}>
+          {content.receipt_email_cta}
+        </button>
+      </div>
+    </section>
+    <section class="vera-section vera-section--paper">
+      <article class="vera-receipt" data-account-receipt>
+        <header class="vera-receipt__header">
+          <div>
+            <h1 {...builderEdit("receipt_brand")}>{content.receipt_brand}</h1>
+            <p data-account-receipt-address {...builderEdit("receipt_address")}>{content.receipt_address}</p>
+          </div>
+          <div>
+            <div class="vera-card-meta" {...builderEdit("receipt_label")}>{content.receipt_label}</div>
+            <h2 data-account-receipt-ref {...builderEdit("receipt_ref")}>{content.receipt_ref}</h2>
+            <p data-account-receipt-date {...builderEdit("receipt_date")}>{content.receipt_date}</p>
+          </div>
+        </header>
+        <div class="vera-field-row" style="margin-top: 26px">
+          <div>
+            <div class="vera-card-meta" {...builderEdit("receipt_billed_label")}>{content.receipt_billed_label}</div>
+            <p><span data-account-receipt-name {...builderEdit("receipt_billed_name")}>{content.receipt_billed_name}</span><br /><span data-account-receipt-email {...builderEdit("receipt_billed_email")}>{content.receipt_billed_email}</span></p>
+          </div>
+          <div>
+            <div class="vera-card-meta" {...builderEdit("receipt_sitting_label")}>{content.receipt_sitting_label}</div>
+            <p><span data-account-receipt-when {...builderEdit("receipt_sitting_when")}>{content.receipt_sitting_when}</span><br /><span data-account-receipt-where {...builderEdit("receipt_sitting_where")}>{content.receipt_sitting_where}</span></p>
+          </div>
+        </div>
+        <div class="vera-receipt__lines">
+          {[1, 2, 3, 4].map((index) => (
+            <div class="vera-receipt__line" data-account-receipt-line>
+              <div>
+                <strong data-account-receipt-line-label {...builderEdit(`receipt_line_${index}_label`)}>{content[`receipt_line_${index}_label`]}</strong>
+                <p data-account-receipt-line-note {...builderEdit(`receipt_line_${index}_note`)}>{content[`receipt_line_${index}_note`]}</p>
+              </div>
+              <span data-account-receipt-line-when {...builderEdit(`receipt_line_${index}_when`)}>{content[`receipt_line_${index}_when`]}</span>
+              <strong data-account-receipt-line-amount {...builderEdit(`receipt_line_${index}_amount`)}>{content[`receipt_line_${index}_amount`]}</strong>
+            </div>
+          ))}
+        </div>
+        <dl class="vera-receipt__totals">
+          {["total", "paid", "balance"].map((part) => (
+            <div>
+              <dt {...builderEdit(`receipt_${part}_label`)}>{content[`receipt_${part}_label`]}</dt>
+              <dd data-account-receipt-total={part} {...builderEdit(`receipt_${part}_value`)}>{content[`receipt_${part}_value`]}</dd>
+            </div>
+          ))}
+        </dl>
+        <p class="vera-form-note" style="text-align: right" {...builderEdit("receipt_due_note")}>{content.receipt_due_note}</p>
+        <p class="vera-form-note" style="margin-top: 34px; padding-top: 22px; border-top: 2px dashed var(--vera-sand-deep)" {...builderEdit("receipt_legal")}>
+          {content.receipt_legal}
+        </p>
+        <div class="vera-signature" {...builderEdit("receipt_signature")}>{content.receipt_signature}</div>
+      </article>
+    </section>
+  </div>
+
+  <div class="vera-account-panel" data-account-panel="room" data-account-room hidden>
+    <section class="vera-page-hero vera-account-room-hero">
+      <button class="vera-button vera-button--paper vera-button--small" type="button" data-open-account-panel="overview" {...builderEdit("back_sittings_cta")}>
+        {content.back_sittings_cta}
+      </button>
+      <div class="vera-account-room-hero__copy">
+        <div>
+          <p class="vera-eyebrow" {...builderEdit("room_eyebrow")}>{content.room_eyebrow}</p>
+          <h1 class="vera-display" {...builderEdit("room_title")}>{content.room_title}</h1>
+        </div>
+        <p class="vera-lede" {...builderEdit("room_intro")}>{content.room_intro}</p>
+      </div>
+    </section>
+
+    <section class="vera-section vera-section--paper vera-page-grid">
+      <div>
+        <article class="vera-upcoming" data-account-files-card>
+          <div class="vera-account-recording-header">
+            <div>
+              <div class="vera-card-meta" style="color: var(--vera-clay)" {...builderEdit("recording_title")}>
+                {content.recording_title}
+              </div>
+              <h2 style="font-size: 30px" data-account-recording-title {...builderEdit("recording_meta")}>{recordingMeta[0]}</h2>
+            </div>
+            <div class="vera-card-meta" data-account-recording-meta {...builderEdit("recording_meta")}>{recordingMeta.slice(1).join("\n")}</div>
+          </div>
+          <audio controls preload="metadata" style="width: 100%; margin-top: 18px" data-account-recording hidden></audio>
+          <div class="vera-detail-stack" style="margin-top: 18px" data-account-recording-chapters hidden>
+            {[1, 2, 3, 4, 5, 6].map((index) => (
+              <button class="vera-button vera-button--paper vera-button--small" type="button" data-account-recording-chapter>
+                <span {...builderEdit(`recording_chapter_${index}_time`)}>{content[`recording_chapter_${index}_time`]}</span>
+                <span {...builderEdit(`recording_chapter_${index}_label`)}>{content[`recording_chapter_${index}_label`]}</span>
+              </button>
+            ))}
+          </div>
+          <button class="vera-button vera-button--paper vera-button--small" style="margin-top: 20px" type="button" data-account-file-download {...builderEdit("recording_cta")}>
+            {content.recording_cta}
+          </button>
+        </article>
+
+        <article class="vera-panel vera-prose" style="margin-top: 24px; padding: 32px 34px" data-account-report>
+          <header class="vera-account-summary-header">
+            <div>
+              <div class="vera-card-meta" {...builderEdit("summary_title")}>{content.summary_title}</div>
+              <h2 style="margin-top: 6px" {...builderEdit("summary_meta")}>{content.summary_meta}</h2>
+            </div>
+            <a class="vera-button vera-button--paper vera-button--small" data-account-report-download hidden {...builderEdit("summary_download_cta")}>{content.summary_download_cta}</a>
+          </header>
+          <p {...builderEdit("summary_p1")}>{content.summary_p1}</p>
+          <p {...builderEdit("summary_p2")}>{content.summary_p2}</p>
+          <aside class="vera-info-card" style="margin-top: 24px">
+            <div class="vera-card-meta" {...builderEdit("watch_title")}>{content.watch_title}</div>
+            <ul class="vera-feature-list">
+              {[1, 2, 3].map((index) => (
+                <li {...builderEdit(`watch_${index}`)}>{content[`watch_${index}`]}</li>
+              ))}
+            </ul>
+          </aside>
+          <p {...builderEdit("summary_outro")}>{content.summary_outro}</p>
+          <div class="vera-signature" {...builderEdit("summary_signature")}>{content.summary_signature}</div>
+        </article>
+
+        <form class="vera-info-card" style="margin-top: 24px" data-follow-form data-account-message-form>
+          <h2 {...builderEdit("follow_title")}>{content.follow_title}</h2>
+          <div class="vera-card-meta" style="margin-top: 6px" {...builderEdit("follow_status")}>
+            {content.follow_status}
+          </div>
+          <p {...builderEdit("follow_body")}>{content.follow_body}</p>
+          <textarea class="vera-textarea" name="message" required placeholder={content.follow_placeholder} style="margin-top: 16px" {...builderEdit("follow_placeholder")}></textarea>
+          <button class="vera-button vera-button--burnt vera-button--small" style="margin-top: 14px" type="submit" {...builderEdit("follow_cta")}>
+            {content.follow_cta}
+          </button>
+          <p class="vera-lede" style="font-size: 15px" data-follow-success hidden aria-live="polite" {...builderEdit("follow_success")}>
+            {content.follow_success}
+          </p>
+          <div data-account-messages-mount></div>
+        </form>
+      </div>
+
+      <aside class="vera-sidebar">
+        <div class="vera-sidebar-card" data-account-room-chart>
+          <h2 {...builderEdit("chart_title")}>{content.chart_title}</h2>
+          <VeraImage alt={content.chart_alt} altField="chart_alt" edit={builderEdit} class="vera-account-chart-full" />
+          <p {...builderEdit("room_chart_note")}>{content.room_chart_note}</p>
+          <div class="vera-account-chart-actions">
+            <a class="vera-button vera-button--mustard vera-button--small" data-account-chart-download hidden {...builderEdit("room_chart_download_cta")}>{content.room_chart_download_cta}</a>
+            <a class="vera-button vera-button--paper vera-button--small" href="/contact?topic=booking" {...builderEdit("room_chart_print_cta")}>{content.room_chart_print_cta}</a>
+          </div>
+        </div>
+        <div class="vera-sidebar-card" data-account-files-ledger hidden>
+          <h2 {...builderEdit("room_files_title")}>{content.room_files_title}</h2>
+          <div class="vera-detail-stack" data-account-files-mount></div>
+        </div>
+        <div class="vera-sidebar-card vera-sidebar-card--dark" data-account-five-year>
+          <h2 {...builderEdit("room_five_year_title")}>{content.room_five_year_title}</h2>
+          <p {...builderEdit("room_five_year_body")}>{content.room_five_year_body}</p>
+          <button class="vera-button vera-button--mustard vera-button--small" style="width: 100%; margin-top: 16px" type="button" data-open-account-panel="overview" {...builderEdit("room_five_year_cta")}>{content.room_five_year_cta}</button>
+        </div>
+        <div class="vera-account-destroy-note" {...builderEdit("room_destroy_note")}>
+          {content.room_destroy_note}
+        </div>
+      </aside>
+    </section>
+  </div>
+
+</VeraFrame>
+
+<script>
+  import { loadStripe, type Stripe, type StripeCardElement } from "@stripe/stripe-js";
+
+  type VeraRow = Record<string, unknown>;
+  type VeraPortal = {
+    account?: VeraRow;
+    csrfToken?: string;
+    bookings?: VeraRow[];
+    invoices?: VeraRow[];
+    reports?: VeraRow[];
+    files?: VeraRow[];
+    threads?: VeraRow[];
+  };
+
+  const accountEndpoint = "/api/astropages/generated-site/vera/account";
+  const catalogEndpoint = "/api/astropages/generated-site/vera/catalog";
+  const availabilityEndpoint = "/api/astropages/generated-site/vera/availability";
+  const messagesEndpoint = "/api/astropages/generated-site/vera/account/messages";
+  const locale = document.documentElement.lang || "en";
+  const accessStorageKey = "vera-solaro:booking-access";
+  let storedBookingId = "";
+  let storedManageToken = "";
+  try {
+    const stored = JSON.parse(sessionStorage.getItem(accessStorageKey) || "{}") as VeraRow;
+    storedBookingId = typeof stored.bookingId === "string" ? stored.bookingId : "";
+    storedManageToken = typeof stored.manageToken === "string" ? stored.manageToken : "";
+  } catch {
+    // The verified account session remains the authority when storage is unavailable.
+  }
+  const requestedBookingId = storedBookingId;
+  const manageToken = storedManageToken;
+
+  let portal: VeraPortal | null = null;
+  let catalog: VeraRow = {};
+  let selectedBooking: VeraRow | null = null;
+  let balanceBooking: VeraRow | null = null;
+  let selectedStartAt = "";
+  let selectedStartLabel = "";
+  let activeThread: VeraRow | null = null;
+  let preparedRescheduleBookingId = "";
+  let balanceStripe: Stripe | null = null;
+  let balanceCardElement: StripeCardElement | null = null;
+  const serviceBySlug = new Map<string, VeraRow>();
+
+  function query<T extends Element>(selector: string) {
+    return document.querySelector<T>(selector);
+  }
+
+  const rows = (value: unknown): VeraRow[] => Array.isArray(value)
+    ? value.filter((entry): entry is VeraRow => Boolean(entry) && typeof entry === "object")
+    : [];
+  const stringValue = (row: VeraRow | null | undefined, ...keys: string[]) => {
+    for (const key of keys) {
+      const value = row?.[key];
+      if (typeof value === "string" && value) return value;
+    }
+    return "";
+  };
+  const numberValue = (row: VeraRow | null | undefined, ...keys: string[]) => {
+    for (const key of keys) {
+      const value = Number(row?.[key]);
+      if (Number.isFinite(value)) return value;
+    }
+    return 0;
+  };
+  const setText = (selector: string, value: unknown) => {
+    const element = query<HTMLElement>(selector);
+    if (element) element.textContent = value == null ? "" : String(value);
+  };
+  const validDate = (value: unknown) => {
+    const parsed = new Date(String(value ?? ""));
+    return Number.isFinite(parsed.getTime()) ? parsed : null;
+  };
+  const formatDateTime = (value: unknown) => {
+    const parsed = validDate(value);
+    return parsed
+      ? new Intl.DateTimeFormat(locale, { dateStyle: "full", timeStyle: "short" }).format(parsed)
+      : "";
+  };
+  const formatDate = (value: unknown) => {
+    const parsed = validDate(value);
+    return parsed
+      ? new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(parsed)
+      : "";
+  };
+  const formatMoney = (cents: unknown, currency = "USD") => new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: currency || "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Math.max(0, Number(cents) || 0) / 100);
+  const replaceFirstToken = (source: string, value: string) => {
+    const splitAt = source.indexOf(" ");
+    return splitAt < 0 ? value : `${value}${source.slice(splitAt)}`;
+  };
+  const readyData = async (response: Response) => {
+    const body = await response.json().catch(() => null) as {
+      status?: string;
+      data?: VeraRow;
+    } | null;
+    return response.ok && body?.status === "ready" && body.data && typeof body.data === "object"
+      ? body.data
+      : null;
+  };
+  const sourceText = (selector: string) => query<HTMLElement>(selector)?.textContent?.trim() ?? "";
+  const sourceCopy = {
+    accountTitle: sourceText("[data-account-title]"),
+    upcomingWhere: sourceText("[data-account-upcoming-where]"),
+    paid: sourceText("[data-account-payment-paid]"),
+    balance: sourceText("[data-account-payment-balance]"),
+    cancelledKicker: "",
+    rescheduleMode: "",
+    balanceSubmit: sourceText("[data-account-balance-submit]"),
+  };
+
+  const accountLoading = document.querySelector<HTMLElement>("[data-account-loading]");
+  const accountPanels = Array.from(document.querySelectorAll<HTMLElement>("[data-account-panel]"));
+  const accountPanelNames = new Set(["overview", "receipt", "room"]);
+  const showAccountPanel = (requestedName: string, updateLocation = true) => {
+    const name = accountPanelNames.has(requestedName) ? requestedName : "overview";
+    accountPanels.forEach((panel) => {
+      panel.hidden = panel.dataset.accountPanel !== name;
+    });
+    if (updateLocation) {
+      const destination = name === "overview"
+        ? `${window.location.pathname}${window.location.search}`
+        : `${window.location.pathname}${window.location.search}#${name}`;
+      window.history.replaceState(null, "", destination);
+    }
+    window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  };
+
+  const serviceFor = (booking: VeraRow | null) =>
+    serviceBySlug.get(stringValue(booking, "service_slug", "serviceSlug"));
+  const serviceName = (booking: VeraRow | null) =>
+    stringValue(serviceFor(booking), "name") || stringValue(booking, "booking_number", "bookingNumber");
+  const bookingId = (booking: VeraRow | null) => stringValue(booking, "id");
+  const bookingStart = (booking: VeraRow | null) =>
+    stringValue(booking, "selected_start_at", "selectedStartAt");
+  const bookingEnd = (booking: VeraRow | null) =>
+    stringValue(booking, "selected_end_at", "selectedEndAt");
+  const bookingCurrency = (booking: VeraRow | null) =>
+    stringValue(booking, "currency") || "USD";
+  const assetsFor = (booking: VeraRow | null) => {
+    const id = bookingId(booking);
+    return {
+      files: rows(portal?.files).filter((file) => stringValue(file, "booking_id") === id),
+      reports: rows(portal?.reports).filter((report) => stringValue(report, "bookingId") === id),
+      threads: rows(portal?.threads).filter((thread) => stringValue(thread, "booking_id") === id),
+    };
+  };
+
+  const personalizeAccountTitle = (name: string) => {
+    const title = query<HTMLElement>("[data-account-title]");
+    if (!title) return;
+    const comma = sourceCopy.accountTitle.indexOf(",");
+    const stop = sourceCopy.accountTitle.endsWith(".") ? "." : "";
+    title.textContent = comma >= 0
+      ? `${sourceCopy.accountTitle.slice(0, comma + 1)} ${name}${stop}`
+      : name;
+  };
+
+  const renderPrep = (booking: VeraRow | null) => {
+    const wrapper = query<HTMLElement>("[data-account-prep]");
+    const prepRows = Array.from(document.querySelectorAll<HTMLElement>("[data-account-prep-row]"));
+    if (!wrapper || !booking) {
+      if (wrapper) wrapper.hidden = true;
+      return;
+    }
+    prepRows.forEach((row) => (row.hidden = true));
+    const paid = numberValue(booking, "paid_cents", "paidCents");
+    if (prepRows[1] && paid > 0) {
+      prepRows[1].hidden = false;
+      const body = prepRows[1].querySelector<HTMLElement>("p");
+      if (body) body.textContent = formatMoney(paid, bookingCurrency(booking));
+    }
+    if (prepRows[2]) {
+      prepRows[2].hidden = false;
+      const status = prepRows[2].querySelector<HTMLElement>(".vera-card-meta");
+      if (status) status.textContent = formatDate(bookingStart(booking));
+    }
+    wrapper.hidden = prepRows.every((row) => row.hidden);
+  };
+
+  const renderPastBookings = (bookings: VeraRow[], upcoming: VeraRow | null) => {
+    const now = Date.now();
+    const past = bookings
+      .filter((booking) => {
+        if (bookingId(booking) === bookingId(upcoming)) return false;
+        const start = validDate(bookingStart(booking))?.getTime() ?? 0;
+        return start > 0 && start < now && !["cancelled", "expired"].includes(stringValue(booking, "status"));
+      })
+      .sort((left, right) => (validDate(bookingStart(right))?.getTime() ?? 0) -
+        (validDate(bookingStart(left))?.getTime() ?? 0));
+    const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-account-past-row]"));
+    elements.forEach((element, index) => {
+      const booking = past[index];
+      element.hidden = !booking;
+      if (!booking) return;
+      const assets = assetsFor(booking);
+      const report = assets.reports[0];
+      const file = assets.files[0];
+      const body = element.querySelector<HTMLElement>("[data-account-past-body]");
+      const open = element.querySelector<HTMLButtonElement>("[data-account-past-open]");
+      const assetLabel = stringValue(report, "title") || stringValue(file, "file_name");
+      setText(`[data-account-past-row]:nth-of-type(${index + 1}) [data-account-past-date]`, formatDate(bookingStart(booking)));
+      setText(`[data-account-past-row]:nth-of-type(${index + 1}) [data-account-past-ref]`, stringValue(booking, "booking_number"));
+      setText(`[data-account-past-row]:nth-of-type(${index + 1}) [data-account-past-title]`, serviceName(booking));
+      if (body) {
+        body.textContent = assetLabel;
+        body.hidden = !assetLabel;
+      }
+      if (open) {
+        open.dataset.bookingId = bookingId(booking);
+        open.hidden = !assetLabel && assets.threads.length === 0;
+      }
+    });
+    const header = query<HTMLElement>("[data-account-past-header]");
+    const list = query<HTMLElement>("[data-account-past-list]");
+    if (header) header.hidden = past.length === 0;
+    if (list) list.hidden = past.length === 0;
+    setText("[data-account-past-note]", String(past.length));
+  };
+
+  const showBalanceStatus = (kind: "processing" | "error" | "success" | null) => {
+    document.querySelectorAll<HTMLElement>("[data-account-balance-status]").forEach((status) => {
+      status.hidden = status.dataset.accountBalanceStatus !== kind;
+    });
+  };
+
+  const renderBalancePayment = (bookings: VeraRow[]) => {
+    const panel = query<HTMLElement>("[data-account-balance-payment]");
+    balanceBooking = bookings
+      .filter((booking) =>
+        numberValue(booking, "balance_cents", "balanceCents") > 0 &&
+        !["cancelled", "expired", "refunded"].includes(stringValue(booking, "status"))
+      )
+      .sort((left, right) => (validDate(bookingStart(right))?.getTime() ?? 0) -
+        (validDate(bookingStart(left))?.getTime() ?? 0))[0] ?? null;
+    if (panel) panel.hidden = !balanceBooking;
+    if (!balanceBooking) return;
+    const balance = formatMoney(
+      numberValue(balanceBooking, "balance_cents", "balanceCents"),
+      bookingCurrency(balanceBooking),
+    );
+    const submit = query<HTMLButtonElement>("[data-account-balance-submit]");
+    if (submit) {
+      submit.hidden = false;
+      submit.disabled = false;
+      submit.textContent = sourceCopy.balanceSubmit.replace(/\{\{\s*balance\s*\}\}/g, balance);
+    }
+    const cardMount = query<HTMLElement>("[data-account-balance-card]");
+    if (cardMount) cardMount.hidden = false;
+    showBalanceStatus(null);
+    void mountBalanceCard();
+  };
+
+  const renderOverview = () => {
+    if (!portal) return;
+    const bookings = rows(portal.bookings);
+    const now = Date.now();
+    const upcoming = bookings
+      .filter((booking) => {
+        const start = validDate(bookingStart(booking))?.getTime() ?? 0;
+        return start > now && !["cancelled", "expired", "completed", "refunded"].includes(stringValue(booking, "status"));
+      })
+      .sort((left, right) => (validDate(bookingStart(left))?.getTime() ?? 0) -
+        (validDate(bookingStart(right))?.getTime() ?? 0))[0] ?? null;
+    const requested = bookings.find((booking) => bookingId(booking) === requestedBookingId) ?? null;
+    selectedBooking = requested || upcoming || selectedBooking || bookings[0] || null;
+
+    const account = portal.account ?? {};
+    const displayName = stringValue(account, "displayName") || stringValue(account, "email");
+    personalizeAccountTitle(displayName);
+    setText("[data-account-profile-name]", displayName);
+    setText("[data-account-profile-ref]", stringValue(upcoming, "booking_number") || stringValue(account, "email"));
+
+    const upcomingCard = query<HTMLElement>("[data-account-upcoming]");
+    const cancelledCard = query<HTMLElement>("[data-account-cancelled]");
+    if (upcomingCard) upcomingCard.hidden = !upcoming;
+    if (cancelledCard) cancelledCard.hidden = true;
+    const emptyCard = query<HTMLElement>("[data-account-empty]");
+    const hasBookings = Boolean(upcoming) || bookings.length > 0;
+    if (emptyCard) emptyCard.hidden = hasBookings;
+    if (upcoming) {
+      setText("[data-account-upcoming-kicker]", formatDateTime(bookingStart(upcoming)));
+      setText("[data-account-upcoming-title]", serviceName(upcoming));
+      setText("[data-account-upcoming-when]", formatDateTime(bookingStart(upcoming)));
+      setText(
+        "[data-account-upcoming-where]",
+        stringValue(upcoming, "mode") === "in_person"
+          ? sourceCopy.upcomingWhere
+          : stringValue(upcoming, "calendly_meeting_url", "calendlyMeetingUrl"),
+      );
+      setText(
+        "[data-account-payment-paid]",
+        replaceFirstToken(sourceCopy.paid, formatMoney(numberValue(upcoming, "paid_cents", "paidCents"), bookingCurrency(upcoming))),
+      );
+      setText(
+        "[data-account-payment-balance]",
+        replaceFirstToken(sourceCopy.balance, formatMoney(numberValue(upcoming, "balance_cents", "balanceCents"), bookingCurrency(upcoming))),
+      );
+      upcomingCard?.querySelectorAll<HTMLElement>("[data-open-account-panel], [data-account-add-calendar]").forEach((button) => {
+        button.dataset.bookingId = bookingId(upcoming);
+      });
+      const move = upcomingCard?.querySelector<HTMLElement>("[data-open-account-panel='reschedule']");
+      const bookingStatus = stringValue(upcoming, "status");
+      const start = validDate(bookingStart(upcoming))?.getTime() ?? 0;
+      if (move) {
+        move.hidden = numberValue(upcoming, "free_reschedule_used", "freeRescheduleUsed") === 1 ||
+          start - now < 72 * 60 * 60 * 1000 || !["confirmed", "reschedule_pending"].includes(bookingStatus);
+      }
+      const cancel = upcomingCard?.querySelector<HTMLElement>("[data-open-account-panel='cancel']");
+      if (cancel) cancel.hidden = bookingStatus === "payment_action_required";
+      const actionRequired = query<HTMLElement>("[data-account-action-required]");
+      if (actionRequired) {
+        actionRequired.hidden = bookingStatus !== "payment_action_required" &&
+          !stringValue(upcoming, "scheduling_error");
+      }
+      const receipt = upcomingCard?.querySelector<HTMLElement>("[data-open-account-panel='receipt']");
+      if (receipt) {
+        receipt.hidden = !rows(portal.invoices).some((invoice) =>
+          stringValue(invoice, "booking_id") === bookingId(upcoming));
+      }
+      renderPrep(upcoming);
+    } else {
+      renderPrep(null);
+      const cancelled = bookings
+        .filter((booking) => ["cancelled", "refunded"].includes(stringValue(booking, "status")))
+        .sort((left, right) => (validDate(stringValue(right, "updated_at"))?.getTime() ?? 0) -
+          (validDate(stringValue(left, "updated_at"))?.getTime() ?? 0))[0] ?? null;
+      if (cancelled && cancelledCard) {
+        const prefix = sourceCopy.cancelledKicker.match(/^[^\d]*/)?.[0] ?? "";
+        setText("[data-account-cancelled-kicker]", `${prefix}${formatDate(stringValue(cancelled, "updated_at"))}`);
+        setText("[data-account-cancelled-title]", serviceName(cancelled));
+        const cancelledBody = query<HTMLElement>("[data-account-cancelled-body]");
+        if (cancelledBody) cancelledBody.hidden = true;
+        cancelledCard.hidden = false;
+      }
+    }
+
+    renderBalancePayment(bookings);
+    renderPastBookings(bookings, upcoming);
+    const birthCard = query<HTMLElement>("[data-account-birth-card]");
+    const intake = selectedBooking?.intake && typeof selectedBooking.intake === "object"
+      ? selectedBooking.intake as VeraRow
+      : null;
+    if (birthCard) birthCard.hidden = !intake;
+    if (intake) {
+      setText("[data-account-birth-value='date']", stringValue(intake, "birthDate"));
+      setText(
+        "[data-account-birth-value='time']",
+        intake.birthTimeUnknown === true
+          ? stringValue(intake, "birthTimeApproximation")
+          : stringValue(intake, "birthTime"),
+      );
+      setText("[data-account-birth-value='place']", stringValue(intake, "birthPlace"));
+    }
+    const chartCard = query<HTMLElement>("[data-account-chart-card]");
+    const chartAssets = assetsFor(selectedBooking);
+    const chartFile = chartAssets.files.find((file) => stringValue(file, "kind") === "chart");
+    const chartLabel = stringValue(chartAssets.reports[0], "title") ||
+      stringValue(chartFile, "file_name");
+    if (chartCard) {
+      chartCard.hidden = !chartLabel;
+      const note = chartCard.querySelector<HTMLElement>("p");
+      if (note) note.textContent = chartLabel;
+      const open = chartCard.querySelector<HTMLElement>("[data-open-account-panel='room']");
+      if (open && selectedBooking) open.dataset.bookingId = bookingId(selectedBooking);
+    }
+  };
+
+  const mutationOptions = (body: VeraRow): RequestInit => ({
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      "content-type": "application/json",
+      ...(portal?.csrfToken ? { "x-csrf-token": portal.csrfToken } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  const mountBalanceCard = async (publishableKey = stringValue(catalog, "stripePublishableKey")) => {
+    const mount = query<HTMLElement>("[data-account-balance-card]");
+    if (!publishableKey || !mount || balanceCardElement) return Boolean(balanceCardElement);
+    balanceStripe = await loadStripe(publishableKey);
+    if (!balanceStripe) return false;
+    balanceCardElement = balanceStripe.elements().create("card", {
+      hidePostalCode: false,
+      style: {
+        base: {
+          color: "#2C1810",
+          fontFamily: "Georgia, serif",
+          fontSize: "16px",
+          "::placeholder": { color: "#7A5A44" },
+        },
+        invalid: { color: "#C6491F" },
+      },
+    });
+    balanceCardElement.mount(mount);
+    return true;
+  };
+
+  const refreshAccountPortal = async () => {
+    const refreshed = await readyData(await fetch(accountEndpoint, { credentials: "same-origin" }));
+    if (!refreshed) return null;
+    portal = refreshed as VeraPortal;
+    return portal;
+  };
+
+  const waitForBalanceSettlement = async (id: string) => {
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 1_500));
+      const refreshed = await refreshAccountPortal();
+      const booking = rows(refreshed?.bookings).find((entry) => bookingId(entry) === id);
+      if (!booking || numberValue(booking, "balance_cents", "balanceCents") > 0) continue;
+      selectedBooking = booking;
+      renderOverview();
+      const panel = query<HTMLElement>("[data-account-balance-payment]");
+      const mount = query<HTMLElement>("[data-account-balance-card]");
+      const submit = query<HTMLButtonElement>("[data-account-balance-submit]");
+      if (panel) panel.hidden = false;
+      if (mount) mount.hidden = true;
+      if (submit) submit.hidden = true;
+      showBalanceStatus("success");
+      return true;
+    }
+    return false;
+  };
+
+  query<HTMLButtonElement>("[data-account-balance-submit]")?.addEventListener("click", async (event) => {
+    if (!balanceBooking || !portal?.csrfToken) return;
+    const button = event.currentTarget as HTMLButtonElement;
+    button.disabled = true;
+    showBalanceStatus("processing");
+    try {
+      const id = bookingId(balanceBooking);
+      const intentData = await readyData(await fetch(
+        `/api/astropages/generated-site/vera/bookings/${encodeURIComponent(id)}/payment-intent`,
+        mutationOptions({ kind: "balance" }),
+      ));
+      const payment = intentData?.payment && typeof intentData.payment === "object"
+        ? intentData.payment as VeraRow
+        : null;
+      if (!payment || !await mountBalanceCard(stringValue(payment, "publishableKey"))) {
+        throw new Error("stripe");
+      }
+      const clientSecret = stringValue(payment, "clientSecret");
+      if (!clientSecret || !balanceStripe || !balanceCardElement) throw new Error("stripe");
+      const confirmed = await balanceStripe.confirmCardPayment(clientSecret, {
+        payment_method: { card: balanceCardElement },
+      });
+      if (confirmed.error) throw new Error("stripe");
+      if (!await waitForBalanceSettlement(id)) return;
+    } catch {
+      showBalanceStatus("error");
+      button.disabled = false;
+    }
+  });
+
+  const rescheduleSubmit = document.querySelector<HTMLButtonElement>("[data-account-reschedule-submit]");
+  const rescheduleStatus = query<HTMLElement>("[data-account-reschedule-status]");
+  const rescheduleMount = query<HTMLElement>("[data-account-reschedule-slot-mount]");
+  const rescheduleSlots = query<HTMLElement>("[data-account-reschedule-slots]");
+  const rescheduleLoadingCopy = rescheduleStatus?.textContent?.trim() ?? "";
+
+  const showRescheduleStatus = (kind: "loading" | "empty" | "error") => {
+    if (!rescheduleStatus) return;
+    rescheduleStatus.hidden = false;
+    rescheduleStatus.textContent = kind === "loading"
+      ? rescheduleLoadingCopy
+      : kind === "empty"
+        ? rescheduleMount?.dataset.emptyCopy ?? ""
+        : rescheduleMount?.dataset.errorCopy ?? "";
+  };
+
+  const renderRescheduleSlots = (times: VeraRow[]) => {
+    rescheduleSlots?.replaceChildren();
+    selectedStartAt = "";
+    selectedStartLabel = "";
+    setText("[data-account-reschedule-selected]", "");
+    if (rescheduleSubmit) rescheduleSubmit.disabled = true;
+    if (times.length === 0) {
+      showRescheduleStatus("empty");
+      return;
+    }
+    if (rescheduleStatus) rescheduleStatus.hidden = true;
+    for (const time of times) {
+      const startAt = stringValue(time, "startAt");
+      const label = formatDateTime(startAt);
+      if (!startAt || !label) continue;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "vera-calendar-slot";
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        rescheduleSlots?.querySelectorAll<HTMLButtonElement>("button").forEach((slot) => {
+          slot.toggleAttribute("data-selected", slot === button);
+          slot.setAttribute("aria-pressed", String(slot === button));
+        });
+        selectedStartAt = startAt;
+        selectedStartLabel = label;
+        setText("[data-account-reschedule-selected]", label);
+        if (rescheduleSubmit) rescheduleSubmit.disabled = false;
+      });
+      button.setAttribute("aria-pressed", "false");
+      rescheduleSlots?.append(button);
+    }
+  };
+
+  const loadRescheduleAvailability = async (booking: VeraRow) => {
+    showRescheduleStatus("loading");
+    const start = new Date(Date.now() + 5 * 60_000);
+    const ranges = [0, 1].map((index) => {
+      const rangeStart = new Date(start.getTime() + index * 7 * 24 * 60 * 60_000);
+      const rangeEnd = new Date(rangeStart.getTime() + 7 * 24 * 60 * 60_000 - 1_000);
+      return { rangeStart, rangeEnd };
+    });
+    try {
+      const results = await Promise.all(ranges.map(async ({ rangeStart, rangeEnd }) => {
+        const url = new URL(availabilityEndpoint, window.location.origin);
+        url.searchParams.set("serviceSlug", stringValue(booking, "service_slug", "serviceSlug"));
+        url.searchParams.set("mode", stringValue(booking, "mode"));
+        url.searchParams.set("start", rangeStart.toISOString());
+        url.searchParams.set("end", rangeEnd.toISOString());
+        const response = await fetch(url, { credentials: "same-origin" });
+        const data = await readyData(response);
+        if (!data) throw new Error("availability");
+        return rows(data.times);
+      }));
+      const unique = new Map<string, VeraRow>();
+      results.flat().forEach((time) => unique.set(stringValue(time, "startAt"), time));
+      renderRescheduleSlots([...unique.values()].filter((time) =>
+        stringValue(time, "startAt") !== bookingStart(booking)));
+    } catch {
+      rescheduleSlots?.replaceChildren();
+      showRescheduleStatus("error");
+    }
+  };
+
+  const prepareReschedule = async (booking: VeraRow) => {
+    setText("[data-account-reschedule-current]", formatDateTime(bookingStart(booking)));
+    setText(
+      "[data-account-reschedule-mode]",
+      stringValue(booking, "mode") === "in_person"
+        ? sourceCopy.rescheduleMode
+        : stringValue(booking, "calendly_meeting_url", "calendlyMeetingUrl"),
+    );
+    const id = bookingId(booking);
+    if (!id || preparedRescheduleBookingId === id) return;
+    preparedRescheduleBookingId = id;
+    showRescheduleStatus("loading");
+    try {
+      const authorization = await fetch(
+        `/api/astropages/generated-site/vera/bookings/${encodeURIComponent(id)}/reschedule`,
+        mutationOptions({}),
+      );
+      if (!await readyData(authorization)) throw new Error("authorize");
+      await loadRescheduleAvailability(booking);
+    } catch {
+      preparedRescheduleBookingId = "";
+      showRescheduleStatus("error");
+    }
+  };
+
+  rescheduleSubmit?.addEventListener("click", async () => {
+    if (!selectedBooking || !selectedStartAt) return;
+    rescheduleSubmit.disabled = true;
+    try {
+      const response = await fetch(
+        `/api/astropages/generated-site/vera/bookings/${encodeURIComponent(bookingId(selectedBooking))}/reschedule`,
+        mutationOptions({ newStartAt: selectedStartAt }),
+      );
+      const data = await readyData(response);
+      const booking = data?.booking && typeof data.booking === "object"
+        ? data.booking as VeraRow
+        : null;
+      if (!booking) throw new Error("reschedule");
+      selectedBooking.selected_start_at = stringValue(booking, "selectedStartAt") || selectedStartAt;
+      selectedBooking.selected_end_at = stringValue(booking, "selectedEndAt");
+      const actionRequired = data?.actionRequired === true;
+      selectedBooking.status = actionRequired
+        ? "payment_action_required"
+        : stringValue(booking, "status") || "confirmed";
+      selectedBooking.scheduling_error = actionRequired ? "action_required" : "";
+      selectedBooking.free_reschedule_used = 1;
+      if (actionRequired) {
+        renderOverview();
+        showAccountPanel("overview");
+        return;
+      }
+      const completedLabel = formatDateTime(bookingStart(selectedBooking)) || selectedStartLabel;
+      const open = document.querySelector<HTMLElement>("[data-account-reschedule-open]");
+      const done = document.querySelector<HTMLElement>("[data-account-rescheduled]");
+      setText("[data-account-rescheduled-now]", completedLabel);
+      if (open) open.hidden = true;
+      if (done) done.hidden = false;
+      renderOverview();
+    } catch {
+      showRescheduleStatus("error");
+      rescheduleSubmit.disabled = false;
+    }
+  });
+
+  const prepareCancel = (booking: VeraRow) => {
+    const panel = query<HTMLElement>("[data-account-panel='cancel']");
+    const title = panel?.querySelector<HTMLElement>("h1");
+    const intro = panel?.querySelector<HTMLElement>("p.vera-lede");
+    const moveBody = panel?.querySelector<HTMLElement>("aside.vera-info-card p");
+    if (title) title.textContent = formatDateTime(bookingStart(booking));
+    if (intro) intro.hidden = true;
+    if (moveBody) moveBody.hidden = true;
+    const paid = numberValue(booking, "paid_cents", "paidCents");
+    const eligible = (validDate(bookingStart(booking))?.getTime() ?? 0) - Date.now() >= 72 * 60 * 60 * 1000;
+    const currency = bookingCurrency(booking);
+    const deposit = query<HTMLElement>("[data-account-cancel-value='deposit']");
+    const refund = query<HTMLElement>("[data-account-cancel-value='refund']");
+    const card = query<HTMLElement>("[data-account-cancel-value='card']");
+    const arrives = query<HTMLElement>("[data-account-cancel-value='arrives']");
+    if (deposit) deposit.textContent = formatMoney(paid, currency);
+    if (refund) refund.textContent = formatMoney(eligible ? paid : 0, currency);
+    if (card?.parentElement) card.parentElement.hidden = true;
+    if (arrives?.parentElement) arrives.parentElement.hidden = !eligible;
+  };
+
+  const cancelForm = document.querySelector<HTMLFormElement>("[data-account-cancel-form]");
+  const cancelSubmit = document.querySelector<HTMLButtonElement>("[data-account-cancel-submit]");
+  const cancelStatus = query<HTMLElement>("[data-account-cancel-status]");
+  cancelSubmit?.addEventListener("click", async () => {
+    if (!selectedBooking || !cancelForm) return;
+    const formData = new FormData(cancelForm);
+    const reason = [
+      String(formData.get("cancel-reason") ?? "").trim(),
+      String(formData.get("cancel-note") ?? "").trim(),
+    ].filter(Boolean).join(" — ");
+    cancelSubmit.disabled = true;
+    try {
+      const response = await fetch(
+        `/api/astropages/generated-site/vera/bookings/${encodeURIComponent(bookingId(selectedBooking))}/cancel`,
+        mutationOptions({ reason }),
+      );
+      const data = await readyData(response);
+      const state = stringValue(data, "cancellationState");
+      if (!data) throw new Error("cancel");
+      if (state === "action_required") {
+        selectedBooking.status = "payment_action_required";
+        selectedBooking.scheduling_error = "action_required";
+        if (cancelStatus) cancelStatus.hidden = false;
+        return;
+      }
+      if (!["cancelled", "hold_released"].includes(state)) throw new Error("cancel");
+      selectedBooking.status = "cancelled";
+      selectedBooking.updated_at = new Date().toISOString();
+      renderOverview();
+      showAccountPanel("overview");
+    } catch {
+      if (cancelStatus) cancelStatus.hidden = false;
+    }
+  });
+
+  const prepareReceipt = (booking: VeraRow) => {
+    if (!portal) return;
+    const invoice = rows(portal.invoices).find((entry) =>
+      stringValue(entry, "booking_id") === bookingId(booking));
+    const account = portal.account ?? {};
+    const currency = bookingCurrency(booking);
+    const price = numberValue(booking, "price_cents", "priceCents");
+    const paid = numberValue(booking, "paid_cents", "paidCents");
+    const gift = numberValue(booking, "gift_applied_cents", "giftAppliedCents");
+    const balance = numberValue(booking, "balance_cents", "balanceCents");
+    setText("[data-account-receipt-ref]", stringValue(invoice, "invoice_number") || stringValue(booking, "booking_number", "bookingNumber"));
+    setText("[data-account-receipt-date]", formatDate(stringValue(invoice, "issued_at")));
+    setText("[data-account-receipt-name]", stringValue(account, "displayName"));
+    setText("[data-account-receipt-email]", stringValue(account, "email"));
+    setText("[data-account-receipt-when]", formatDateTime(bookingStart(booking)));
+    setText(
+      "[data-account-receipt-where]",
+      stringValue(booking, "mode") === "in_person"
+        ? sourceCopy.upcomingWhere
+        : stringValue(booking, "calendly_meeting_url", "calendlyMeetingUrl"),
+    );
+    const lineRows = Array.from(document.querySelectorAll<HTMLElement>("[data-account-receipt-line]"));
+    const lineData = [
+      { label: serviceName(booking), note: "", when: formatDate(bookingStart(booking)), amount: formatMoney(price, currency), show: true },
+      { label: lineRows[1]?.querySelector("[data-account-receipt-line-label]")?.textContent ?? "", note: "", when: formatDate(stringValue(invoice, "issued_at")), amount: formatMoney(paid, currency), show: paid > 0 },
+      { label: lineRows[2]?.querySelector("[data-account-receipt-line-label]")?.textContent ?? "", note: "", when: "", amount: formatMoney(gift, currency), show: gift > 0 },
+      { label: lineRows[3]?.querySelector("[data-account-receipt-line-label]")?.textContent ?? "", note: lineRows[3]?.querySelector("[data-account-receipt-line-note]")?.textContent ?? "", when: formatDate(bookingEnd(booking)), amount: formatMoney(balance, currency), show: balance > 0 },
+    ];
+    lineRows.forEach((row, index) => {
+      const line = lineData[index];
+      row.hidden = !line?.show;
+      if (!line) return;
+      const label = row.querySelector<HTMLElement>("[data-account-receipt-line-label]");
+      const note = row.querySelector<HTMLElement>("[data-account-receipt-line-note]");
+      const when = row.querySelector<HTMLElement>("[data-account-receipt-line-when]");
+      const amount = row.querySelector<HTMLElement>("[data-account-receipt-line-amount]");
+      if (label) label.textContent = line.label;
+      if (note) {
+        note.textContent = line.note;
+        note.hidden = !line.note;
+      }
+      if (when) when.textContent = line.when;
+      if (amount) amount.textContent = line.amount;
+    });
+    setText("[data-account-receipt-total='total']", formatMoney(price, currency));
+    setText("[data-account-receipt-total='paid']", formatMoney(paid, currency));
+    setText("[data-account-receipt-total='balance']", formatMoney(balance, currency));
+  };
+
+  const icsEscape = (value: string) => value
+    .replaceAll("\\", "\\\\")
+    .replaceAll("\n", "\\n")
+    .replaceAll(",", "\\,")
+    .replaceAll(";", "\\;");
+  const icsDate = (value: string) => new Date(value).toISOString()
+    .replaceAll("-", "")
+    .replaceAll(":", "")
+    .replace(/\.\d{3}Z$/, "Z");
+
+  const addCalendarButton = query<HTMLButtonElement>("[data-account-add-calendar]");
+  addCalendarButton?.addEventListener("click", () => {
+    const id = addCalendarButton.dataset.bookingId;
+    const booking = rows(portal?.bookings).find((entry) => bookingId(entry) === id) ?? selectedBooking;
+    if (!booking || !bookingStart(booking) || !bookingEnd(booking)) return;
+    const identifier = stringValue(booking, "booking_number", "bookingNumber") || bookingId(booking);
+    const location = stringValue(booking, "mode") === "in_person"
+      ? sourceCopy.upcomingWhere
+      : stringValue(booking, "calendly_meeting_url", "calendlyMeetingUrl");
+    const calendar = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Vera Solaro//Sitting//EN",
+      "BEGIN:VEVENT",
+      `UID:${icsEscape(identifier)}`,
+      `DTSTAMP:${icsDate(new Date().toISOString())}`,
+      `DTSTART:${icsDate(bookingStart(booking))}`,
+      `DTEND:${icsDate(bookingEnd(booking))}`,
+      `SUMMARY:${icsEscape(serviceName(booking))}`,
+      `LOCATION:${icsEscape(location)}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    const url = URL.createObjectURL(new Blob([calendar], { type: "text/calendar;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${identifier}.ics`;
+    link.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.querySelector<HTMLElement>("[data-account-receipt-download]")?.addEventListener("click", () => {
+    window.print();
+  });
+  document.querySelector<HTMLButtonElement>("[data-account-receipt-email]")?.addEventListener("click", async (event) => {
+    if (!selectedBooking || !portal?.csrfToken) return;
+    const button = event.currentTarget as HTMLButtonElement;
+    button.disabled = true;
+    try {
+      const response = await fetch(accountEndpoint, mutationOptions({
+        action: "resend_receipt",
+        bookingId: bookingId(selectedBooking),
+      }));
+      if (!await readyData(response)) throw new Error("receipt");
+    } catch {
+      button.disabled = false;
+    }
+  });
+
+  const flattenReport = (value: unknown, output: string[] = []) => {
+    if (typeof value === "string" && value.trim()) output.push(value.trim());
+    else if (typeof value === "number" || typeof value === "boolean") output.push(String(value));
+    else if (Array.isArray(value)) value.forEach((entry) => flattenReport(entry, output));
+    else if (value && typeof value === "object") {
+      Object.values(value as VeraRow).forEach((entry) => flattenReport(entry, output));
+    }
+    return output;
+  };
+
+  const renderMessages = async (thread: VeraRow) => {
+    const mount = query<HTMLElement>("[data-account-messages-mount]");
+    mount?.replaceChildren();
+    const url = new URL(messagesEndpoint, window.location.origin);
+    url.searchParams.set("threadId", stringValue(thread, "id"));
+    const response = await fetch(url, { credentials: "same-origin" });
+    const data = await readyData(response);
+    if (!data || !mount) return false;
+    const messages = rows(data.messages);
+    for (const message of messages) {
+      const article = document.createElement("article");
+      article.className = "vera-info-card";
+      const body = document.createElement("p");
+      body.textContent = stringValue(message, "body");
+      const time = document.createElement("time");
+      time.className = "vera-card-meta";
+      time.dateTime = stringValue(message, "created_at");
+      time.textContent = formatDateTime(stringValue(message, "created_at"));
+      article.append(body, time);
+      mount.append(article);
+    }
+    return messages.some((message) => stringValue(message, "sender_role") === "customer");
+  };
+
+  const prepareRoom = (booking: VeraRow) => {
+    const assets = assetsFor(booking);
+    const room = query<HTMLElement>("[data-account-panel='room']");
+    const roomHero = room?.querySelector<HTMLElement>(".vera-page-hero");
+    const roomEyebrow = roomHero?.querySelector<HTMLElement>(".vera-eyebrow");
+    const roomTitle = roomHero?.querySelector<HTMLElement>("h1");
+    if (roomEyebrow) roomEyebrow.textContent = formatDate(bookingStart(booking));
+    if (roomTitle) roomTitle.textContent = serviceName(booking);
+
+    const filesCard = query<HTMLElement>("[data-account-files-card]");
+    const filesLedger = query<HTMLElement>("[data-account-files-ledger]");
+    const filesMount = query<HTMLElement>("[data-account-files-mount]");
+    const primaryFile = query<HTMLButtonElement>("[data-account-file-download]");
+    const recordingAudio = query<HTMLAudioElement>("[data-account-recording]");
+    const chapters = query<HTMLElement>("[data-account-recording-chapters]");
+    const recording = assets.files.find((file) => stringValue(file, "kind") === "recording") ?? null;
+    filesMount?.replaceChildren();
+    if (filesCard) filesCard.hidden = !recording;
+    if (filesLedger) filesLedger.hidden = assets.files.length === 0;
+    if (recording && primaryFile) {
+      const recordingId = stringValue(recording, "id");
+      const recordingUrl = `/api/astropages/generated-site/vera/account/files/${encodeURIComponent(recordingId)}`;
+      primaryFile.hidden = false;
+      primaryFile.dataset.fileId = recordingId;
+      if (recordingAudio) {
+        recordingAudio.src = recordingUrl;
+        recordingAudio.hidden = false;
+      }
+      if (chapters) chapters.hidden = false;
+    } else {
+      if (primaryFile) {
+        primaryFile.hidden = true;
+        delete primaryFile.dataset.fileId;
+      }
+      if (recordingAudio) {
+        recordingAudio.removeAttribute("src");
+        recordingAudio.load();
+        recordingAudio.hidden = true;
+      }
+      if (chapters) chapters.hidden = true;
+    }
+    for (const file of assets.files) {
+      const link = document.createElement("a");
+      link.className = "vera-button vera-button--paper vera-button--small";
+      link.href = `/api/astropages/generated-site/vera/account/files/${encodeURIComponent(stringValue(file, "id"))}`;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.download = stringValue(file, "file_name");
+      link.textContent = stringValue(file, "file_name");
+      filesMount?.append(link);
+    }
+
+    const reportElement = query<HTMLElement>("[data-account-report]");
+    const report = assets.reports[0];
+    const reportFile = assets.files.find((file) =>
+      stringValue(file, "kind") === "report_pdf" &&
+      (!report || stringValue(file, "report_id") === stringValue(report, "id"))
+    );
+    const reportDownload = query<HTMLAnchorElement>("[data-account-report-download]");
+    if (reportDownload) {
+      reportDownload.hidden = !reportFile;
+      if (reportFile) {
+        reportDownload.href = `/api/astropages/generated-site/vera/account/files/${encodeURIComponent(stringValue(reportFile, "id"))}`;
+        reportDownload.download = stringValue(reportFile, "file_name");
+      } else {
+        reportDownload.removeAttribute("href");
+        reportDownload.removeAttribute("download");
+      }
+    }
+    if (reportElement) reportElement.hidden = !report;
+    if (reportElement && report) {
+      const values = flattenReport(report.content);
+      const meta = reportElement.querySelector<HTMLElement>(".vera-card-meta");
+      const heading = reportElement.querySelector<HTMLElement>("h2");
+      if (meta) meta.textContent = stringValue(report, "title");
+      if (heading) heading.textContent = formatDate(stringValue(report, "publishedAt"));
+      const paragraphs = Array.from(reportElement.children)
+        .filter((element): element is HTMLParagraphElement => element instanceof HTMLParagraphElement);
+      paragraphs.forEach((paragraph, index) => {
+        paragraph.textContent = values[index] ?? "";
+        paragraph.hidden = !values[index];
+      });
+      const watch = reportElement.querySelector<HTMLElement>("aside");
+      const watchItems = Array.from(reportElement.querySelectorAll<HTMLElement>(".vera-feature-list li"));
+      watchItems.forEach((item, index) => {
+        const value = values[index + paragraphs.length];
+        item.textContent = value ?? "";
+        item.hidden = !value;
+      });
+      if (watch) watch.hidden = watchItems.every((item) => item.hidden);
+    }
+
+    const roomChart = query<HTMLElement>("[data-account-room-chart]");
+    const chartFile = assets.files.find((file) => stringValue(file, "kind") === "chart");
+    const chartFigure = roomChart?.querySelector<HTMLElement>(".vera-account-chart-full");
+    const chartDownload = roomChart?.querySelector<HTMLAnchorElement>("[data-account-chart-download]");
+    if (roomChart) {
+      roomChart.hidden = !chartFile;
+      chartFigure?.querySelector("img[data-account-runtime-chart]")?.remove();
+      if (chartFile && chartFigure) {
+        const image = document.createElement("img");
+        image.dataset.accountRuntimeChart = "";
+        image.src = `/api/astropages/generated-site/vera/account/files/${encodeURIComponent(stringValue(chartFile, "id"))}`;
+        image.alt = chartFigure.getAttribute("aria-label") || "";
+        chartFigure.prepend(image);
+        chartFigure.classList.add("vera-image--runtime");
+        chartFigure.querySelector("figcaption")?.classList.add("vera-visually-hidden");
+      } else {
+        chartFigure?.classList.remove("vera-image--runtime");
+      }
+      if (chartDownload) {
+        chartDownload.hidden = !chartFile;
+        if (chartFile) {
+          chartDownload.href = `/api/astropages/generated-site/vera/account/files/${encodeURIComponent(stringValue(chartFile, "id"))}`;
+          chartDownload.download = stringValue(chartFile, "file_name");
+        } else {
+          chartDownload.removeAttribute("href");
+          chartDownload.removeAttribute("download");
+        }
+      }
+    }
+
+    const fiveYear = query<HTMLElement>("[data-account-five-year]");
+    if (fiveYear) {
+      fiveYear.hidden = !rows(portal?.bookings).some((entry) => {
+        const start = validDate(bookingStart(entry))?.getTime() ?? 0;
+        return start > Date.now() && !["cancelled", "expired", "refunded"].includes(stringValue(entry, "status"));
+      });
+    }
+
+    const followForm = query<HTMLFormElement>("[data-follow-form]");
+    activeThread = assets.threads.find((thread) => stringValue(thread, "status") === "open") ?? null;
+    if (followForm) followForm.hidden = !activeThread;
+    if (activeThread && followForm) {
+      const status = followForm.querySelector<HTMLElement>(".vera-card-meta");
+      const success = followForm.querySelector<HTMLElement>("[data-follow-success]");
+      if (status) status.textContent = stringValue(activeThread, "subject");
+      if (success) success.hidden = true;
+      void renderMessages(activeThread).then((used) => {
+        const textarea = followForm.elements.namedItem("message");
+        const submit = followForm.querySelector<HTMLButtonElement>("button[type='submit']");
+        if (textarea instanceof HTMLTextAreaElement) textarea.disabled = used;
+        if (submit) submit.disabled = used;
+        if (success) success.hidden = !used;
+      });
+    }
+  };
+
+  const primaryFileButton = query<HTMLButtonElement>("[data-account-file-download]");
+  primaryFileButton?.addEventListener("click", () => {
+    const id = primaryFileButton.dataset.fileId;
+    if (id) window.open(
+      `/api/astropages/generated-site/vera/account/files/${encodeURIComponent(id)}`,
+      "_blank",
+      "noopener",
+    );
+  });
+
+  const chapterTimeSeconds = (value: string) => value.split(":")
+    .map((part) => Number(part))
+    .reduce((total, part) => total * 60 + (Number.isFinite(part) ? part : 0), 0);
+  document.querySelectorAll<HTMLButtonElement>("[data-account-recording-chapter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const audio = query<HTMLAudioElement>("[data-account-recording]");
+      const time = button.querySelector<HTMLElement>("span")?.textContent?.trim() ?? "";
+      if (!audio || !audio.src || !time) return;
+      audio.currentTime = chapterTimeSeconds(time);
+      void audio.play().catch(() => undefined);
+    });
+  });
+
+  const followForm = document.querySelector<HTMLFormElement>("[data-follow-form]");
+  followForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!activeThread || !portal?.csrfToken) return;
+    const textarea = followForm.elements.namedItem("message");
+    const body = textarea instanceof HTMLTextAreaElement ? textarea.value.trim() : "";
+    if (!body) return;
+    const submit = followForm.querySelector<HTMLButtonElement>("button[type='submit']");
+    if (submit) submit.disabled = true;
+    let sent = false;
+    try {
+      const response = await fetch(messagesEndpoint, mutationOptions({
+        threadId: stringValue(activeThread, "id"),
+        body,
+      }));
+      if (!await readyData(response)) throw new Error("message");
+      if (textarea instanceof HTMLTextAreaElement) textarea.value = "";
+      const success = followForm.querySelector<HTMLElement>("[data-follow-success]");
+      if (success) success.hidden = false;
+      await renderMessages(activeThread);
+      sent = true;
+      if (textarea instanceof HTMLTextAreaElement) textarea.disabled = true;
+    } catch {
+      const success = followForm.querySelector<HTMLElement>("[data-follow-success]");
+      if (success) success.hidden = true;
+    } finally {
+      if (submit) submit.disabled = sent;
+    }
+  });
+
+  const prepareAccountPanel = (panel: string) => {
+    if (!selectedBooking) return;
+    if (panel === "reschedule") void prepareReschedule(selectedBooking);
+    if (panel === "cancel") prepareCancel(selectedBooking);
+    if (panel === "receipt") prepareReceipt(selectedBooking);
+    if (panel === "room") prepareRoom(selectedBooking);
+  };
+
+  document.querySelectorAll<HTMLElement>("[data-open-account-panel]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.bookingId;
+      if (id) {
+        selectedBooking = rows(portal?.bookings).find((booking) => bookingId(booking) === id) ?? selectedBooking;
+      }
+      const panel = button.dataset.openAccountPanel ?? "overview";
+      showAccountPanel(panel);
+      prepareAccountPanel(panel);
+    });
+  });
+
+  const loadAccount = async () => {
+    try {
+      const [accountResponse, catalogResponse] = await Promise.all([
+        fetch(accountEndpoint, { credentials: "same-origin" }),
+        fetch(catalogEndpoint, { credentials: "same-origin" }),
+      ]);
+      if (accountResponse.status === 401) {
+        window.location.replace("/login?next=%2Faccount");
+        return;
+      }
+      let [accountData, catalogData] = await Promise.all([
+        readyData(accountResponse),
+        readyData(catalogResponse),
+      ]);
+      if (!accountData) return;
+      portal = accountData as VeraPortal;
+      catalog = catalogData ?? {};
+      if (requestedBookingId && manageToken) {
+        let claimed = rows(portal.bookings).some((booking) => bookingId(booking) === requestedBookingId);
+        if (!claimed && portal.csrfToken) {
+          const claimResponse = await fetch(accountEndpoint, mutationOptions({
+            action: "claim_booking",
+            bookingId: requestedBookingId,
+            manageToken,
+          }));
+          if (await readyData(claimResponse)) {
+            const refreshed = await readyData(await fetch(accountEndpoint, { credentials: "same-origin" }));
+            if (refreshed) {
+              accountData = refreshed;
+              portal = refreshed as VeraPortal;
+              claimed = rows(portal.bookings).some((booking) => bookingId(booking) === requestedBookingId);
+            }
+          }
+        }
+        if (claimed) {
+          try {
+            sessionStorage.removeItem(accessStorageKey);
+          } catch {
+            // The opaque capability expires even when storage cannot be cleared.
+          }
+        }
+      }
+      rows(catalogData?.services).forEach((service) => {
+        serviceBySlug.set(stringValue(service, "slug"), service);
+      });
+      renderOverview();
+      if (accountLoading) accountLoading.hidden = true;
+      const requestedPanel = window.location.hash.replace(/^#/, "");
+      const initialPanel = accountPanelNames.has(requestedPanel) ? requestedPanel : "overview";
+      if (requestedPanel && !accountPanelNames.has(requestedPanel)) {
+        window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+      }
+      showAccountPanel(initialPanel, false);
+      prepareAccountPanel(initialPanel);
+      document.dispatchEvent(new CustomEvent("astropages:account-ready"));
+    } catch {
+      // Keep the source loading state visible; no raw backend copy is exposed.
+    }
+  };
+
+  void loadAccount();
+</script>

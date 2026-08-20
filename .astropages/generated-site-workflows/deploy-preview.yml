@@ -1,0 +1,338 @@
+name: Deploy Preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      preview_deployment_id:
+        required: true
+        description: Control-plane preview deployment id.
+        type: string
+      project_id:
+        required: true
+        description: Control-plane project id.
+        type: string
+      project_version_id:
+        required: true
+        description: Control-plane project version id.
+        type: string
+      project_branch_id:
+        required: true
+        description: Control-plane project branch id.
+        type: string
+      commit_sha:
+        required: true
+        description: Exact commit SHA to deploy.
+        type: string
+      verification_profile:
+        required: false
+        description: Verification profile for this preview deployment.
+        type: choice
+        default: code_change_strict
+        options:
+          - initial_seed_fast
+          - code_change_strict
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: astropages-preview-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-preview:
+    name: Deploy preview Worker
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_DEV_WORKERS_SUBDOMAIN: ${{ secrets.CLOUDFLARE_DEV_WORKERS_SUBDOMAIN }}
+      EMDASH_ENCRYPTION_KEY: ${{ secrets.EMDASH_ENCRYPTION_KEY }}
+      ASTROPAGES_PROJECT_ID: ${{ inputs.project_id }}
+      ASTROPAGES_SSO_PUBLIC_JWK: ${{ vars.ASTROPAGES_SSO_PUBLIC_JWK }}
+      CLOUDFLARE_SECRETS_STORE_ID: ${{ secrets.CLOUDFLARE_SECRETS_STORE_ID || vars.CLOUDFLARE_SECRETS_STORE_ID }}
+      GH_REPOSITORY_VARIABLES_TOKEN: ${{ secrets.GH_REPOSITORY_VARIABLES_TOKEN }}
+      ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN: ${{ secrets.ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN }}
+      ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL: ${{ secrets.ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL }}
+      PREVIEW_SITE_D1_DATABASE_ID: ${{ vars.PREVIEW_SITE_D1_DATABASE_ID }}
+      PREVIEW_SITE_SESSION_KV_NAMESPACE_ID: ${{ vars.PREVIEW_SITE_SESSION_KV_NAMESPACE_ID }}
+      PREVIEW_SITE_URL: ${{ vars.PREVIEW_SITE_URL }}
+      ASTROPAGES_DEPLOY_STAGE: starting
+    steps:
+      - name: Prepare control-plane callback
+        run: |
+          set -euo pipefail
+          if [ -z "${ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL:-}" ]; then
+            echo "ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL is required." >&2
+            exit 1
+          fi
+          case "${ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL}" in
+            http://*|https://*) ;;
+            *) echo "ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL must be an http(s) URL." >&2; exit 1 ;;
+          esac
+          callback_base="${ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL%/}"
+          echo "ASTROPAGES_CONTROL_PLANE_CALLBACK_URL=${callback_base}/callback/preview-deployments/${{ inputs.preview_deployment_id }}/status" >> "$GITHUB_ENV"
+
+      - name: Notify preview building
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/preview-status-building.json" <<JSON
+          {
+            "status": "building",
+            "workflowRunId": "${{ github.run_id }}",
+            "commitSha": "${{ inputs.commit_sha }}",
+            "evidence": {
+              "workflowRunUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "githubRepository": "${{ github.repository }}",
+              "githubRef": "${{ github.ref_name }}",
+              "previewDeploymentId": "${{ inputs.preview_deployment_id }}",
+              "projectId": "${{ inputs.project_id }}",
+              "projectVersionId": "${{ inputs.project_version_id }}",
+              "projectBranchId": "${{ inputs.project_branch_id }}",
+              "verificationProfile": "${{ inputs.verification_profile }}"
+            }
+          }
+          JSON
+          curl -sS --fail --max-time 60 \
+            -X POST "${ASTROPAGES_CONTROL_PLANE_CALLBACK_URL}" \
+            -H "Authorization: Bearer ${ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data @"$RUNNER_TEMP/preview-status-building.json"
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit_sha }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Report pnpm store path
+        run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=dependency_setup" >> "$GITHUB_ENV"
+          pnpm store path
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          echo "ASTROPAGES_DEPLOY_STAGE=dependency_install" >> "$GITHUB_ENV"
+          started_at="$(date +%s)"
+          pnpm install --frozen-lockfile
+          echo "Dependency install completed in $(($(date +%s) - started_at))s" >> "$GITHUB_STEP_SUMMARY"
+      - if: ${{ inputs.verification_profile != 'initial_seed_fast' }}
+        run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=test" >> "$GITHUB_ENV"
+          pnpm run test
+      - if: ${{ inputs.verification_profile != 'initial_seed_fast' }}
+        run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=safety_scan" >> "$GITHUB_ENV"
+          pnpm run scan:safety
+      - if: ${{ inputs.verification_profile != 'initial_seed_fast' }}
+        run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=d1_schema_check" >> "$GITHUB_ENV"
+          pnpm run d1:schema:check
+      - if: ${{ inputs.verification_profile != 'initial_seed_fast' }}
+        run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=typecheck" >> "$GITHUB_ENV"
+          pnpm run typecheck
+      - name: Build site
+        run: |
+          set -euo pipefail
+          echo "ASTROPAGES_DEPLOY_STAGE=build" >> "$GITHUB_ENV"
+          started_at="$(date +%s)"
+          pnpm run build
+          echo "Build completed in $(($(date +%s) - started_at))s" >> "$GITHUB_STEP_SUMMARY"
+      - name: Check provisioned Cloudflare resource IDs
+        id: provisioned_resources
+        run: |
+          set -euo pipefail
+          echo "ASTROPAGES_DEPLOY_STAGE=resource_variable_validation" >> "$GITHUB_ENV"
+          started_at="$(date +%s)"
+          missing=0
+          for name in PREVIEW_SITE_D1_DATABASE_ID PREVIEW_SITE_SESSION_KV_NAMESPACE_ID PREVIEW_SITE_URL; do
+            value="${!name-}"
+            if [ -z "$value" ]; then
+              echo "$name is missing; Cloudflare resource repair will run." >&2
+              missing=1
+            fi
+          done
+          if [ "$missing" -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Preview resource variables were precreated by AstroPages." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Preview resource variables were missing; repair fallback will run." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "Resource variable validation completed in $(($(date +%s) - started_at))s" >> "$GITHUB_STEP_SUMMARY"
+      - name: Ensure Cloudflare resources
+        run: |
+          set -euo pipefail
+          echo "ASTROPAGES_DEPLOY_STAGE=resource_repair" >> "$GITHUB_ENV"
+          started_at="$(date +%s)"
+          node scripts/ensure-cloudflare-resources.mjs preview
+          echo "Cloudflare resource repair completed in $(($(date +%s) - started_at))s" >> "$GITHUB_STEP_SUMMARY"
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=render_wrangler_config" >> "$GITHUB_ENV"
+          node scripts/render-wrangler-config.mjs preview
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=write_worker_secrets" >> "$GITHUB_ENV"
+          node scripts/write-worker-secrets-file.mjs
+      - name: Apply D1 migrations
+        run: |
+          set -euo pipefail
+          echo "ASTROPAGES_DEPLOY_STAGE=d1_migrations" >> "$GITHUB_ENV"
+          started_at="$(date +%s)"
+          pnpm exec wrangler d1 migrations apply aspt-verdigris-vera-solaro-preview-site --env preview --remote --config .wrangler/generated/wrangler.preview.jsonc
+          echo "D1 migrations completed in $(($(date +%s) - started_at))s" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify D1 EmDash schema
+        run: |
+          set -euo pipefail
+          echo "ASTROPAGES_DEPLOY_STAGE=emdash_d1_schema_check" >> "$GITHUB_ENV"
+          started_at="$(date +%s)"
+          pnpm exec wrangler d1 execute aspt-verdigris-vera-solaro-preview-site --env preview --remote --config .wrangler/generated/wrangler.preview.jsonc --command "SELECT disabled FROM users LIMIT 0;"
+          pnpm exec wrangler d1 execute aspt-verdigris-vera-solaro-preview-site --env preview --remote --config .wrangler/generated/wrangler.preview.jsonc --command "SELECT name FROM _emdash_migrations WHERE name = '009_user_disabled';"
+          echo "EmDash D1 schema verified in $(($(date +%s) - started_at))s" >> "$GITHUB_STEP_SUMMARY"
+      - name: Deploy Worker
+        run: |
+          set -euo pipefail
+          echo "ASTROPAGES_DEPLOY_STAGE=worker_deploy" >> "$GITHUB_ENV"
+          started_at="$(date +%s)"
+          pnpm exec wrangler deploy --env preview --config .wrangler/generated/wrangler.preview.jsonc --secrets-file "$RUNNER_TEMP/aspt-verdigris-vera-solaro-worker-secrets.json"
+          echo "Worker deploy completed in $(($(date +%s) - started_at))s" >> "$GITHUB_STEP_SUMMARY"
+      - name: Prepare deployed EmDash
+        run: |
+          set -euo pipefail
+          echo "ASTROPAGES_DEPLOY_STAGE=prepare_deployed_emdash" >> "$GITHUB_ENV"
+          started_at="$(date +%s)"
+          node scripts/prepare-deployed-emdash.mjs preview
+          echo "Deployed EmDash preparation completed in $(($(date +%s) - started_at))s" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify EmDash schema bootstrap
+        run: |
+          set -euo pipefail
+          echo "ASTROPAGES_DEPLOY_STAGE=emdash_schema_bootstrap" >> "$GITHUB_ENV"
+          started_at="$(date +%s)"
+          deadline=$((SECONDS + 90))
+          last_status=""
+          while [ "$SECONDS" -le "$deadline" ]; do
+            health_status="$(curl -sS --max-time 15 -o /dev/null -w '%{http_code}' "${PREVIEW_SITE_URL}/api/astropages/generated-site/health" || true)"
+            last_status="$health_status"
+            if [ "$health_status" = "200" ]; then
+              echo "Worker health route is ready."
+              echo "EmDash schema bootstrap verified in $(($(date +%s) - started_at))s" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Worker health returned ${health_status}, expected 200; retrying..." >&2
+            sleep 5
+          done
+          echo "Worker health returned ${last_status}, expected 200" >&2
+          exit 1
+      - name: Smoke preview routes
+        run: |
+          set -euo pipefail
+          echo "ASTROPAGES_DEPLOY_STAGE=smoke_checks" >> "$GITHUB_ENV"
+          started_at="$(date +%s)"
+          smoke() {
+            path="$1"
+            expected="$2"
+            deadline=$((SECONDS + 180))
+            last_status=""
+            while [ "$SECONDS" -le "$deadline" ]; do
+              status="$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' "${PREVIEW_SITE_URL}${path}" || true)"
+              last_status="$status"
+              case ",${expected}," in
+                *,"${status}",*) echo "${path} -> ${status}"; return 0 ;;
+              esac
+              echo "${path} returned ${status}, expected ${expected}; retrying..." >&2
+              sleep 5
+            done
+            echo "${path} returned ${last_status}, expected ${expected}" >&2
+            exit 1
+          }
+          smoke "/api/astropages/generated-site/health" "200"
+          smoke "/api/astropages/generated-site/edit-readiness" "200"
+          verify_vera_readiness() {
+            path="/api/astropages/generated-site/vera/operations"
+            response_path="$RUNNER_TEMP/vera-preview-readiness.json"
+            deadline=$((SECONDS + 180))
+            last_status=""
+            while [ "$SECONDS" -le "$deadline" ]; do
+              status="$(curl -sS --max-time 30 -o "$response_path" -w '%{http_code}' \
+                -H "Authorization: Bearer ${ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN}" \
+                "${PREVIEW_SITE_URL}${path}" || true)"
+              last_status="$status"
+              if [ "$status" = "200" ] && node -e '
+                const fs = require("node:fs");
+                const body = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+                if (body.status !== "ready" || body.state !== "ready" || body.data?.ready !== true) process.exit(1);
+              ' "$response_path"; then
+                echo "${path} -> 200 (Vera providers and runtime ready)"
+                return 0
+              fi
+              echo "${path} returned ${status} without a ready Vera runtime; retrying..." >&2
+              sleep 5
+            done
+            echo "${path} returned ${last_status}; refusing to report preview ready while Vera provider/runtime configuration is incomplete" >&2
+            exit 1
+          }
+          verify_vera_readiness
+          echo "Smoke checks completed in $(($(date +%s) - started_at))s" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify preview ready
+        if: success()
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/preview-status-ready.json" <<JSON
+          {
+            "status": "ready",
+            "previewUrl": "${PREVIEW_SITE_URL}",
+            "workflowRunId": "${{ github.run_id }}",
+            "commitSha": "${{ inputs.commit_sha }}",
+            "evidence": {
+              "workflowRunUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "githubRepository": "${{ github.repository }}",
+              "githubRef": "${{ github.ref_name }}",
+              "previewDeploymentId": "${{ inputs.preview_deployment_id }}",
+              "projectId": "${{ inputs.project_id }}",
+              "projectVersionId": "${{ inputs.project_version_id }}",
+              "projectBranchId": "${{ inputs.project_branch_id }}",
+              "verificationProfile": "${{ inputs.verification_profile }}"
+            }
+          }
+          JSON
+          curl -sS --fail --max-time 60 \
+            -X POST "${ASTROPAGES_CONTROL_PLANE_CALLBACK_URL}" \
+            -H "Authorization: Bearer ${ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data @"$RUNNER_TEMP/preview-status-ready.json"
+
+      - name: Notify preview failed
+        if: failure()
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/preview-status-failed.json" <<JSON
+          {
+            "status": "failed",
+            "workflowRunId": "${{ github.run_id }}",
+            "commitSha": "${{ inputs.commit_sha }}",
+            "evidence": {
+              "workflowRunUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "githubRepository": "${{ github.repository }}",
+              "githubRef": "${{ github.ref_name }}",
+              "previewDeploymentId": "${{ inputs.preview_deployment_id }}",
+              "projectId": "${{ inputs.project_id }}",
+              "projectVersionId": "${{ inputs.project_version_id }}",
+              "projectBranchId": "${{ inputs.project_branch_id }}",
+              "verificationProfile": "${{ inputs.verification_profile }}",
+              "failureStage": "${ASTROPAGES_DEPLOY_STAGE:-unknown}"
+            }
+          }
+          JSON
+          curl -sS --fail --max-time 60 \
+            -X POST "${ASTROPAGES_CONTROL_PLANE_CALLBACK_URL}" \
+            -H "Authorization: Bearer ${ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data @"$RUNNER_TEMP/preview-status-failed.json"

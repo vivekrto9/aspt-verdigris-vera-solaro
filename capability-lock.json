@@ -1,0 +1,41 @@
+{
+  "lockVersion": "0.3.0",
+  "capabilityRepo": {
+    "url": "git@github.com:VedicRishiAstro/astropages-capabilities.git",
+    "commitSha": "RESOLVED_AT_TEMPLATE_REGISTRATION"
+  },
+  "capabilities": [
+    {
+      "capabilityKey": "content-seo-localization",
+      "displayName": "Content, SEO & Localization",
+      "version": "0.3.0",
+      "registryVersionId": "capability-content-seo-localization@0.3.0",
+      "stage": "published",
+      "summary": "EmDash-backed public copy, localized defaults, SEO metadata editing, content snapshots, and Builder MCP support."
+    },
+    {
+      "capabilityKey": "generated-site-operations",
+      "displayName": "Generated Site Operations",
+      "version": "0.3.0",
+      "registryVersionId": "capability-generated-site-operations@0.3.0",
+      "stage": "published",
+      "summary": "Official EmDash Astro Cloudflare runtime, generated-site SSO, deployment callbacks, edit readiness, runtime config, and safe secret boundaries."
+    },
+    {
+      "capabilityKey": "customer-auth",
+      "displayName": "Customer Auth",
+      "version": "0.1.0",
+      "registryVersionId": "capability-customer-auth@0.1.0",
+      "stage": "starter",
+      "summary": "Neutral starter customer account, session, and password reset primitives for templates that need visitor accounts."
+    },
+    {
+      "capabilityKey": "transactional-notifications",
+      "displayName": "Transactional Notifications",
+      "version": "0.3.0",
+      "registryVersionId": "capability-transactional-notifications@0.3.0",
+      "stage": "published",
+      "summary": "Project-D1 email template management, safe variable mappings, rendering, and SES test delivery."
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+---
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import VeraFrame from "../components/vera/VeraFrame.astro";
+import VeraImage from "../components/vera/VeraImage.astro";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "closed");
+const { content, builderEdit } = page;
+---
+
+<VeraFrame {...page} currentPath="/closed">
+  <section class="vera-closed-page">
+    <div>
+      <p class="vera-status-pill" {...builderEdit("closed_kicker") }>
+        <span aria-hidden="true">✷</span>{content.closed_kicker}
+      </p>
+      <h1 class="vera-display" {...builderEdit("closed_title")}>{content.closed_title}</h1>
+      <p class="vera-lede" {...builderEdit("closed_intro")}>{content.closed_intro}</p>
+
+      <dl class="vera-closed-facts">
+        {[1, 2, 3].map((index) => (
+          <div>
+            <dt {...builderEdit(`fact_${index}_value`)}>{content[`fact_${index}_value`]}</dt>
+            <dd {...builderEdit(`fact_${index}_label`)}>{content[`fact_${index}_label`]}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <section class="vera-closed-works">
+        <h2 {...builderEdit("works_title")}>{content.works_title}</h2>
+        <div>
+          {[1, 2, 3, 4].map((index) => (
+            <article>
+              <div>
+                <h3 {...builderEdit(`work_${index}_title`)}>{content[`work_${index}_title`]}</h3>
+                <p {...builderEdit(`work_${index}_body`)}>{content[`work_${index}_body`]}</p>
+              </div>
+              <span {...builderEdit(`work_${index}_status`)}>{content[`work_${index}_status`]}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+
+    <aside class="vera-closed-rail">
+      <div class="vera-sidebar-card vera-sidebar-card--dark">
+        <div class="vera-card-meta" {...builderEdit("return_label")}>{content.return_label}</div>
+        <h2 {...builderEdit("return_title")}>{content.return_title}</h2>
+        <p {...builderEdit("return_body")}>{content.return_body}</p>
+        <a class="vera-button vera-button--mustard" href="/booking" {...builderEdit("return_cta") }>
+          {content.return_cta}
+        </a>
+        <div class="vera-card-meta" {...builderEdit("return_note")}>{content.return_note}</div>
+      </div>
+      <VeraImage alt={content.photo_alt} altField="photo_alt" edit={builderEdit} class="vera-closed-photo" />
+      <div class="vera-closed-booked">
+        <strong {...builderEdit("booked_title")}>{content.booked_title}</strong>{" "}
+        <span {...builderEdit("booked_note")}>{content.booked_note}</span>
+      </div>
+    </aside>
+  </section>
+</VeraFrame>

@@ -1,0 +1,13 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Vera Solaro</title>
+  <desc id="desc">Vera Solaro astrology wheel icon.</desc>
+  <circle cx="32" cy="32" r="30" fill="#082b22" stroke="#0b3026" stroke-width="3"/>
+  <circle cx="32" cy="32" r="25" stroke="#6fb89f" stroke-width="2"/>
+  <g stroke="#3e8c77" stroke-width="3" stroke-linecap="round">
+    <path d="M32 8V18"/><path d="M32 46V56"/><path d="M8 32H18"/><path d="M46 32H56"/>
+    <path d="M15 15L22 22"/><path d="M42 42L49 49"/><path d="M49 15L42 22"/><path d="M22 42L15 49"/>
+  </g>
+  <circle cx="32" cy="32" r="14" fill="#e6ebdf" stroke="#9d2c60" stroke-width="2"/>
+  <circle cx="32" cy="32" r="9" fill="#7fcbb1" stroke="#0b3026" stroke-width="2"/>
+  <path d="M32 25.5L33.8 30.2L38.5 32L33.8 33.8L32 38.5L30.2 33.8L25.5 32L30.2 30.2L32 25.5Z" fill="#082b22"/>
+</svg>

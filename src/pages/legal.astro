@@ -1,0 +1,87 @@
+---
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import VeraFrame from "../components/vera/VeraFrame.astro";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "legal");
+const { content, builderEdit, chromeEdit } = page;
+const sections = [
+  { index: 1, paragraphs: 3 },
+  { index: 2, paragraphs: 3 },
+  { index: 3, paragraphs: 2 },
+  { index: 4, paragraphs: 2 },
+  { index: 5, paragraphs: 2 },
+];
+---
+
+<VeraFrame {...page} currentPath="/legal">
+  <section class="vera-page-hero">
+    <p class="vera-eyebrow" {...builderEdit("legal_eyebrow")}>{content.legal_eyebrow}</p>
+    <h1 class="vera-display" {...builderEdit("legal_title")}>{content.legal_title}</h1>
+    <p class="vera-lede" {...builderEdit("legal_intro")}>{content.legal_intro}</p>
+  </section>
+
+  <section class="vera-section vera-section--paper vera-legal-layout">
+    <nav class="vera-legal-nav" aria-label={content.legal_title}>
+      <a href="#disclaimer" aria-current="location" {...builderEdit("disclaimer_title")}>
+        {content.disclaimer_title}
+      </a>
+      {sections.map((section) => (
+        <a href={`#legal-${section.index}`} {...builderEdit(`section_${section.index}_title`)}>
+          {content[`section_${section.index}_title`]}
+        </a>
+      ))}
+    </nav>
+
+    <article class="vera-prose">
+      <section class="vera-sidebar-card vera-sidebar-card--dark" id="disclaimer">
+        <div class="vera-card-meta" style="color: var(--vera-mustard)" {...builderEdit("disclaimer_tag")}>
+          {content.disclaimer_tag}
+        </div>
+        <h2 style="color: var(--vera-mustard); font-size: 36px; margin-top: 10px" {...builderEdit("disclaimer_title")}>
+          {content.disclaimer_title}
+        </h2>
+        <p style="font-size: 17px" {...builderEdit("disclaimer_intro")}>{content.disclaimer_intro}</p>
+        <ul class="vera-feature-list" style="border-color: #7a4a5e">
+          {[1, 2, 3, 4, 5, 6].map((index) => (
+            <li {...builderEdit(`disclaimer_${index}`)}>{content[`disclaimer_${index}`]}</li>
+          ))}
+        </ul>
+        <p {...builderEdit("disclaimer_outro")}>{content.disclaimer_outro}</p>
+      </section>
+
+      {sections.map((section) => (
+        <section class="vera-legal-section" id={`legal-${section.index}`}>
+          <div class="vera-eyebrow" {...builderEdit(`section_${section.index}_tag`)}>
+            {content[`section_${section.index}_tag`]}
+          </div>
+          <h2 {...builderEdit(`section_${section.index}_title`)}>
+            {content[`section_${section.index}_title`]}
+          </h2>
+          {Array.from({ length: section.paragraphs }, (_, offset) => offset + 1).map((paragraph) => (
+            <p {...builderEdit(`section_${section.index}_p${paragraph}`)}>
+              {content[`section_${section.index}_p${paragraph}`]}
+            </p>
+          ))}
+          {section.index === 5 ? (
+            <button class="vera-button vera-button--paper vera-button--small" type="button" data-analytics-withdraw {...chromeEdit("analytics_consent_decline")}>
+              {content.analytics_consent_decline}
+            </button>
+          ) : null}
+        </section>
+      ))}
+
+      <aside class="vera-info-card">
+        <p {...builderEdit("legal_contact")}>{content.legal_contact}</p>
+      </aside>
+    </article>
+
+  </section>
+</VeraFrame>
+
+<script>
+  document.querySelector<HTMLElement>("[data-analytics-withdraw]")?.addEventListener("click", () => {
+    window.astroPagesAnalytics?.withdraw();
+  });
+</script>

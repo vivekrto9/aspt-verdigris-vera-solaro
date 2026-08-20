@@ -1,0 +1,72 @@
+---
+type Edit = (field: string) => Record<string, unknown>;
+
+const {
+  src,
+  alt,
+  altField,
+  edit,
+  shape = "rect",
+  eager = false,
+  class: className = "",
+} = Astro.props as {
+  src?: string | null;
+  alt: string;
+  altField?: string;
+  edit?: Edit;
+  shape?: "rect" | "circle";
+  eager?: boolean;
+  class?: string;
+};
+
+const editAttrs = altField && edit ? edit(altField) : {};
+---
+
+{
+  src ? (
+    <figure class:list={["vera-image", "vera-image--pending", `vera-image--${shape}`, className]}>
+      <img
+        data-vera-image
+        src={src}
+        alt={alt}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+        fetchpriority={eager ? "high" : "auto"}
+      />
+      <span class="vera-image__fallback" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="3" y="4" width="18" height="16" rx="1.5"></rect>
+          <circle cx="8.5" cy="9" r="1.5"></circle>
+          <path d="m5 18 5-5 3 3 2-2 4 4"></path>
+        </svg>
+        <span>{alt}</span>
+      </span>
+      <figcaption class="vera-visually-hidden" {...editAttrs}>{alt}</figcaption>
+    </figure>
+  ) : (
+    <figure
+      class:list={["vera-image", "vera-image--placeholder", `vera-image--${shape}`, className]}
+      role="img"
+      aria-label={alt}
+    >
+      <span aria-hidden="true">✷</span>
+      <figcaption {...editAttrs}>{alt}</figcaption>
+    </figure>
+  )
+}
+
+<script>
+  const syncVeraImage = (image: HTMLImageElement) => {
+    const figure = image.closest(".vera-image");
+    if (!figure) return;
+    const settled = image.complete;
+    figure.classList.toggle("vera-image--pending", !settled);
+    figure.classList.toggle("vera-image--missing", settled && image.naturalWidth === 0);
+  };
+
+  document.querySelectorAll<HTMLImageElement>("[data-vera-image]").forEach((image) => {
+    syncVeraImage(image);
+    image.addEventListener("load", () => syncVeraImage(image));
+    image.addEventListener("error", () => syncVeraImage(image));
+  });
+</script>

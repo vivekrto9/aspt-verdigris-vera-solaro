@@ -1,0 +1,34 @@
+---
+type Edit = (field: string) => Record<string, unknown>;
+
+const { content, edit } = Astro.props as {
+  content: Record<string, string>;
+  edit: Edit;
+};
+
+const signs = ["♈︎", "♉︎", "♊︎", "♋︎", "♌︎", "♍︎", "♎︎", "♏︎", "♐︎", "♑︎", "♒︎", "♓︎"];
+const wheelTitleWords = String(content.wheel_title ?? "").trim().split(/\s+/).filter(Boolean);
+const wheelTitleLineOne = wheelTitleWords.slice(0, 2).join(" ");
+const wheelTitleLineTwo = wheelTitleWords.slice(2).join(" ");
+---
+
+<div class="vera-wheel" aria-hidden="true">
+  <div class="vera-wheel__outer"></div>
+  <div class="vera-wheel__ring"></div>
+  <div class="vera-wheel__rays"></div>
+  <div class="vera-wheel__inner"></div>
+  <div class="vera-wheel__core">
+    <span {...edit("wheel_eyebrow")}>{content.wheel_eyebrow}</span>
+    <span class="vera-wheel__title" {...edit("wheel_title")}>
+      {wheelTitleLineOne}{wheelTitleLineTwo && <><br />{wheelTitleLineTwo}</>}
+    </span>
+    <span {...edit("wheel_note")}>{content.wheel_note}</span>
+  </div>
+  <div class="vera-wheel__signs">
+    {signs.map((sign, index) => (
+      <span class="vera-wheel__sign" style={`--sign-index:${index}`}>
+        <span>{sign}</span>
+      </span>
+    ))}
+  </div>
+</div>

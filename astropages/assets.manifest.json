@@ -1,0 +1,149 @@
+{
+  "contractVersion": 1,
+  "seedRoot": "astropages/assets",
+  "assets": [
+    {
+      "seedKey": "about-vera-portrait.jpg",
+      "source": "about-vera-portrait.jpg",
+      "alias": "about-vera-portrait",
+      "displayName": "About Vera Portrait",
+      "mimeType": "image/jpeg",
+      "contentHash": "sha256:1e537e8013c770d8acaacdee62d25b0c401f337f6ede1bfe525dc72b02b34d36",
+      "visibility": "customer",
+      "protected": true,
+      "replaceable": true
+    },
+    {
+      "seedKey": "blog-drawn-by-hand.svg",
+      "source": "blog-drawn-by-hand.svg",
+      "alias": "blog-drawn-by-hand",
+      "displayName": "Blog Drawn By Hand",
+      "mimeType": "image/svg+xml",
+      "contentHash": "sha256:b6e293da653441aa99215b8de6dfe8be12770d8140b345bdb3a17b730a1bd6dd",
+      "visibility": "customer",
+      "protected": true,
+      "replaceable": true
+    },
+    {
+      "seedKey": "blog-ephemeris-desk.svg",
+      "source": "blog-ephemeris-desk.svg",
+      "alias": "blog-ephemeris-desk",
+      "displayName": "Blog Ephemeris Desk",
+      "mimeType": "image/svg+xml",
+      "contentHash": "sha256:34195d02071e27cb5a49c6a85a0bb837088811bfa016a361445201f563933529",
+      "visibility": "customer",
+      "protected": true,
+      "replaceable": true
+    },
+    {
+      "seedKey": "blog-night-sky.svg",
+      "source": "blog-night-sky.svg",
+      "alias": "blog-night-sky",
+      "displayName": "Blog Night Sky",
+      "mimeType": "image/svg+xml",
+      "contentHash": "sha256:7393c7637e4512253d45d7ff97186b3e1bb3c29b2a2b8405057b920b4ffaa670",
+      "visibility": "customer",
+      "protected": true,
+      "replaceable": true
+    },
+    {
+      "seedKey": "blog-retrograde-loop.svg",
+      "source": "blog-retrograde-loop.svg",
+      "alias": "blog-retrograde-loop",
+      "displayName": "Blog Retrograde Loop",
+      "mimeType": "image/svg+xml",
+      "contentHash": "sha256:7892ce38dcdb8cbc1112b35ce5bad5bd26d2b02e6023ae7b96cdcc5899e46726",
+      "visibility": "customer",
+      "protected": true,
+      "replaceable": true
+    },
+    {
+      "seedKey": "blog-saturn-transit.svg",
+      "source": "blog-saturn-transit.svg",
+      "alias": "blog-saturn-transit",
+      "displayName": "Blog Saturn Transit",
+      "mimeType": "image/svg+xml",
+      "contentHash": "sha256:5976a5afa2b3c8c5cbef4bdd116009a6d0c7a02fd6a95f840a503a15c1eafd0a",
+      "visibility": "customer",
+      "protected": true,
+      "replaceable": true
+    },
+    {
+      "seedKey": "blog-zodiac-wheel.svg",
+      "source": "blog-zodiac-wheel.svg",
+      "alias": "blog-zodiac-wheel",
+      "displayName": "Blog Zodiac Wheel",
+      "mimeType": "image/svg+xml",
+      "contentHash": "sha256:854465ef0fa2f891c6e0c421b05c4e751486f7af4cda9e31da3726b3dbe07f66",
+      "visibility": "customer",
+      "protected": true,
+      "replaceable": true
+    },
+    {
+      "seedKey": "brass-protractor.webp",
+      "source": "brass-protractor.webp",
+      "alias": "brass-protractor",
+      "displayName": "Brass Protractor",
+      "mimeType": "image/webp",
+      "contentHash": "sha256:de9af6ec01e12130565ca5674996450eb8eb039f7ad03ff18f1cd20a3a38cd94",
+      "visibility": "customer",
+      "protected": true,
+      "replaceable": true
+    },
+    {
+      "seedKey": "ephemeris-pages.webp",
+      "source": "ephemeris-pages.webp",
+      "alias": "ephemeris-pages",
+      "displayName": "Ephemeris Pages",
+      "mimeType": "image/webp",
+      "contentHash": "sha256:ebacf116c671487b9815eda4f8222426ed07b758288c185c9c6d1e6b96390387",
+      "visibility": "customer",
+      "protected": true,
+      "replaceable": true
+    },
+    {
+      "seedKey": "favicon.svg",
+      "source": "favicon.svg",
+      "alias": "favicon",
+      "displayName": "Favicon",
+      "mimeType": "image/svg+xml",
+      "contentHash": "sha256:e68f2e38b0b7070d0b07b3b193d9c6452133268d82d2345786645a1344204227",
+      "visibility": "customer",
+      "protected": true,
+      "replaceable": true
+    },
+    {
+      "seedKey": "logo.svg",
+      "source": "logo.svg",
+      "alias": "logo",
+      "displayName": "Logo",
+      "mimeType": "image/svg+xml",
+      "contentHash": "sha256:741cc403f4ac8f89f86cb1605657a91e630a95439358fc885849e433ab4a713f",
+      "visibility": "customer",
+      "protected": true,
+      "replaceable": true
+    },
+    {
+      "seedKey": "night-sky.webp",
+      "source": "night-sky.webp",
+      "alias": "night-sky",
+      "displayName": "Night Sky",
+      "mimeType": "image/webp",
+      "contentHash": "sha256:bb712472e0a5bc9c59ec87fd44547400866b034b912d57307a2d2e113f2c26e6",
+      "visibility": "customer",
+      "protected": true,
+      "replaceable": true
+    },
+    {
+      "seedKey": "vera-portrait.webp",
+      "source": "vera-portrait.webp",
+      "alias": "vera-portrait",
+      "displayName": "Vera Portrait",
+      "mimeType": "image/webp",
+      "contentHash": "sha256:8488cc8f617dfa29a8278578c13d7295921ef43291a0386104f318c6eb3320eb",
+      "visibility": "customer",
+      "protected": true,
+      "replaceable": true
+    }
+  ]
+}

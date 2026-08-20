@@ -1,0 +1,123 @@
+---
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import VeraFrame from "../components/vera/VeraFrame.astro";
+import { buildFaqJsonLd } from "../server/generated-site/seo.ts";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "questions");
+const { content, builderEdit } = page;
+const groups = [
+  { index: 1, start: 1, end: 5 },
+  { index: 2, start: 6, end: 10 },
+  { index: 3, start: 11, end: 15 },
+  { index: 4, start: 16, end: 19 },
+  { index: 5, start: 20, end: 24 },
+];
+const jsonLd = [
+  buildFaqJsonLd(
+    Array.from({ length: 24 }, (_, offset) => offset + 1).map((index) => ({
+      question: content[`faq_${index}_q`],
+      answer: content[`faq_${index}_a`],
+    })),
+  ),
+].filter(Boolean) as Array<Record<string, unknown>>;
+---
+
+<VeraFrame {...page} currentPath="/questions" jsonLd={jsonLd}>
+  <section class="vera-page-hero vera-faq-hero">
+    <div>
+      <p class="vera-eyebrow" {...builderEdit("faq_eyebrow")}>{content.faq_eyebrow}</p>
+      <h1 class="vera-display" {...builderEdit("faq_title")}>{content.faq_title}</h1>
+    </div>
+    <p class="vera-lede" {...builderEdit("faq_intro")}>{content.faq_intro}</p>
+  </section>
+
+  <section class="vera-section vera-section--paper vera-faq-layout">
+    <aside class="vera-faq-rail">
+      <div class="vera-faq-tabs" role="tablist" aria-label={content.faq_title}>
+        {groups.map((group) => (
+          <button
+            type="button"
+            role="tab"
+            id={`faq-tab-${group.index}`}
+            aria-controls={`faq-panel-${group.index}`}
+            aria-selected={group.index === 1 ? "true" : "false"}
+            tabindex={group.index === 1 ? 0 : -1}
+            data-faq-tab={group.index}
+          >
+            <span {...builderEdit(`group_${group.index}_title`)}>
+              {content[`group_${group.index}_title`]}
+            </span>
+            <span aria-hidden="true">{group.end - group.start + 1}</span>
+          </button>
+        ))}
+      </div>
+      <div class="vera-sidebar-card vera-faq-contact">
+        <h2 {...builderEdit("faq_contact_title")}>{content.faq_contact_title}</h2>
+        <p {...builderEdit("faq_contact_body")}>{content.faq_contact_body}</p>
+        <a href="/contact" {...builderEdit("faq_contact_cta")}>{content.faq_contact_cta}</a>
+      </div>
+    </aside>
+
+    <div>
+      {groups.map((group) => (
+        <section
+          id={`faq-panel-${group.index}`}
+          role="tabpanel"
+          aria-labelledby={`faq-tab-${group.index}`}
+          data-faq-panel={group.index}
+          hidden={group.index !== 1}
+        >
+          <h2 class="vera-heading" {...builderEdit(`group_${group.index}_title`)}>
+            {content[`group_${group.index}_title`]}
+          </h2>
+          <p class="vera-lede" {...builderEdit(`group_${group.index}_note`)}>
+            {content[`group_${group.index}_note`]}
+          </p>
+          <div class="vera-reading-faqs vera-faq-list">
+            {Array.from({ length: group.end - group.start + 1 }, (_, offset) => group.start + offset).map((index) => (
+              <details open={index === group.start}>
+                <summary {...builderEdit(`faq_${index}_q`)}>{content[`faq_${index}_q`]}</summary>
+                <p {...builderEdit(`faq_${index}_a`)}>{content[`faq_${index}_a`]}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </section>
+</VeraFrame>
+
+<script>
+  const faqTabs = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-faq-tab]"));
+  const faqPanels = Array.from(document.querySelectorAll<HTMLElement>("[data-faq-panel]"));
+  const selectFaqGroup = (tab: HTMLButtonElement) => {
+    const selected = tab.dataset.faqTab;
+    faqTabs.forEach((item) => {
+      const active = item === tab;
+      item.setAttribute("aria-selected", String(active));
+      item.tabIndex = active ? 0 : -1;
+    });
+    faqPanels.forEach((panel) => {
+      panel.hidden = panel.dataset.faqPanel !== selected;
+    });
+  };
+
+  faqTabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => selectFaqGroup(tab));
+    tab.addEventListener("keydown", (event) => {
+      if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const nextIndex = event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? faqTabs.length - 1
+          : (index + (event.key === "ArrowDown" ? 1 : -1) + faqTabs.length) % faqTabs.length;
+      const nextTab = faqTabs[nextIndex];
+      if (!nextTab) return;
+      selectFaqGroup(nextTab);
+      nextTab.focus();
+    });
+  });
+</script>

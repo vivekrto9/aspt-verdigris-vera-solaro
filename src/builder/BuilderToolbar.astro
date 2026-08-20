@@ -1,0 +1,294 @@
+---
+import BuilderClient from "./BuilderClient.astro";
+import BuilderStyles from "./BuilderStyles.astro";
+import { builderSeoFields } from "./registry.ts";
+
+type Props = {
+  launcherEnabled: boolean;
+  studioModeEnabled: boolean;
+  collection: string;
+  entry: string;
+  locale: string;
+  csrfToken: string;
+  canPublish: boolean;
+  endpoint?: string;
+  diffEndpoint?: string;
+  seo?: Record<string, string | undefined>;
+  hasSavedDraft?: boolean;
+  reviewTargets?: Array<{ collection: string; entry: string; locale: string }>;
+};
+
+const {
+  launcherEnabled,
+  studioModeEnabled,
+  collection,
+  entry,
+  locale,
+  csrfToken,
+  canPublish,
+  endpoint = "/api/astropages/generated-site/editor/content-field?_preview=1",
+  diffEndpoint = "/api/astropages/generated-site/editor/content-diff?_preview=1",
+  seo = {},
+  hasSavedDraft = false,
+  reviewTargets = [],
+} = Astro.props;
+
+const value = (field: string) => seo[field] ?? "";
+const fieldLabel = (field: string) =>
+  field
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+    .replace("Seo", "SEO")
+    .replace("Og", "Open Graph")
+    .replace("Twitter", "X/Twitter");
+
+const searchFields = ["seo_title", "seo_description", "seo_canonical_path", "seo_robots"];
+const socialFields = ["og_title", "og_description", "og_image", "og_image_alt", "twitter_card", "twitter_title", "twitter_description", "twitter_image"];
+const advancedFields = builderSeoFields.filter((field) => !searchFields.includes(field) && !socialFields.includes(field));
+---
+
+{
+  launcherEnabled ? (
+    <>
+      <BuilderStyles />
+      <section
+        class="builder-shell"
+        data-builder-toolbar
+        data-builder-studio-mode={studioModeEnabled ? "true" : "false"}
+        data-builder-collection={collection}
+        data-builder-entry={entry}
+        data-builder-locale={locale}
+        data-builder-endpoint={endpoint}
+        data-builder-diff-endpoint={diffEndpoint}
+        data-builder-csrf={csrfToken}
+        data-builder-can-publish={canPublish ? "true" : "false"}
+        data-builder-has-saved-draft={hasSavedDraft ? "true" : "false"}
+        data-builder-review-targets={JSON.stringify(reviewTargets)}
+        aria-label="AstroPages Content Studio"
+      >
+        <div class="builder-launcher-wrap">
+          <button class="builder-launcher-label" type="button" data-builder-launcher-label aria-label="Open Content editor">
+            <span>
+              <strong>Content editor</strong>
+              <small data-builder-launcher-summary>{hasSavedDraft ? "1 unpublished change" : "Edit this page"}</small>
+            </span>
+            <i aria-hidden="true">
+              <svg viewBox="0 0 16 16" focusable="false">
+                <path d="M4.25 11.75 11.75 4.25M5.25 4.25h6.5v6.5" />
+              </svg>
+            </i>
+          </button>
+          <button
+            class="builder-launcher-button"
+            type="button"
+            data-builder-launcher
+            aria-expanded="false"
+            aria-controls="astropages-content-studio-menu"
+            aria-label="Open AstroPages Content Studio"
+          >
+            <svg class="builder-launcher-icon" data-builder-launcher-icon viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+              <path opacity="0.2" d="M20.7806 8.4695L18 11.2501L12.75 6.00012L15.5306 3.2195C15.6713 3.07895 15.862 3 16.0608 3C16.2596 3 16.4503 3.07895 16.5909 3.2195L20.7806 7.40637C20.8506 7.47606 20.9062 7.55889 20.9441 7.65012C20.982 7.74134 21.0015 7.83915 21.0015 7.93793C21.0015 8.03672 20.982 8.13453 20.9441 8.22575C20.9062 8.31697 20.8506 8.39981 20.7806 8.4695Z" fill="currentColor" />
+              <path d="M21.3113 6.87821L17.1216 2.68946C16.9823 2.55014 16.8169 2.43962 16.6349 2.36421C16.4529 2.28881 16.2578 2.25 16.0608 2.25C15.8638 2.25 15.6687 2.28881 15.4867 2.36421C15.3047 2.43962 15.1393 2.55014 15 2.68946L3.43969 14.2498C3.2998 14.3886 3.18889 14.5538 3.11341 14.7358C3.03792 14.9178 2.99938 15.113 3.00001 15.3101V19.4998C3.00001 19.8976 3.15804 20.2791 3.43935 20.5604C3.72065 20.8417 4.10218 20.9998 4.50001 20.9998H20.25C20.4489 20.9998 20.6397 20.9208 20.7803 20.7801C20.921 20.6395 21 20.4487 21 20.2498C21 20.0509 20.921 19.8601 20.7803 19.7194C20.6397 19.5788 20.4489 19.4998 20.25 19.4998H10.8113L21.3113 8.99977C21.4506 8.86048 21.5611 8.69511 21.6365 8.5131C21.7119 8.33109 21.7507 8.136 21.7507 7.93899C21.7507 7.74198 21.7119 7.5469 21.6365 7.36489C21.5611 7.18288 21.4506 7.0175 21.3113 6.87821ZM7.43626 17.6248L15.375 9.68509L16.9397 11.2498L9.00001 19.1895L7.43626 17.6248ZM6.37501 16.5645L4.81032 14.9998L12.75 7.06009L14.3147 8.62477L6.37501 16.5645ZM4.50001 16.8101L7.18969 19.4998H4.50001V16.8101ZM18 10.1895L13.8113 5.99977L16.0613 3.74977L20.25 7.93946L18 10.1895Z" fill="currentColor" />
+            </svg>
+            <i data-builder-draft-count aria-hidden="true" hidden={!hasSavedDraft}>{hasSavedDraft ? "1" : ""}</i>
+          </button>
+        </div>
+        <div class="builder-menu" data-builder-menu id="astropages-content-studio-menu" hidden>
+          <header class="builder-menu-header">
+            <div>
+              <strong>AstroPages Content Studio</strong>
+              <span data-builder-locale-pill>{locale.toUpperCase()} · {collection}/{entry}</span>
+            </div>
+            <button type="button" data-builder-menu-close aria-label="Close Content Studio"><span>Close</span></button>
+          </header>
+          <div class="builder-menu-primary">
+            <label class="builder-edit-switch" data-builder-edit-switch>
+              <input type="checkbox" data-builder-edit-toggle />
+              <span>Edit content</span>
+            </label>
+          </div>
+          <div class="builder-menu-actions">
+            <button class="builder-action builder-secondary-button" type="button" data-builder-seo-toggle>Page SEO</button>
+            <button class="builder-action builder-secondary-button" type="button" data-builder-review-toggle disabled={!hasSavedDraft}>Review changes</button>
+            <button class="builder-action builder-secondary-button" type="button" data-builder-preview-toggle>Preview site</button>
+          </div>
+          <footer class="builder-menu-footer">
+            <span class="builder-edit-status" data-builder-edit-status data-state={hasSavedDraft ? "draft" : "idle"}>
+              {hasSavedDraft ? "Unpublished draft" : "Published"}
+            </span>
+            <div>
+              <button class="builder-action builder-save-button" type="button" data-builder-save disabled>Save draft</button>
+              <button class="builder-action builder-publish-button" type="button" data-builder-publish disabled={!studioModeEnabled || !hasSavedDraft || !canPublish}>Publish changes</button>
+            </div>
+          </footer>
+        </div>
+        <div class="builder-error-popover" data-builder-error-popover hidden role="status" aria-live="polite"></div>
+        {studioModeEnabled ? (
+          <div class="builder-editing-dock" data-builder-editing-dock hidden>
+            <div class="builder-dock-header">
+              <div>
+                <span>Editing</span>
+                <strong data-builder-dock-field>Select content</strong>
+              </div>
+              <button class="builder-dock-details" type="button" data-builder-content-details>Details</button>
+            </div>
+            <div class="builder-dock-meta">
+              <span class="builder-edit-status" data-builder-edit-status data-state={hasSavedDraft ? "draft" : "idle"}>
+                {hasSavedDraft ? "Unpublished draft" : "Published"}
+              </span>
+              <span class="builder-dirty-count" data-builder-dirty-count>0 unsaved</span>
+            </div>
+            <p class="builder-dock-error" data-builder-dock-error hidden></p>
+            <div class="builder-dock-actions">
+              <button class="builder-action builder-save-button" type="button" data-builder-save disabled>Save draft</button>
+              <button class="builder-action builder-secondary-button" type="button" data-builder-review-toggle disabled={!hasSavedDraft}>Review changes</button>
+              <button class="builder-action builder-publish-button" type="button" data-builder-publish disabled={!hasSavedDraft || !canPublish}>Publish changes</button>
+              <button class="builder-action builder-secondary-button" type="button" data-builder-done-editing>Done</button>
+            </div>
+          </div>
+        ) : null}
+      </section>
+      {studioModeEnabled ? (
+        <>
+          <aside class="builder-inspector" data-builder-inspector hidden aria-label="Content Studio inspector">
+            <div class="builder-inspector-header">
+              <div>
+                <strong data-builder-inspector-title>Page SEO</strong>
+                <span data-builder-inspector-subtitle>{locale.toUpperCase()} metadata</span>
+              </div>
+              <button type="button" data-builder-inspector-close aria-label="Close Content Studio inspector"><span>Close</span></button>
+            </div>
+            <div class="builder-inspector-tabs" role="tablist" aria-label="Content Studio inspector tabs">
+              <button type="button" data-builder-tab="field" role="tab">Content</button>
+              <button type="button" data-builder-tab="seo" role="tab" data-builder-active>Page SEO</button>
+              <button type="button" data-builder-tab="changes" role="tab">Changes</button>
+            </div>
+            <section class="builder-inspector-panel" data-builder-panel="field" hidden>
+              <div class="builder-selected-card">
+                <span>Selected content</span>
+                <strong data-builder-selected-field>Nothing selected</strong>
+                <p data-builder-selected-help>Select editable text on the page.</p>
+              </div>
+            </section>
+            <section class="builder-inspector-panel" data-builder-panel="changes" hidden>
+              <div class="builder-preview-card">
+                <span>Draft review</span>
+                <strong data-builder-changes-summary>{hasSavedDraft ? "Loading unpublished changes" : "No draft saved"}</strong>
+                <p data-builder-changes-help>
+                  {hasSavedDraft ? "Review saved draft edits before publishing them to the live site." : "Save a draft to review changes before publishing."}
+                </p>
+              </div>
+              <div class="builder-changes-section" data-builder-local-changes hidden>
+                <h3>Unsaved edits</h3>
+                <p>Save the draft to include these edits in the publish review.</p>
+                <div data-builder-local-change-list></div>
+              </div>
+              <div class="builder-changes-section" data-builder-content-changes hidden>
+                <h3>Content</h3>
+                <div data-builder-content-change-list></div>
+              </div>
+              <div class="builder-changes-section" data-builder-seo-changes hidden>
+                <h3>Page SEO</h3>
+                <div data-builder-seo-change-list></div>
+              </div>
+              <div class="builder-empty-state" data-builder-no-changes hidden>No unpublished changes for this locale.</div>
+            </section>
+            <section class="builder-inspector-panel" data-builder-panel="seo">
+              <div class="builder-preview-card">
+                <span>Search preview</span>
+                <strong data-builder-search-title>{value("seo_title") || "Vera Solaro"}</strong>
+                <small data-builder-search-url>example.com{value("seo_canonical_path") || "/"}</small>
+                <p data-builder-search-description>{value("seo_description")}</p>
+              </div>
+              <div class="builder-seo-form">
+                <fieldset>
+                  <legend>Search</legend>
+                  {searchFields.map((field) => {
+                    const currentValue = value(field);
+                    return (
+                      <label class="builder-field-control" data-builder-seo-control={field}>
+                        <span>
+                          {fieldLabel(field)}
+                          {(field.includes("title") || field.includes("description")) && (
+                            <small data-builder-counter-for={field}>{currentValue.length}</small>
+                          )}
+                        </span>
+                        {field.includes("description") ? (
+                          <textarea data-builder-seo-field={field}>{currentValue}</textarea>
+                        ) : field === "seo_robots" ? (
+                          <select data-builder-seo-field={field}>
+                            {["index,follow", "noindex,nofollow", "index,nofollow", "noindex,follow"].map((option) => (
+                              <option value={option} selected={currentValue === option}>{option}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input data-builder-seo-field={field} value={currentValue} />
+                        )}
+                      </label>
+                    );
+                  })}
+                </fieldset>
+                <fieldset>
+                  <legend>Social</legend>
+                  <div class="builder-preview-card builder-social-preview">
+                    <span>Open Graph preview</span>
+                    <strong data-builder-social-title>{value("og_title") || value("seo_title") || "Vera Solaro"}</strong>
+                    <p data-builder-social-description>{value("og_description") || value("seo_description")}</p>
+                  </div>
+                  {socialFields.map((field) => {
+                    const currentValue = value(field);
+                    return (
+                      <label class="builder-field-control" data-builder-seo-control={field}>
+                        <span>
+                          {fieldLabel(field)}
+                          {(field.includes("title") || field.includes("description")) && (
+                            <small data-builder-counter-for={field}>{currentValue.length}</small>
+                          )}
+                        </span>
+                        {field.includes("description") ? (
+                          <textarea data-builder-seo-field={field}>{currentValue}</textarea>
+                        ) : field === "twitter_card" ? (
+                          <select data-builder-seo-field={field}>
+                            {["summary_large_image", "summary"].map((option) => (
+                              <option value={option} selected={currentValue === option}>{option}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input data-builder-seo-field={field} value={currentValue} />
+                        )}
+                      </label>
+                    );
+                  })}
+                </fieldset>
+                {advancedFields.length > 0 && (
+              <fieldset>
+                <legend>Advanced</legend>
+                {advancedFields.map((field) => {
+                  const currentValue = value(field);
+                  return (
+                    <label class="builder-field-control" data-builder-seo-control={field}>
+                      <span>
+                        {fieldLabel(field)}
+                        {(field.includes("title") || field.includes("description")) && (
+                          <small data-builder-counter-for={field}>{currentValue.length}</small>
+                        )}
+                      </span>
+                      {field.includes("description") ? (
+                        <textarea data-builder-seo-field={field}>{currentValue}</textarea>
+                      ) : (
+                        <input data-builder-seo-field={field} value={currentValue} />
+                      )}
+                    </label>
+                  );
+                })}
+              </fieldset>
+                )}
+              </div>
+            </section>
+          </aside>
+        </>
+      ) : null}
+      <BuilderClient />
+    </>
+  ) : null
+}

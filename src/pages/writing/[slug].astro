@@ -1,0 +1,120 @@
+---
+import { PortableText } from "emdash/ui";
+import { loadPublicPageContent } from "../../builder/public-page.ts";
+import VeraFrame from "../../components/vera/VeraFrame.astro";
+import VeraImage from "../../components/vera/VeraImage.astro";
+import { blogImageAt, getBlogLocale, getBlogPost, listBlogPosts } from "../../data/blog-posts.ts";
+import generatedSettings from "../../generated/site-settings.json";
+import {
+  buildArticleJsonLd,
+  buildBreadcrumbJsonLd,
+} from "../../server/generated-site/seo.ts";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "article");
+const { content, builderEdit } = page;
+const slug = Astro.params.slug;
+if (!slug) {
+  return Astro.redirect("/writing", 302);
+}
+const locale = getBlogLocale(Astro.request.url);
+const { post } = await getBlogPost(slug, locale);
+if (!post) {
+  return Astro.redirect("/writing", 302);
+}
+const { posts } = await listBlogPosts(locale);
+const readNext = posts.filter((item) => item.slug !== post.slug).slice(0, 2);
+// Until every piece carries its own `featured_image`, the article opens on the same almanac plate the
+// listings use for it, so a reader arrives on the picture they clicked.
+const articleImage = blogImageAt(post, Math.max(0, posts.findIndex((item) => item.slug === post.slug)));
+const seo = {
+  seo_title: post.seoTitle,
+  seo_description: post.seoDescription,
+  seo_canonical_path: post.canonicalPath,
+  seo_robots: content.seo_robots,
+  og_title: post.seoTitle,
+  og_description: post.seoDescription,
+  og_image: post.image?.src || content.og_image,
+  og_image_alt: post.image?.alt || content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: post.seoTitle,
+  twitter_description: post.seoDescription,
+  twitter_image: post.image?.src || content.twitter_image,
+};
+const jsonLd = [
+  buildBreadcrumbJsonLd({
+    requestUrl: Astro.request.url,
+    items: [
+      { name: content.back_label.replace(/^←\s*/, ""), path: "/writing" },
+      { name: post.title, path: post.canonicalPath },
+    ],
+  }),
+  buildArticleJsonLd({
+    requestUrl: Astro.request.url,
+    siteSettings: generatedSettings.siteSettings,
+    headline: post.title,
+    description: post.seoDescription,
+    authorName: content.author_name,
+    datePublished: post.publishedAt,
+    dateModified: post.publishedAt,
+    image: post.image?.src,
+    url: post.canonicalPath,
+  }),
+].filter(Boolean) as Array<Record<string, unknown>>;
+---
+
+<VeraFrame {...page} content={{ ...content, ...seo }} currentPath={post.canonicalPath} jsonLd={jsonLd}>
+  <article class="vera-article-page">
+    <header class="vera-page-hero vera-article-hero">
+      <a class="vera-card-meta" href="/writing" style="color: var(--vera-burnt); text-decoration: none" {...builderEdit("back_label")}>
+        {content.back_label}
+      </a>
+      <div class="vera-article-header__inner">
+        <p class="vera-eyebrow">{post.meta}</p>
+        <h1 class="vera-display" style="color: var(--vera-burnt); text-shadow: 3px 3px 0 var(--vera-mustard); margin-top: 18px">
+          {post.title}
+        </h1>
+        {post.excerpt ? (
+          <p class="vera-lede" style="font-size: 21px; font-style: italic">{post.excerpt}</p>
+        ) : null}
+        <div class="vera-card-meta" style="margin-top: 26px">
+          <span {...builderEdit("article_byline")}>{content.article_byline}</span>
+          <span style="color: var(--vera-burnt)"> · {post.publishedLabel}</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="vera-section vera-section--paper vera-page-grid vera-article-layout">
+      <div class="vera-prose">
+        <figure style="margin: 0 0 30px">
+          <VeraImage src={articleImage.src} alt={articleImage.alt} class="vera-article-figure" eager />
+        </figure>
+        {post.content.length > 0 ? <PortableText value={post.content} /> : <p>{post.seoDescription}</p>}
+
+        <aside class="vera-info-card vera-article-bio">
+          <div>
+            <h2 {...builderEdit("author_name")}>{content.author_name}</h2>
+            <p {...builderEdit("author_bio")}>{content.author_bio}</p>
+          </div>
+        </aside>
+      </div>
+
+      <aside class="vera-sidebar">
+        <div class="vera-sidebar-card vera-sidebar-card--dark">
+          <h2 {...builderEdit("cta_title")}>{content.cta_title}</h2>
+          <p {...builderEdit("cta_body")}>{content.cta_body}</p>
+          <a class="vera-button vera-button--mustard vera-button--small" style="width: 100%; margin-top: 18px" href="/readings" {...builderEdit("cta_label")}>
+            {content.cta_label}
+          </a>
+        </div>
+        {readNext.length > 0 ? (
+          <nav class="vera-sidebar-card vera-article-next" aria-label={content.read_next_title}>
+            <div class="vera-card-meta" {...builderEdit("read_next_title")}>{content.read_next_title}</div>
+            {readNext.map((item) => <a href={item.href}>{item.title}</a>)}
+          </nav>
+        ) : null}
+      </aside>
+    </div>
+  </article>
+</VeraFrame>

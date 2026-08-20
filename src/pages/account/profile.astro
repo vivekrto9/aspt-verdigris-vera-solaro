@@ -1,0 +1,56 @@
+---
+import { loadPublicPageContent } from "../../builder/public-page.ts";
+import VeraFrame from "../../components/vera/VeraFrame.astro";
+import VeraPortalNav from "../../components/vera/VeraPortalNav.astro";
+import { getRuntimeEnv } from "../../server/generated-site/request.ts";
+import { getVeraAccountPortal } from "../../server/vera/account.ts";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "account");
+const { content, builderEdit, chromeEdit } = page;
+const env = await getRuntimeEnv(Astro);
+const portal = await getVeraAccountPortal(env as never, Astro.request);
+if (!portal.ok) {
+  return Astro.redirect(`/login?next=${encodeURIComponent(Astro.url.pathname)}`, 302);
+}
+const account = portal.account;
+const details = [
+  { field: "profile_field_name", value: account.displayName },
+  { field: "profile_field_email", value: account.email },
+  { field: "profile_field_phone", value: account.phone },
+];
+---
+
+<VeraFrame {...page} currentPath="/account">
+  <VeraPortalNav content={content} chromeEdit={chromeEdit} active="profile" />
+
+  <section class="vera-page-hero">
+    <p class="vera-eyebrow" {...builderEdit("profile_eyebrow")}>{content.profile_eyebrow}</p>
+    <h1 class="vera-display" {...builderEdit("profile_title")}>{content.profile_title}</h1>
+    <p class="vera-lede" {...builderEdit("profile_intro")}>{content.profile_intro}</p>
+  </section>
+
+  <section class="vera-section vera-section--paper vera-page-grid">
+    <div class="vera-info-card">
+      <h2 {...builderEdit("profile_details_title")}>{content.profile_details_title}</h2>
+      <dl class="vera-portal-details">
+        {details.map((row) => (
+          <div>
+            <dt {...builderEdit(row.field)}>{content[row.field]}</dt>
+            <dd>{row.value || content.profile_value_empty}</dd>
+          </div>
+        ))}
+      </dl>
+      <p class="vera-form-note" {...builderEdit("profile_change_note")}>{content.profile_change_note}</p>
+    </div>
+
+    <aside class="vera-sidebar-card">
+      <h2 {...builderEdit("help_title")}>{content.help_title}</h2>
+      <p {...builderEdit("help_body")}>{content.help_body}</p>
+      <a class="vera-card-meta" style="display: block; margin-top: 12px; color: var(--vera-burnt); text-decoration: none" href="/contact" {...builderEdit("help_cta")}>
+        {content.help_cta}
+      </a>
+    </aside>
+  </section>
+</VeraFrame>

@@ -1,0 +1,12 @@
+---
+export const prerender = false;
+
+return Astro.redirect(
+  `/booking/${encodeURIComponent(String(Astro.params.id ?? ""))}/confirmation${
+    Astro.url.searchParams.get("payment")
+      ? `?payment=${encodeURIComponent(String(Astro.url.searchParams.get("payment")))}`
+      : ""
+  }`,
+  302,
+);
+---

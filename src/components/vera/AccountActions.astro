@@ -1,0 +1,55 @@
+---
+type Edit = (field: string) => Record<string, unknown>;
+
+const {
+  label,
+  field,
+  edit,
+  signedOutHref = "/login",
+  class: className = "",
+} = Astro.props as {
+  label: string;
+  field?: string;
+  edit?: Edit;
+  signedOutHref?: string;
+  class?: string;
+};
+
+const editAttrs = field && edit ? edit(field) : {};
+---
+
+<div class:list={["vera-account-actions", className]}>
+  <button
+    class="vera-button vera-button--paper vera-button--small"
+    type="button"
+    data-account-signout
+    data-signed-out-href={signedOutHref}
+    {...editAttrs}
+  >
+    {label}
+  </button>
+</div>
+
+<script>
+  const bindAccountActions = () => {
+    document.querySelectorAll<HTMLButtonElement>("[data-account-signout]").forEach((button) => {
+      if (button.dataset.bound === "true") return;
+      button.dataset.bound = "true";
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+          await fetch("/api/astropages/generated-site/customer-auth/logout", {
+            method: "POST",
+            credentials: "same-origin",
+          });
+        } catch {
+          // The session cookie is cleared on the next verified request either way.
+        }
+        window.location.assign(button.dataset.signedOutHref || "/login");
+      });
+    });
+  };
+
+  bindAccountActions();
+  document.addEventListener("astro:page-load", bindAccountActions);
+</script>

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "semanticModel": "leads.v1",
+  "source": "d1",
+  "table": "ap_leads",
+  "eventsTable": "ap_business_events",
+  "kinds": ["consultation", "waitlist", "newsletter", "contact"],
+  "sources": {
+    "consultation_booking": ["bookingNumber", "serviceSlug", "serviceName", "consultationMode", "consultationDate", "consultationSlot", "paymentOption", "amountCents", "currency"],
+    "waitlist": ["serviceSlug", "serviceName", "consultationMode", "earliestDate", "latestDate", "shortNotice"],
+    "newsletter": [],
+    "contact": ["topic"]
+  }
+}

@@ -1,0 +1,175 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import "@fontsource/familjen-grotesk/400.css";
+import "@fontsource/familjen-grotesk/500.css";
+import "@fontsource/familjen-grotesk/600.css";
+import "@fontsource/newsreader/300.css";
+import "@fontsource/newsreader/300-italic.css";
+import "@fontsource/newsreader/400.css";
+import "@fontsource/newsreader/600.css";
+import "@fontsource/rye/400.css";
+import "@fontsource/ultra/400.css";
+import "../../styles/vera.css";
+import "../../styles/verdigris.css";
+import VeraFooter from "./VeraFooter.astro";
+import VeraHeader from "./VeraHeader.astro";
+
+type Edit = (field: string) => Record<string, unknown>;
+
+const {
+  content,
+  builder,
+  builderPage,
+  chromePage,
+  reviewTargets,
+  chromeEdit,
+  jsonLd = [],
+  currentPath = Astro.url.pathname,
+  showHeader = true,
+  showFooter = true,
+} = Astro.props as {
+  content: Record<string, string>;
+  builder: Record<string, any>;
+  builderPage: { hasSavedDraft: boolean };
+  chromePage: { hasSavedDraft: boolean };
+  reviewTargets: Array<{ collection: string; entry: string; locale: string }>;
+  chromeEdit: Edit;
+  jsonLd?: Array<Record<string, unknown>>;
+  currentPath?: string;
+  showHeader?: boolean;
+  showFooter?: boolean;
+};
+
+const seoContent = {
+  seo_title: content.seo_title,
+  seo_description: content.seo_description,
+  seo_canonical_path: content.seo_canonical_path,
+  seo_robots: content.seo_robots,
+  og_title: content.og_title,
+  og_description: content.og_description,
+  og_image: content.og_image,
+  og_image_alt: content.og_image_alt,
+  twitter_card: content.twitter_card,
+  twitter_title: content.twitter_title,
+  twitter_description: content.twitter_description,
+  twitter_image: content.twitter_image,
+};
+
+const builderToolbar = {
+  launcherEnabled: Boolean(builder.launcherEnabled),
+  studioModeEnabled: Boolean(builder.studioModeEnabled),
+  collection: String(builder.collection),
+  entry: String(builder.entry),
+  locale: String(builder.locale),
+  csrfToken: String(builder.csrfToken),
+  canPublish: Boolean(builder.canPublish),
+  seo: seoContent,
+  hasSavedDraft: builderPage.hasSavedDraft || chromePage.hasSavedDraft,
+  reviewTargets,
+};
+
+const analyticsConsent = {
+  title: content.analytics_consent_title,
+  message: content.analytics_consent_message,
+  declineLabel: content.analytics_consent_decline,
+  acceptLabel: content.analytics_consent_accept,
+};
+---
+
+<BaseLayout
+  seo={seoContent}
+  jsonLd={jsonLd}
+  bodyClass="vera-body"
+  builderToolbar={builderToolbar}
+  analyticsConsent={analyticsConsent}
+  analyticsConsentEdit={chromeEdit}
+>
+  <a class="vera-skip-link" href="#vera-main" {...chromeEdit("skip_to_content")}>
+    {content.skip_to_content}
+  </a>
+  <div class="vera-site" data-vera-public-site>
+    {showHeader ? (
+      <VeraHeader
+        content={content}
+        chromeEdit={chromeEdit}
+        currentPath={currentPath}
+      />
+    ) : null}
+    <main id="vera-main" tabindex="-1">
+      <slot />
+    </main>
+    {showFooter ? <VeraFooter content={content} chromeEdit={chromeEdit} /> : null}
+  </div>
+</BaseLayout>
+
+<script>
+  const newsletterEndpoint = "/api/astropages/generated-site/vera/newsletter";
+
+  const setNewsletterBusy = (form: HTMLFormElement, busy: boolean) => {
+    form.querySelectorAll<HTMLButtonElement>("button[type='submit']").forEach((button) => {
+      button.disabled = busy;
+    });
+  };
+
+  const submitNewsletter = async (form: HTMLFormElement) => {
+    const status = form.querySelector<HTMLElement>("[data-newsletter-status]");
+    if (status) status.hidden = true;
+    const formData = new FormData(form);
+    const payload = {
+      email: String(formData.get("email") ?? "").trim(),
+      name: String(formData.get("name") ?? "").trim(),
+      locale: document.documentElement.lang || "en",
+      source: window.location.pathname,
+      birthDate: String(formData.get("birth-date") ?? "").trim(),
+      birthTime: String(formData.get("birth-time") ?? "").trim(),
+      website: String(formData.get("website") ?? ""),
+      consentMarketing: true,
+    };
+
+    setNewsletterBusy(form, true);
+    try {
+      const response = await fetch(newsletterEndpoint, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json().catch(() => null) as { status?: string } | null;
+      if (!response.ok || result?.status !== "ready") throw new Error("newsletter");
+      document.dispatchEvent(new CustomEvent("astropages:newsletter-pending", {
+        detail: { form },
+      }));
+      window.astroPagesTrack?.("letter_opt_in_started", {
+        status: "pending",
+        source: window.location.pathname,
+      });
+    } catch {
+      if (status) status.hidden = false;
+      document.dispatchEvent(new CustomEvent("astropages:newsletter-error", {
+        detail: { form },
+      }));
+    } finally {
+      setNewsletterBusy(form, false);
+    }
+  };
+
+  document.querySelectorAll<HTMLFormElement>("[data-newsletter-form]").forEach((form) => {
+    if (!form.elements.namedItem("website")) {
+      const honeypot = document.createElement("input");
+      honeypot.type = "text";
+      honeypot.name = "website";
+      honeypot.tabIndex = -1;
+      honeypot.autocomplete = "off";
+      honeypot.hidden = true;
+      honeypot.setAttribute("aria-hidden", "true");
+      form.append(honeypot);
+    }
+  });
+
+  document.addEventListener("submit", (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !form.matches("[data-newsletter-form]")) return;
+    event.preventDefault();
+    void submitNewsletter(form);
+  });
+</script>

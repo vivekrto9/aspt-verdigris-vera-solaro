@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="An open ephemeris with columns of figures under a rising sunburst">
+  <defs>
+    <pattern id="ep-dots" width="15" height="15" patternUnits="userSpaceOnUse">
+      <circle cx="3.5" cy="3.5" r="1.7" fill="#0b3026" opacity=".15"/>
+    </pattern>
+    <clipPath id="ep-frame"><rect width="1200" height="720"/></clipPath>
+  </defs>
+  <g clip-path="url(#ep-frame)">
+    <rect width="1200" height="720" fill="#7fcbb1"/>
+    <g transform="translate(600 300)" fill="#9d2c60" opacity=".85">
+      <g id="ep-ray"><path d="M0 0 L760 -78 L760 78 Z"/></g>
+      <use href="#ep-ray" transform="rotate(36)"/>
+      <use href="#ep-ray" transform="rotate(72)"/>
+      <use href="#ep-ray" transform="rotate(108)"/>
+      <use href="#ep-ray" transform="rotate(144)"/>
+      <use href="#ep-ray" transform="rotate(180)"/>
+      <use href="#ep-ray" transform="rotate(216)"/>
+      <use href="#ep-ray" transform="rotate(252)"/>
+      <use href="#ep-ray" transform="rotate(288)"/>
+      <use href="#ep-ray" transform="rotate(324)"/>
+    </g>
+    <circle cx="600" cy="300" r="132" fill="#f1f3ec" stroke="#0b3026" stroke-width="9"/>
+    <circle cx="600" cy="300" r="84" fill="#7fcbb1" stroke="#0b3026" stroke-width="7"/>
+    <g stroke="#0b3026" stroke-width="7" stroke-linecap="round">
+      <path d="M600 214 v-38 M600 386 v38 M514 300 h-38 M686 300 h38"/>
+      <path d="M539 239 l-27 -27 M661 361 l27 27 M661 239 l27 -27 M539 361 l-27 27"/>
+    </g>
+    <!-- open book -->
+    <g transform="translate(600 560)">
+      <path d="M-520 -60 Q-260 -130 0 -70 Q260 -130 520 -60 L520 150 Q260 90 0 150 Q-260 90 -520 150 Z" fill="#f1f3ec" stroke="#0b3026" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M0 -70 V150" stroke="#0b3026" stroke-width="8"/>
+      <g stroke="#4f695f" stroke-width="6" stroke-linecap="round" opacity=".9">
+        <path d="M-470 -30 H-60 M-470 10 H-60 M-470 50 H-60 M-470 90 H-180"/>
+        <path d="M60 -22 H470 M60 18 H470 M60 58 H470 M180 98 H470"/>
+      </g>
+      <g fill="#9d2c60">
+        <circle cx="-330" cy="-30" r="9"/><circle cx="-160" cy="50" r="9"/>
+        <circle cx="220" cy="18" r="9"/><circle cx="400" cy="58" r="9"/>
+      </g>
+      <path d="M-520 -60 Q-260 -130 0 -70" fill="none" stroke="#0b3026" stroke-width="10"/>
+    </g>
+    <rect width="1200" height="720" fill="url(#ep-dots)"/>
+  </g>
+</svg>

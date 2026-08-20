@@ -1,0 +1,13 @@
+---
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import ReadingsCatalog from "../components/vera/ReadingsCatalog.astro";
+import VeraFrame from "../components/vera/VeraFrame.astro";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "readings");
+---
+
+<VeraFrame {...page} currentPath="/readings">
+  <ReadingsCatalog content={page.content} edit={page.builderEdit} />
+</VeraFrame>

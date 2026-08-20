@@ -1,0 +1,39 @@
+---
+import AccountActions from "./AccountActions.astro";
+
+type Edit = (field: string) => Record<string, unknown>;
+
+const {
+  content,
+  chromeEdit,
+  active = "dashboard",
+} = Astro.props as {
+  content: Record<string, string>;
+  chromeEdit: Edit;
+  active?: string;
+};
+
+const links = [
+  { key: "dashboard", href: "/account", field: "portal_nav_dashboard" },
+  { key: "billing", href: "/account/billing", field: "portal_nav_billing" },
+];
+---
+
+<nav class="vera-portal-nav" aria-label={content.portal_nav_label}>
+  <div class="vera-portal-nav__links">
+    {links.map((link) => (
+      <a
+        href={link.href}
+        aria-current={active === link.key ? "page" : undefined}
+        {...chromeEdit(link.field)}
+      >
+        {content[link.field]}
+      </a>
+    ))}
+  </div>
+  <AccountActions
+    label={content.account_signout_cta}
+    field="account_signout_cta"
+    edit={chromeEdit}
+  />
+</nav>

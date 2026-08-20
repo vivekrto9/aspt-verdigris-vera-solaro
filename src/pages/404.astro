@@ -1,0 +1,40 @@
+---
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import VeraFrame from "../components/vera/VeraFrame.astro";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "not_found_page");
+const { content, builderEdit } = page;
+Astro.response.status = 404;
+---
+
+<VeraFrame {...page} currentPath="/404">
+  <section class="vera-placeholder-page vera-placeholder-page--404">
+    <div class="vera-placeholder-page__inner">
+      <div class="vera-placeholder-page__symbol" aria-hidden="true" {...builderEdit("not_found_symbol")}>
+        {content.not_found_symbol}
+      </div>
+      <h1 class="vera-display" style="margin-top: 28px" {...builderEdit("not_found_title")}>
+        {content.not_found_title}
+      </h1>
+      <p class="vera-lede" style="margin-inline: auto" {...builderEdit("not_found_body")}>
+        {content.not_found_body}
+      </p>
+      <div class="vera-actions" style="justify-content: center">
+        <a class="vera-button vera-button--burnt vera-button--shadow" href="/writing" {...builderEdit("not_found_home_cta")}>
+          {content.not_found_home_cta}
+        </a>
+        <a class="vera-button vera-button--paper" href="/about" {...builderEdit("not_found_about_cta")}>
+          {content.not_found_about_cta}
+        </a>
+        <a class="vera-button vera-button--paper" href="/contact" {...builderEdit("not_found_contact_cta")}>
+          {content.not_found_contact_cta}
+        </a>
+      </div>
+      <aside class="vera-info-card" style="margin-top: 56px">
+        <p {...builderEdit("not_found_note")}>{content.not_found_note}</p>
+      </aside>
+    </div>
+  </section>
+</VeraFrame>

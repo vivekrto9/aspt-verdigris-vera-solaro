@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "contract": "users-data.v1",
+  "schemaRevision": "vera-solaro-users-2026-08-15-2",
+  "entity": {
+    "key": "customer",
+    "label": "Customer",
+    "pluralLabel": "Customers",
+    "idField": "id"
+  },
+  "defaultSort": {
+    "field": "created_at",
+    "direction": "desc"
+  },
+  "columns": [
+    { "key": "id", "label": "User ID", "type": "text" },
+    { "key": "display_name", "label": "Name", "type": "text", "searchable": true, "sortable": true },
+    { "key": "email", "label": "Email", "type": "email", "searchable": true, "sortable": true },
+    { "key": "phone", "label": "Phone", "type": "text", "searchable": true },
+    { "key": "default_language", "label": "Language", "type": "text", "sortable": true },
+    { "key": "email_verified_at", "label": "Email verified", "type": "date", "sortable": true },
+    { "key": "created_at", "label": "Joined", "type": "date", "sortable": true },
+    { "key": "updated_at", "label": "Updated", "type": "date", "sortable": true }
+  ],
+  "detailFields": [
+    { "key": "id", "label": "User ID", "type": "text" },
+    { "key": "display_name", "label": "Name", "type": "text" },
+    { "key": "email", "label": "Email", "type": "email" },
+    { "key": "phone", "label": "Phone", "type": "text" },
+    { "key": "default_language", "label": "Language", "type": "text" },
+    { "key": "email_verified_at", "label": "Email verified", "type": "date" },
+    { "key": "created_at", "label": "Joined", "type": "date" },
+    { "key": "updated_at", "label": "Updated", "type": "date" }
+  ],
+  "relatedSections": [
+    {
+      "key": "bookings",
+      "title": "Consultation bookings",
+      "columns": ["booking_number", "service_name", "mode", "status", "payment_state", "selected_start_at", "price_cents", "paid_cents", "balance_cents", "currency", "created_at"]
+    },
+    {
+      "key": "reports",
+      "title": "Published reports",
+      "columns": ["booking_number", "title", "status", "published_at"]
+    },
+    {
+      "key": "files",
+      "title": "Private files",
+      "columns": ["booking_number", "kind", "file_name", "content_type", "size_bytes", "created_at"]
+    },
+    {
+      "key": "messages",
+      "title": "Private message threads",
+      "columns": ["booking_number", "subject", "status", "updated_at"]
+    },
+    {
+      "key": "invoices",
+      "title": "Invoices and receipts",
+      "columns": ["invoice_number", "booking_number", "status", "amount_cents", "currency", "issued_at"]
+    }
+  ]
+}

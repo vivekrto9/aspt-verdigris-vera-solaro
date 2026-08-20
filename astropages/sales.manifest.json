@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "contract": "sales-mcp.v1",
+  "semanticModel": "commerce.v1",
+  "schemaRevision": "vera-solaro-sales-2026-08-15-2",
+  "paymentStatuses": ["pending", "succeeded", "failed", "cancelled"],
+  "transactionKinds": [
+    {
+      "key": "consultation_booking",
+      "label": "Consultation bookings",
+      "description": "Stripe payment attempts for Vera Solaro astrology consultation bookings.",
+      "examples": ["The Natal Hour", "The Year Ahead", "Two Charts"]
+    }
+  ],
+  "dimensions": [
+    {
+      "key": "service_slug",
+      "label": "Consultation service",
+      "description": "The Vera Solaro consultation service selected for the booking."
+    },
+    {
+      "key": "consultation_mode",
+      "label": "Consultation mode",
+      "description": "Whether the consultation is by call or in person."
+    },
+    {
+      "key": "payment_option",
+      "label": "Payment option",
+      "description": "Whether the client selected the deposit or full-payment option."
+    }
+  ],
+  "entities": [
+    { "type": "item", "key": "natal-hour", "label": "The Natal Hour", "transactionKind": "consultation_booking" },
+    { "type": "item", "key": "year-ahead", "label": "The Year Ahead", "transactionKind": "consultation_booking" },
+    { "type": "item", "key": "two-charts", "label": "Two Charts", "transactionKind": "consultation_booking" }
+  ]
+}

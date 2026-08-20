@@ -1,0 +1,1102 @@
+---
+import { isOfferedReading } from "../data/vera/offered-readings.ts";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import BookingProgress from "../components/vera/booking/BookingProgress.astro";
+import VeraFrame from "../components/vera/VeraFrame.astro";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "booking");
+const { content, builderEdit } = page;
+const services = [1, 2, 3].filter(isOfferedReading);
+const calendarWeekdays = String(content.calendar_weekdays ?? "").split("\n");
+const calendarLegendRows = String(content.calendar_legend ?? "").split("\n");
+const calendarLegend = calendarLegendRows.slice(0, 3);
+const calendarRuntimeCopy = calendarLegendRows.slice(3);
+const waitStats = String(content.wait_stats ?? "").split("\n").map((row) => {
+  const [value = "", label = ""] = row.split("|");
+  return { value, label };
+});
+const validationErrors = String(content.validation_errors ?? "").split("\n");
+const genderRows = String(content.gender_options ?? "").split("\n");
+const genderLabel = genderRows[0] ?? "";
+const genderPrompt = genderRows[1] ?? "";
+const genderOptions = genderRows.slice(2).map((row) => {
+  const [label = "", value = ""] = row.split("|");
+  return { label, value };
+});
+const summaryLabels = String(content.summary_labels ?? "").split("\n");
+const paymentCompactCopy = String(content.payment_compact_intro ?? "").split("\n");
+---
+
+<VeraFrame {...page} currentPath="/booking">
+  <section class="vera-page-hero vera-page-hero--booking">
+    <p class="vera-status-pill" {...builderEdit("booking_eyebrow")}>
+      <span aria-hidden="true">✷</span>{content.booking_eyebrow}
+    </p>
+    <h1 class="vera-display" style="margin-top: 20px" {...builderEdit("booking_title")}>
+      {content.booking_title}
+    </h1>
+    <p class="vera-lede" {...builderEdit("booking_intro")}>{content.booking_intro}</p>
+  </section>
+
+  <section class="vera-section vera-section--paper vera-section--booking">
+    <form class="vera-booking-shell" data-vera-booking novalidate>
+      <BookingProgress content={content} builderEdit={builderEdit} active={1} />
+
+      <div class="vera-booking-step" data-booking-step="1">
+        <fieldset class="vera-form-section">
+          <legend {...builderEdit("service_label")}>{content.service_label}</legend>
+          <div class="vera-filter-pills">
+            {services.map((index) => (
+              <label class="vera-pill">
+                <input
+                  type="radio"
+                  name="service"
+                  value={index === 1 ? "natal-hour" : index === 2 ? "year-ahead" : "two-charts"}
+                />
+                <span {...builderEdit(`service_${index}`)}>{content[`service_${index}`]}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <input type="hidden" name="meeting" value="call" />
+
+        <fieldset class="vera-form-section" style="margin-top: 34px">
+          <legend class="vera-visually-hidden" {...builderEdit("calendar_label")}>{content.calendar_label}</legend>
+          <div class="vera-calendar-toolbar">
+            <div class="vera-calendar-month-control">
+              <button type="button" data-calendly-prev-month aria-label={content.calendar_month}>←</button>
+              <strong data-calendly-month-label {...builderEdit("calendar_month")}>{content.calendar_month}</strong>
+              <button type="button" data-calendly-next-month aria-label={content.calendar_month}>→</button>
+            </div>
+          </div>
+          <div class="vera-calendar-grid-shell">
+            <div class="vera-calendar-weekdays" {...builderEdit("calendar_weekdays")}>
+              {calendarWeekdays.map((weekday) => <span>{weekday}</span>)}
+            </div>
+            <div
+              class="vera-calendar-month"
+              aria-label={content.calendar_label}
+              aria-busy="true"
+              data-calendly-month-grid
+              data-slot-singular={calendarRuntimeCopy[0]}
+              data-slot-plural={calendarRuntimeCopy[1]}
+              data-hour-singular={calendarRuntimeCopy[2]}
+              data-hour-plural={calendarRuntimeCopy[3]}
+              data-time-suffix={calendarRuntimeCopy[4]}
+              data-no-sittings={calendarLegend[2]}
+            ></div>
+            <p
+              class="vera-calendar-loading"
+              data-calendly-month-loading
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <span class="vera-calendar-loading__mark" aria-hidden="true"></span>
+              <span>{calendarRuntimeCopy[5]}</span>
+            </p>
+          </div>
+          <div class="vera-calendar-legend" {...builderEdit("calendar_legend")}>
+            {calendarLegend.map((label, index) => (
+              <span><i data-kind={index === 0 ? "open" : index === 1 ? "chosen" : "closed"}></i>{label}</span>
+            ))}
+          </div>
+          <div
+            class="vera-info-card"
+            style="margin-top: 40px"
+            data-calendly-slot-mount
+            data-empty-copy={content.calendar_empty}
+            data-error-copy={content.calendar_error}
+            aria-live="polite"
+          >
+            <p data-calendly-status {...builderEdit("calendar_loading")}>{content.calendar_loading}</p>
+            <div data-calendly-day-hours hidden>
+              <div class="vera-calendar-day-heading">
+                <strong data-calendly-day-label></strong>
+                <span data-calendly-day-count></span>
+              </div>
+              <div class="vera-calendar-slots" data-calendly-live-slots></div>
+              <p class="vera-form-note vera-calendar-local-note" {...builderEdit("calendar_local_note")}>{content.calendar_local_note}</p>
+            </div>
+            <p data-calendly-prompt {...builderEdit("calendar_prompt")}>{content.calendar_prompt}</p>
+            <span class="vera-visually-hidden" {...builderEdit("calendar_empty")}>{content.calendar_empty}</span>
+            <span class="vera-visually-hidden" {...builderEdit("calendar_error")}>{content.calendar_error}</span>
+            <button class="vera-button vera-button--burnt vera-button--small" style="margin-top: 14px" type="button" data-booking-open-waitlist hidden {...builderEdit("wait_submit_cta")}>
+              {content.wait_submit_cta}
+            </button>
+          </div>
+        </fieldset>
+
+        <div class="vera-actions vera-booking-primary-actions">
+          <button
+            class="vera-button vera-button--burnt vera-button--shadow"
+            type="button"
+            data-booking-next="2"
+            disabled
+            {...builderEdit("continue_details_cta")}
+          >
+            {content.continue_details_cta}
+          </button>
+        </div>
+        <p class="vera-form-note vera-booking-slot-error" data-booking-slot-error hidden aria-live="assertive" {...builderEdit("taken_body")}>{content.taken_body}</p>
+      </div>
+
+      <div class="vera-booking-step vera-booking-step--compact" data-booking-step="2" hidden>
+        <header class="vera-booking-step__header">
+          <h2 class="vera-display" {...builderEdit("details_title")}>{content.details_title}</h2>
+          <p class="vera-lede" {...builderEdit("details_compact_intro")}>{content.details_compact_intro}</p>
+        </header>
+
+        <fieldset class="vera-form-card vera-form-card--compact">
+          <legend {...builderEdit("sitter_legend")}>{content.sitter_legend}</legend>
+          <div class="vera-field-row">
+            <label class="vera-field">
+              <span class="vera-label" {...builderEdit("name_label")}>{content.name_label}</span>
+              <input class="vera-input" name="full-name" autocomplete="name" required placeholder={content.name_placeholder} {...builderEdit("name_placeholder")} />
+              <p class="vera-form-note" data-booking-intake-error="name" hidden aria-live="polite" {...builderEdit("validation_errors")}>{validationErrors[0]}</p>
+            </label>
+            <label class="vera-field">
+              <span class="vera-label" {...builderEdit("email_label")}>{content.email_label}</span>
+              <input class="vera-input" name="email" type="email" autocomplete="email" required placeholder={content.email_placeholder} {...builderEdit("email_placeholder")} />
+              <p class="vera-form-note" data-booking-intake-error="email" hidden aria-live="polite" {...builderEdit("validation_errors")}>{validationErrors[1]}</p>
+            </label>
+          </div>
+          <label class="vera-field vera-field--wide">
+            <span class="vera-label" {...builderEdit("phone_label")}>{content.phone_label}</span>
+            <input class="vera-input" name="phone" type="tel" autocomplete="tel" placeholder={content.phone_placeholder} {...builderEdit("phone_placeholder")} />
+          </label>
+        </fieldset>
+
+        <fieldset class="vera-form-card vera-form-card--compact">
+          <legend {...builderEdit("birth_legend")}>{content.birth_legend}</legend>
+          <div class="vera-field-row vera-field-row--three">
+            <label class="vera-field">
+              <span class="vera-label" {...builderEdit("birth_date_label")}>{content.birth_date_label}</span>
+              <input class="vera-input" name="birth-date" type="date" autocomplete="bday" required placeholder={content.birth_date_placeholder} {...builderEdit("birth_date_placeholder")} />
+              <p class="vera-form-note" data-booking-intake-error="birth-date" hidden aria-live="polite" {...builderEdit("validation_errors")}>{validationErrors[2]}</p>
+            </label>
+            <label class="vera-field">
+              <span class="vera-label" {...builderEdit("birth_time_label")}>{content.birth_time_label}</span>
+              <input class="vera-input" name="birth-time" type="time" required placeholder={content.birth_time_placeholder} {...builderEdit("birth_time_placeholder")} />
+              <p class="vera-form-note" data-booking-intake-error="birth-time" hidden aria-live="polite" {...builderEdit("validation_errors")}>{validationErrors[3]}</p>
+            </label>
+            <label class="vera-field">
+              <span class="vera-label" {...builderEdit("gender_options")}>{genderLabel}</span>
+              <select class="vera-select" name="gender" required {...builderEdit("gender_options")}>
+                <option value="" selected disabled>{genderPrompt}</option>
+                {genderOptions.map((option) => <option value={option.value}>{option.label}</option>)}
+              </select>
+              <p class="vera-form-note" data-booking-intake-error="gender" hidden aria-live="polite" {...builderEdit("validation_errors")}>{validationErrors[4]}</p>
+            </label>
+          </div>
+          <label class="vera-field">
+            <span class="vera-label" {...builderEdit("birth_place_label")}>{content.birth_place_label}</span>
+            <input class="vera-input" name="birth-place" required autocomplete="off" placeholder={content.birth_place_placeholder} {...builderEdit("birth_place_placeholder")} />
+            <div class="vera-place-suggestions" data-booking-place-suggestions hidden></div>
+            <p class="vera-form-note" data-booking-place-error hidden aria-live="polite" {...builderEdit("birth_place_error")}>{content.birth_place_error}</p>
+            <p class="vera-form-note" data-booking-place-resolved hidden aria-live="polite"><span aria-hidden="true">✓</span> <span data-booking-place-resolved-label></span></p>
+          </label>
+        </fieldset>
+
+        <fieldset class="vera-form-card vera-form-card--compact">
+          <legend {...builderEdit("intention_label")}>{content.intention_label}</legend>
+          <p class="vera-form-note" {...builderEdit("intention_note")}>{content.intention_note}</p>
+          <textarea class="vera-textarea" name="intention" placeholder={content.intention_placeholder} {...builderEdit("intention_placeholder")}></textarea>
+          <label class="vera-form-note vera-consent-row">
+            <input type="checkbox" name="consent" required />
+            <span {...builderEdit("consent_label")}>{content.consent_label}</span>
+          </label>
+          <p class="vera-form-note" data-booking-intake-error="consent" hidden aria-live="polite" {...builderEdit("validation_errors")}>{validationErrors[5]}</p>
+        </fieldset>
+
+        <div class="vera-actions">
+          <button class="vera-button vera-button--paper" type="button" data-booking-back="1" {...builderEdit("back_cta")}>{content.back_cta}</button>
+          <button class="vera-button vera-button--burnt vera-button--shadow" type="button" data-booking-next="3" {...builderEdit("continue_payment_cta")}>{content.continue_payment_cta}</button>
+        </div>
+      </div>
+
+      <div class="vera-booking-step vera-booking-step--compact" data-booking-step="3" hidden>
+        <header class="vera-booking-step__header">
+          <h2 class="vera-display" {...builderEdit("payment_title")}>{content.payment_title}</h2>
+          <p class="vera-lede" {...builderEdit("payment_compact_intro")}>{paymentCompactCopy[0]}</p>
+        </header>
+
+        <article class="vera-booking-review" aria-live="polite">
+          <div class="vera-booking-review__reading">
+            <p class="vera-card-meta" {...builderEdit("summary_kicker")}>{content.summary_kicker}</p>
+            <h3 data-booking-review-service></h3>
+            <p data-booking-review-duration></p>
+          </div>
+          <dl class="vera-booking-review__ledger">
+            <div>
+              <dt {...builderEdit("summary_labels")}>{summaryLabels[1]}</dt>
+              <dd data-booking-review-when></dd>
+            </div>
+            <div class="vera-booking-review__total">
+              <dt {...builderEdit("summary_labels")}>{summaryLabels[5]}</dt>
+              <dd data-booking-review-total></dd>
+            </div>
+          </dl>
+          <p class="vera-form-note vera-booking-review__secure" {...builderEdit("secure_note")}>◈ {content.secure_note}</p>
+          <p class="vera-form-note vera-booking-review__error" data-booking-payment-error hidden aria-live="assertive" {...builderEdit("payment_compact_intro")}>{paymentCompactCopy[1]}</p>
+          <div class="vera-actions vera-booking-review__actions">
+            <button class="vera-button vera-button--paper" type="button" data-booking-back="2" {...builderEdit("back_cta")}>{content.back_cta}</button>
+            <button class="vera-button vera-button--mustard vera-button--shadow" type="submit" data-booking-pay data-submit-template={content.submit_cta} data-busy-copy={content.submit_busy_cta} {...builderEdit("submit_cta")}>{content.submit_cta}</button>
+          </div>
+        </article>
+      </div>
+
+
+      <section class="vera-booking-state vera-booking-waitlist" data-booking-state="waitlist" hidden>
+        <button class="vera-button vera-button--paper vera-button--small" type="button" data-booking-close-waitlist {...builderEdit("wait_back_cta")}>
+          {content.wait_back_cta}
+        </button>
+        <div class="vera-page-grid" style="margin-top: 26px">
+          <div>
+            <p class="vera-status-pill" {...builderEdit("wait_kicker")}>
+              <span aria-hidden="true">✷</span>{content.wait_kicker}
+            </p>
+            <h2 class="vera-display" style="margin-top: 20px" {...builderEdit("wait_title")}>
+              {content.wait_title}
+            </h2>
+            <p class="vera-lede" {...builderEdit("wait_intro")}>{content.wait_intro}</p>
+            <div class="vera-stats" {...builderEdit("wait_stats")}>
+              {waitStats.map((stat) => (
+                <div class="vera-stat">
+                  <strong>{stat.value}</strong>
+                  <span>{stat.label}</span>
+                </div>
+              ))}
+            </div>
+            <p class="vera-info-card" style="margin-top: 40px">
+              <strong {...builderEdit("wait_while_title")}>{content.wait_while_title}</strong>{" "}
+              <span {...builderEdit("wait_while_body")}>{content.wait_while_body}</span>
+            </p>
+          </div>
+
+          <fieldset class="vera-form-card" data-booking-waitlist-form>
+            <legend {...builderEdit("wait_form_title")}>{content.wait_form_title}</legend>
+            <p class="vera-form-note" {...builderEdit("wait_form_intro")}>{content.wait_form_intro}</p>
+            <input
+              class="vera-input"
+              name="waitlist-name"
+              autocomplete="name"
+              placeholder={content.wait_name_placeholder}
+              {...builderEdit("wait_name_placeholder")}
+            />
+            <input
+              class="vera-input"
+              name="waitlist-email"
+              type="email"
+              autocomplete="email"
+              placeholder={content.wait_email_placeholder}
+              {...builderEdit("wait_email_placeholder")}
+            />
+            <p class="vera-form-note" data-booking-waitlist-error hidden aria-live="polite" {...builderEdit("wait_email_error")}>
+              {content.wait_email_error}
+            </p>
+            <div class="vera-label" {...builderEdit("wait_reading_label")}>{content.wait_reading_label}</div>
+            <div class="vera-filter-pills">
+              {services.map((index) => (
+                <label class="vera-pill">
+                  <input
+                    type="radio"
+                    name="waitlist-service"
+                    value={index === 1 ? "natal-hour" : index === 2 ? "year-ahead" : "two-charts"}
+                  />
+                  <span {...builderEdit(`service_${index}`)}>{content[`service_${index}`]}</span>
+                </label>
+              ))}
+            </div>
+            <div class="vera-label" {...builderEdit("wait_short_label")}>{content.wait_short_label}</div>
+            <label class="vera-form-note">
+              <input type="checkbox" name="waitlist-short-notice" checked />
+              <span {...builderEdit("wait_short_body")}>{content.wait_short_body}</span>
+            </label>
+            <button class="vera-button vera-button--burnt vera-button--shadow" type="button" data-booking-submit-waitlist {...builderEdit("wait_submit_cta")}>
+              {content.wait_submit_cta}
+            </button>
+          </fieldset>
+
+          <aside class="vera-sidebar-card vera-sidebar-card--dark" data-booking-waitlist-confirmed hidden aria-live="polite">
+            <p class="vera-status-pill" {...builderEdit("wait_done_kicker")}>
+              <span aria-hidden="true">✓</span>{content.wait_done_kicker}
+            </p>
+            <h2 style="color: var(--vera-mustard); margin-top: 16px" {...builderEdit("wait_done_title")}>
+              {content.wait_done_title}
+            </h2>
+            <p {...builderEdit("wait_done_body")}>{content.wait_done_body}</p>
+            <dl class="vera-booking-summary">
+              <div>
+                <dt {...builderEdit("wait_done_reading_label")}>{content.wait_done_reading_label}</dt>
+                <dd data-booking-waitlist-service></dd>
+              </div>
+              <div>
+                <dt {...builderEdit("wait_done_notify_label")}>{content.wait_done_notify_label}</dt>
+                <dd data-booking-waitlist-email></dd>
+              </div>
+              <div>
+                <dt {...builderEdit("wait_done_short_label")}>{content.wait_done_short_label}</dt>
+                <dd data-booking-waitlist-short></dd>
+              </div>
+            </dl>
+            <p class="vera-form-note" {...builderEdit("wait_done_note")}>{content.wait_done_note}</p>
+          </aside>
+        </div>
+      </section>
+
+
+      <div class="vera-booking-processing" data-booking-state="processing" hidden aria-live="assertive" aria-busy="true">
+        <div class="vera-booking-processing__card">
+          <span class="vera-booking-spinner" aria-hidden="true"></span>
+          <h2 {...builderEdit("processing_title")}>{content.processing_title}</h2>
+          <p {...builderEdit("processing_body")}>{content.processing_body}</p>
+          <div class="vera-card-meta" {...builderEdit("processing_step")}>{content.processing_step}</div>
+        </div>
+      </div>
+    </form>
+  </section>
+</VeraFrame>
+
+<script>
+  import {
+    apiBase,
+    asNumber,
+    asRecord,
+    asRecords,
+    asText,
+    browserTimezone,
+    formatDuration,
+    formatMoney,
+    forgetAccess,
+    loadCatalog,
+    rememberAccess,
+    requestJson,
+    RequestFailure,
+    serviceRow as catalogServiceRow,
+    slotDateLabel,
+    slotTimeLabel,
+    track,
+    zoneLabel,
+    type UnknownRecord,
+  } from "../scripts/vera/booking/shared.ts";
+
+  const bookingForm = document.querySelector<HTMLFormElement>("[data-vera-booking]");
+  const waitlistState = document.querySelector<HTMLElement>("[data-booking-state='waitlist']");
+  const processingState = document.querySelector<HTMLElement>("[data-booking-state='processing']");
+  const slotMount = document.querySelector<HTMLElement>("[data-calendly-slot-mount]");
+  const slotStatus = document.querySelector<HTMLElement>("[data-calendly-status]");
+  const calendarMonthGrid = document.querySelector<HTMLElement>("[data-calendly-month-grid]");
+  const calendarMonthLabel = document.querySelector<HTMLElement>("[data-calendly-month-label]");
+  const calendarPrevMonth = document.querySelector<HTMLButtonElement>("[data-calendly-prev-month]");
+  const calendarNextMonth = document.querySelector<HTMLButtonElement>("[data-calendly-next-month]");
+  const calendarDayHours = document.querySelector<HTMLElement>("[data-calendly-day-hours]");
+  const calendarDayLabel = document.querySelector<HTMLElement>("[data-calendly-day-label]");
+  const calendarDayCount = document.querySelector<HTMLElement>("[data-calendly-day-count]");
+  const calendarPrompt = document.querySelector<HTMLElement>("[data-calendly-prompt]");
+  const calendarLoadingNote = document.querySelector<HTMLElement>("[data-calendly-month-loading]");
+  const liveSlots = document.querySelector<HTMLElement>("[data-calendly-live-slots]");
+  const waitlistOpenButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-booking-open-waitlist]"));
+  const continueToDetails = document.querySelector<HTMLButtonElement>("[data-booking-next='2']");
+  const continueToPayment = document.querySelector<HTMLButtonElement>("[data-booking-next='3']");
+  const payButton = document.querySelector<HTMLButtonElement>("[data-booking-pay]");
+  const paymentError = document.querySelector<HTMLElement>("[data-booking-payment-error]");
+  const slotError = document.querySelector<HTMLElement>("[data-booking-slot-error]");
+  const availabilityLoadingCopy = slotStatus?.textContent?.trim() || "";
+  const calendarCopy = {
+    slot: calendarMonthGrid?.dataset.slotSingular || "",
+    slots: calendarMonthGrid?.dataset.slotPlural || "",
+    hour: calendarMonthGrid?.dataset.hourSingular || "",
+    hours: calendarMonthGrid?.dataset.hourPlural || "",
+    time: calendarMonthGrid?.dataset.timeSuffix || "",
+    noSittings: calendarMonthGrid?.dataset.noSittings || "",
+  };
+
+  let catalog: UnknownRecord = {};
+  let selectedStartAt = "";
+  let selectedSlotLabel = "";
+  const initialCalendarDate = new Date();
+  let calendarMonth = new Date(initialCalendarDate.getFullYear(), initialCalendarDate.getMonth(), 1);
+  let calendarSlots: UnknownRecord[] = [];
+  let calendarSlotsByDay = new Map<string, UnknownRecord[]>();
+  let selectedCalendarDay = "";
+  let availabilitySequence = 0;
+  let calendarLoading = true;
+  let calendarNavTimer = 0;
+  let activeStep = 1;
+  let placeSelectionToken = "";
+  let placeSessionToken = crypto.randomUUID();
+  let placeRequestSequence = 0;
+  let placeDetailsSequence = 0;
+  let placeDebounce = 0;
+  let submitting = false;
+  let bookingId = "";
+  let manageToken = "";
+  const bookingIdempotencyKey = `vera-${crypto.randomUUID().replaceAll("-", "")}`;
+
+  const selectedInput = (name: string) =>
+    bookingForm?.querySelector<HTMLInputElement>(`input[name='${name}']:checked`) ?? null;
+  const selectedService = () => selectedInput("service")?.value || "";
+  // The sitting format is fixed, so it rides on a hidden field that no
+  // :checked selector can see.
+  const selectedMode = () => {
+    const hidden = bookingForm?.elements.namedItem("meeting") as HTMLInputElement | null;
+    return selectedInput("meeting")?.value || hidden?.value || "call";
+  };
+  const selectedTimezone = () => browserTimezone;
+  const serviceRow = (slug = selectedService()) => catalogServiceRow(catalog, slug);
+  const input = (name: string) => bookingForm?.elements.namedItem(name) as HTMLInputElement | null;
+  const textarea = (name: string) => bookingForm?.elements.namedItem(name) as HTMLTextAreaElement | null;
+
+  const showStep = (step: number, { focus = true } = {}) => {
+    activeStep = step;
+    document.querySelectorAll<HTMLElement>("[data-booking-step]").forEach((panel) => {
+      panel.hidden = panel.dataset.bookingStep !== String(step);
+    });
+    document.querySelectorAll<HTMLElement>("[data-booking-progress]").forEach((item) => {
+      if (item.dataset.bookingProgress === String(step)) item.setAttribute("data-active", "");
+      else item.removeAttribute("data-active");
+    });
+    if (focus) {
+      const panel = document.querySelector<HTMLElement>(`[data-booking-step="${step}"]`);
+      panel?.scrollIntoView({ behavior: "smooth", block: "start" });
+      panel?.querySelector<HTMLElement>("h2, legend, input:not([type='hidden'])")?.focus({ preventScroll: true });
+    }
+  };
+
+  const normalizeBirthDate = (value: string) => {
+    const trimmed = value.trim();
+    const iso = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const european = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    const parts = iso ? [iso[1], iso[2], iso[3]] : european ? [european[3], european[2], european[1]] : [];
+    if (!parts.length) return "";
+    const normalized = `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+    const parsed = new Date(`${normalized}T00:00:00Z`);
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().startsWith(normalized) ? normalized : "";
+  };
+
+  const normalizeBirthTime = (value: string) => {
+    const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return "";
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59
+      ? `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
+      : "";
+  };
+
+  const clearPlaceSelection = () => {
+    placeSelectionToken = "";
+    placeDetailsSequence += 1;
+    const resolved = document.querySelector<HTMLElement>("[data-booking-place-resolved]");
+    if (resolved) resolved.hidden = true;
+  };
+
+  const showPlaceError = (visible: boolean) => {
+    const error = document.querySelector<HTMLElement>("[data-booking-place-error]");
+    if (error) error.hidden = !visible;
+  };
+
+  const resolvePlace = async (placeId: string, description: string) => {
+    const birthDate = normalizeBirthDate(input("birth-date")?.value || "");
+    const birthTime = normalizeBirthTime(input("birth-time")?.value || "");
+    if (!birthDate || !birthTime) {
+      (birthDate ? input("birth-time") : input("birth-date"))?.focus();
+      return;
+    }
+    const sequence = ++placeDetailsSequence;
+    try {
+      const data = await requestJson(`${apiBase}/places/details`, {
+        method: "POST",
+        body: JSON.stringify({
+          placeId,
+          sessionToken: placeSessionToken,
+          birthDate,
+          birthTime,
+          birthTimeUnknown: false,
+        }),
+      });
+      if (sequence !== placeDetailsSequence) return;
+      const place = asRecord(data.place);
+      placeSelectionToken = asText(data.selectionToken);
+      const address = asText(place.formattedAddress) || description;
+      const placeInput = input("birth-place");
+      if (placeInput) placeInput.value = address;
+      const suggestions = document.querySelector<HTMLElement>("[data-booking-place-suggestions]");
+      if (suggestions) suggestions.hidden = true;
+      const label = document.querySelector<HTMLElement>("[data-booking-place-resolved-label]");
+      if (label) label.textContent = address;
+      const resolved = document.querySelector<HTMLElement>("[data-booking-place-resolved]");
+      if (resolved) resolved.hidden = false;
+      showPlaceError(!placeSelectionToken);
+      placeSessionToken = crypto.randomUUID();
+    } catch {
+      if (sequence !== placeDetailsSequence) return;
+      clearPlaceSelection();
+      showPlaceError(true);
+    }
+  };
+
+  const loadPlaceSuggestions = async () => {
+    const placeInput = input("birth-place");
+    const suggestions = document.querySelector<HTMLElement>("[data-booking-place-suggestions]");
+    if (!placeInput || !suggestions) return;
+    const query = placeInput.value.trim();
+    clearPlaceSelection();
+    suggestions.replaceChildren();
+    if (query.length < 2) {
+      suggestions.hidden = true;
+      return;
+    }
+    const sequence = ++placeRequestSequence;
+    try {
+      const params = new URLSearchParams({ input: query, sessionToken: placeSessionToken, language: "en" });
+      const data = await requestJson(`${apiBase}/places/autocomplete?${params}`);
+      if (sequence !== placeRequestSequence) return;
+      for (const prediction of asRecords(data.predictions)) {
+        const placeId = asText(prediction.placeId);
+        const description = asText(prediction.description);
+        if (!placeId || !description) continue;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "vera-button vera-button--paper vera-button--small";
+        button.textContent = description;
+        button.addEventListener("click", () => void resolvePlace(placeId, description));
+        suggestions.append(button);
+      }
+      suggestions.hidden = suggestions.childElementCount === 0;
+      showPlaceError(false);
+    } catch {
+      if (sequence !== placeRequestSequence) return;
+      suggestions.hidden = true;
+      showPlaceError(true);
+    }
+  };
+
+  const showIntakeError = (name: string, visible: boolean) => {
+    const error = document.querySelector<HTMLElement>(`[data-booking-intake-error="${name}"]`);
+    if (error) error.hidden = !visible;
+  };
+
+  const validateIntake = () => {
+    document.querySelectorAll<HTMLElement>("[data-booking-intake-error]").forEach((error) => (error.hidden = true));
+    showPlaceError(false);
+    const nameField = input("full-name");
+    const emailField = input("email");
+    const birthDateField = input("birth-date");
+    const birthTimeField = input("birth-time");
+    const genderField = input("gender");
+    const consentField = input("consent");
+    const birthDate = normalizeBirthDate(birthDateField?.value || "");
+    const birthTime = normalizeBirthTime(birthTimeField?.value || "");
+    const invalid = [
+      { key: "name", field: nameField, invalid: (nameField?.value.trim().length || 0) < 2 },
+      { key: "email", field: emailField, invalid: !emailField?.value.trim() || !emailField.validity.valid },
+      { key: "birth-date", field: birthDateField, invalid: !birthDate },
+      { key: "birth-time", field: birthTimeField, invalid: !birthTime },
+      { key: "gender", field: genderField, invalid: !genderField?.value },
+      { key: "consent", field: consentField, invalid: consentField?.checked !== true },
+    ].filter((entry) => entry.invalid);
+    invalid.forEach((entry) => showIntakeError(entry.key, true));
+    if (invalid.length > 0) {
+      invalid[0]?.field?.scrollIntoView({ behavior: "smooth", block: "center" });
+      invalid[0]?.field?.focus({ preventScroll: true });
+      return null;
+    }
+    if (!placeSelectionToken) {
+      showPlaceError(true);
+      input("birth-place")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      input("birth-place")?.focus({ preventScroll: true });
+      return null;
+    }
+    return { birthDate, birthTime, birthTimeUnknown: false, gender: genderField?.value || "" };
+  };
+
+  const clearSlotSelection = () => {
+    selectedStartAt = "";
+    selectedSlotLabel = "";
+    if (continueToDetails) continueToDetails.disabled = true;
+    liveSlots?.querySelectorAll<HTMLInputElement>("input[name='live-slot']").forEach((slot) => {
+      slot.checked = false;
+    });
+  };
+
+  const calendarDateKey = (startAt: string, zone: string) => {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone: zone,
+    }).formatToParts(new Date(startAt));
+    const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value || "";
+    return `${value("year")}-${value("month")}-${value("day")}`;
+  };
+
+  const renderSlots = (times: UnknownRecord[], zone: string) => {
+    liveSlots?.replaceChildren();
+    const modeLabel = selectedInput("meeting")?.nextElementSibling?.textContent?.trim() || "";
+    const duration = formatDuration(asNumber(serviceRow().durationMinutes));
+    for (const slot of times) {
+      const startAt = asText(slot.startAt);
+      if (!startAt) continue;
+      const label = document.createElement("label");
+      label.className = "vera-calendar-slot";
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "live-slot";
+      radio.value = startAt;
+      const time = document.createElement("strong");
+      time.textContent = slotTimeLabel(startAt, zone);
+      const meta = document.createElement("span");
+      meta.textContent = [modeLabel, duration].filter(Boolean).join(" · ");
+      radio.addEventListener("change", () => {
+        selectedStartAt = startAt;
+        selectedSlotLabel = `${slotDateLabel(startAt, zone)} · ${time.textContent || ""}`;
+        if (continueToDetails) continueToDetails.disabled = false;
+        track("slot_selected", { step: 1, service: selectedService(), mode: selectedMode() });
+      });
+      label.append(radio, time, meta);
+      liveSlots?.append(label);
+    }
+  };
+
+  const renderCalendarGrid = () => {
+    if (!calendarMonthGrid) return;
+    calendarMonthGrid.replaceChildren();
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const monthName = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(calendarMonth);
+    if (calendarMonthLabel) calendarMonthLabel.textContent = monthName;
+    const currentMonth = new Date(initialCalendarDate.getFullYear(), initialCalendarDate.getMonth(), 1);
+    if (calendarPrevMonth) calendarPrevMonth.disabled = calendarMonth.getTime() <= currentMonth.getTime();
+    calendarMonthGrid.toggleAttribute("data-loading", calendarLoading);
+    const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+    const dayCount = new Date(year, month + 1, 0).getDate();
+    for (let index = 0; index < firstWeekday; index += 1) {
+      const spacer = document.createElement("span");
+      spacer.className = "vera-calendar-day vera-calendar-day--blank";
+      spacer.setAttribute("aria-hidden", "true");
+      calendarMonthGrid.append(spacer);
+    }
+    for (let day = 1; day <= dayCount; day += 1) {
+      if (calendarLoading) {
+        const placeholder = document.createElement("span");
+        placeholder.className = "vera-calendar-day vera-calendar-day--loading";
+        placeholder.setAttribute("aria-hidden", "true");
+        const pending = document.createElement("strong");
+        pending.textContent = String(day);
+        placeholder.append(pending);
+        calendarMonthGrid.append(placeholder);
+        continue;
+      }
+      const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const times = calendarSlotsByDay.get(key) ?? [];
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "vera-calendar-day";
+      button.dataset.kind = times.length > 0 ? "open" : "closed";
+      button.toggleAttribute("data-selected", selectedCalendarDay === key);
+      button.disabled = times.length === 0;
+      button.setAttribute("aria-label", times.length > 0
+        ? `${day} ${monthName}, ${times.length} ${times.length === 1 ? calendarCopy.slot : calendarCopy.slots}`
+        : `${day} ${monthName}, ${calendarCopy.noSittings}`);
+      const number = document.createElement("strong");
+      number.textContent = String(day);
+      const note = document.createElement("span");
+      note.textContent = times.length > 0
+        ? `${times.length} ${times.length === 1 ? calendarCopy.slot : calendarCopy.slots}`
+        : "—";
+      button.append(number, note);
+      button.addEventListener("click", () => {
+        selectedCalendarDay = key;
+        clearSlotSelection();
+        renderCalendarGrid();
+        renderSlots(times, selectedTimezone());
+        if (calendarDayLabel) calendarDayLabel.textContent = slotDateLabel(asText(times[0]?.startAt), selectedTimezone());
+        if (calendarDayCount) {
+          const zoneName = zoneLabel(selectedTimezone());
+          const countCopy = times.length === 1 ? calendarCopy.hour : calendarCopy.hours;
+          calendarDayCount.textContent = `${times.length} ${countCopy}${zoneName ? ` · ${zoneName} ${calendarCopy.time}` : ""}`;
+        }
+        if (calendarDayHours) calendarDayHours.hidden = false;
+        if (calendarPrompt) calendarPrompt.hidden = true;
+      });
+      calendarMonthGrid.append(button);
+    }
+  };
+
+  const groupCalendarSlots = () => {
+    calendarSlotsByDay = new Map<string, UnknownRecord[]>();
+    const zone = selectedTimezone();
+    for (const slot of calendarSlots) {
+      const startAt = asText(slot.startAt);
+      if (!startAt || !zone) continue;
+      const key = calendarDateKey(startAt, zone);
+      const times = calendarSlotsByDay.get(key) ?? [];
+      times.push(slot);
+      calendarSlotsByDay.set(key, times);
+    }
+    for (const times of calendarSlotsByDay.values()) {
+      times.sort((left, right) => new Date(asText(left.startAt)).getTime() - new Date(asText(right.startAt)).getTime());
+    }
+    selectedCalendarDay = "";
+    clearSlotSelection();
+    if (calendarDayHours) calendarDayHours.hidden = true;
+    if (calendarPrompt) calendarPrompt.hidden = false;
+    renderCalendarGrid();
+  };
+
+  // Calendly rejects any range longer than seven days, so a month has to be read
+  // as several windows. They are requested together rather than one after the
+  // other, which turns a month switch from five round trips into one.
+  const availabilityWindows = () => {
+    const monthStart = Date.UTC(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1) - 14 * 60 * 60_000;
+    const monthEnd = Date.UTC(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1) + 14 * 60 * 60_000;
+    // Snapping the near edge to a quarter hour keeps the window boundaries stable
+    // between clicks, so the cache below can actually recognise a repeat request.
+    const quarterHour = 15 * 60_000;
+    const earliest = Math.ceil((Date.now() + 5 * 60_000) / quarterHour) * quarterHour;
+    const windows: Array<{ start: string; end: string }> = [];
+    let cursor = Math.max(earliest, monthStart);
+    while (cursor < monthEnd) {
+      const endValue = Math.min(cursor + 7 * 24 * 60 * 60_000, monthEnd);
+      windows.push({ start: new Date(cursor).toISOString(), end: new Date(endValue).toISOString() });
+      cursor = endValue;
+    }
+    return windows;
+  };
+
+  // Flipping back to a month or sitting already read costs nothing for as long as
+  // the server would have served its own cached copy anyway.
+  const availabilityCacheMs = 30_000;
+  const availabilityCache = new Map<string, { at: number; data: UnknownRecord }>();
+  let availabilityAbort: AbortController | null = null;
+
+  const readAvailabilityWindow = async (
+    service: string,
+    mode: string,
+    window: { start: string; end: string },
+    signal: AbortSignal,
+  ) => {
+    const key = `${service}|${mode}|${window.start}|${window.end}`;
+    const cached = availabilityCache.get(key);
+    if (cached && Date.now() - cached.at < availabilityCacheMs) return cached.data;
+    const params = new URLSearchParams({
+      serviceSlug: service,
+      mode,
+      start: window.start,
+      end: window.end,
+    });
+    const data = await requestJson(`${apiBase}/availability?${params}`, { signal });
+    if (availabilityCache.size > 60) availabilityCache.clear();
+    availabilityCache.set(key, { at: Date.now(), data });
+    return data;
+  };
+
+  const setCalendarLoading = (loading: boolean) => {
+    calendarLoading = loading;
+    calendarMonthGrid?.setAttribute("aria-busy", loading ? "true" : "false");
+    if (calendarLoadingNote) calendarLoadingNote.hidden = !loading;
+    renderCalendarGrid();
+  };
+
+  const loadAvailability = async ({ refresh = false } = {}) => {
+    window.clearTimeout(calendarNavTimer);
+    const service = selectedService();
+    const mode = selectedMode();
+    const zone = selectedTimezone();
+    if (refresh) availabilityCache.clear();
+    calendarSlots = [];
+    calendarSlotsByDay = new Map<string, UnknownRecord[]>();
+    selectedCalendarDay = "";
+    clearSlotSelection();
+    liveSlots?.replaceChildren();
+    if (calendarDayHours) calendarDayHours.hidden = true;
+    if (calendarPrompt) calendarPrompt.hidden = false;
+    waitlistOpenButtons.forEach((button) => (button.hidden = true));
+    if (!service || !mode || !zone) {
+      setCalendarLoading(false);
+      if (slotStatus) slotStatus.textContent = availabilityLoadingCopy;
+      return;
+    }
+    const sequence = ++availabilitySequence;
+    // A superseded month is dropped mid-flight rather than left to finish.
+    availabilityAbort?.abort();
+    const controller = new AbortController();
+    availabilityAbort = controller;
+    setCalendarLoading(true);
+    if (slotStatus) {
+      slotStatus.hidden = false;
+      slotStatus.textContent = availabilityLoadingCopy;
+    }
+    try {
+      const responses = await Promise.all(
+        availabilityWindows().map((window) => readAvailabilityWindow(service, mode, window, controller.signal)),
+      );
+      if (sequence !== availabilitySequence) return;
+      let activeWaitlistCount = 0;
+      const byStart = new Map<string, UnknownRecord>();
+      for (const data of responses) {
+        activeWaitlistCount = Math.max(activeWaitlistCount, asNumber(data.activeWaitlistCount));
+        for (const slot of asRecords(data.times)) {
+          const startAt = asText(slot.startAt);
+          if (startAt) byStart.set(startAt, slot);
+        }
+      }
+      calendarSlots = [...byStart.values()];
+      groupCalendarSlots();
+      if (slotStatus) {
+        slotStatus.hidden = calendarSlots.length > 0;
+        slotStatus.textContent = calendarSlots.length > 0 ? availabilityLoadingCopy : slotMount?.dataset.emptyCopy || availabilityLoadingCopy;
+      }
+      waitlistOpenButtons.forEach((button) => (button.hidden = calendarSlots.length > 0));
+      const waitStat = waitlistState?.querySelector<HTMLElement>(".vera-stat strong");
+      if (waitStat && activeWaitlistCount > 0) waitStat.textContent = String(activeWaitlistCount);
+    } catch {
+      if (controller.signal.aborted || sequence !== availabilitySequence) return;
+      calendarSlots = [];
+      groupCalendarSlots();
+      if (slotStatus) {
+        slotStatus.hidden = false;
+        slotStatus.textContent = slotMount?.dataset.errorCopy || availabilityLoadingCopy;
+      }
+      waitlistOpenButtons.forEach((button) => (button.hidden = false));
+    } finally {
+      if (sequence === availabilitySequence) setCalendarLoading(false);
+    }
+  };
+
+  const scheduleAvailability = () => {
+    setCalendarLoading(true);
+    window.clearTimeout(calendarNavTimer);
+    calendarNavTimer = window.setTimeout(() => void loadAvailability(), 180);
+  };
+
+  calendarPrevMonth?.addEventListener("click", () => {
+    const currentMonth = new Date(initialCalendarDate.getFullYear(), initialCalendarDate.getMonth(), 1);
+    const previous = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
+    if (previous.getTime() < currentMonth.getTime()) return;
+    calendarMonth = previous;
+    scheduleAvailability();
+  });
+  calendarNextMonth?.addEventListener("click", () => {
+    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
+    scheduleAvailability();
+  });
+
+  bookingForm?.querySelectorAll<HTMLInputElement>("input[name='service'], input[name='meeting']")
+    .forEach((field) => field.addEventListener("change", () => {
+      if (field.name === "meeting") track("mode_selected", { mode: selectedMode() });
+      void loadAvailability();
+    }));
+
+  const updatePaymentReview = () => {
+    const service = serviceRow();
+    const priceCents = asNumber(service.priceCents);
+    const currency = asText(service.currency) || "USD";
+    const serviceName = asText(service.name);
+    const amount = formatMoney(priceCents, currency);
+    const serviceNode = document.querySelector<HTMLElement>("[data-booking-review-service]");
+    const durationNode = document.querySelector<HTMLElement>("[data-booking-review-duration]");
+    const whenNode = document.querySelector<HTMLElement>("[data-booking-review-when]");
+    const totalNode = document.querySelector<HTMLElement>("[data-booking-review-total]");
+    if (serviceNode) serviceNode.textContent = serviceName;
+    if (durationNode) durationNode.textContent = formatDuration(asNumber(service.durationMinutes));
+    if (whenNode) whenNode.textContent = selectedSlotLabel;
+    if (totalNode) totalNode.textContent = amount;
+    if (payButton) {
+      payButton.textContent = (payButton.dataset.submitTemplate || "").replace(/\{\{\s*due_now\s*\}\}/g, amount);
+    }
+  };
+
+  // The approved calendar remains step one; only the panel changes after a valid
+  // slot, so returning from details never reloads Calendly or loses the choice.
+  continueToDetails?.addEventListener("click", () => {
+    if (!selectedStartAt) return;
+    track("intake_started", { step: 1, service: selectedService(), mode: selectedMode() });
+    if (slotError) slotError.hidden = true;
+    showStep(2);
+  });
+
+  input("birth-place")?.addEventListener("input", () => {
+    clearPlaceSelection();
+    placeRequestSequence += 1;
+    window.clearTimeout(placeDebounce);
+    placeDebounce = window.setTimeout(() => void loadPlaceSuggestions(), 260);
+  });
+  [input("birth-date"), input("birth-time")].forEach((field) => field?.addEventListener("input", clearPlaceSelection));
+  ["full-name", "email", "birth-date", "birth-time", "gender", "consent"].forEach((name) => {
+    const field = input(name);
+    field?.addEventListener(field.type === "checkbox" ? "change" : "input", () => {
+      showIntakeError(name === "full-name" ? "name" : name, false);
+    });
+  });
+
+  continueToPayment?.addEventListener("click", () => {
+    if (!validateIntake()) return;
+    updatePaymentReview();
+    if (paymentError) paymentError.hidden = true;
+    track("intake_completed", { step: 2, service: selectedService(), mode: selectedMode() });
+    showStep(3);
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-booking-back='1']")?.addEventListener("click", () => {
+    showStep(bookingId ? 3 : 1);
+  });
+  document.querySelector<HTMLButtonElement>("[data-booking-back='2']")?.addEventListener("click", () => {
+    if (!bookingId) showStep(2);
+  });
+
+  const createBookingAndCheckout = async () => {
+    if (submitting || activeStep !== 3) return;
+    const intake = validateIntake();
+    if (!intake || !selectedStartAt) {
+      showStep(intake ? 1 : 2);
+      return;
+    }
+    submitting = true;
+    if (payButton) {
+      payButton.disabled = true;
+      payButton.textContent = payButton.dataset.busyCopy || payButton.textContent;
+    }
+    if (paymentError) paymentError.hidden = true;
+    if (processingState) processingState.hidden = false;
+    try {
+      if (!bookingId || !manageToken) {
+        const data = await requestJson(`${apiBase}/bookings`, {
+          method: "POST",
+          body: JSON.stringify({
+            idempotencyKey: bookingIdempotencyKey,
+            serviceSlug: selectedService(),
+            mode: selectedMode(),
+            startAt: selectedStartAt,
+            name: input("full-name")?.value || "",
+            email: input("email")?.value || "",
+            phone: input("phone")?.value || "",
+            timezone: selectedTimezone(),
+            paymentOption: "full",
+            consentContact: input("consent")?.checked === true,
+            intake: {
+              ...intake,
+              placeSelectionToken,
+              focus: textarea("intention")?.value || "",
+            },
+          }),
+        });
+        const booking = asRecord(data.booking);
+        bookingId = asText(booking.id);
+        manageToken = asText(data.manageToken);
+        if (!bookingId || !manageToken) throw new RequestFailure(500);
+        document.querySelectorAll<HTMLButtonElement>("[data-booking-back]").forEach((button) => {
+          button.disabled = true;
+        });
+        rememberAccess({
+          bookingId,
+          manageToken,
+          holdExpiresAt: asText(data.holdExpiresAt) || asText(booking.holdExpiresAt),
+          customerTimezone: selectedTimezone(),
+          paymentOption: "full",
+        });
+      }
+      const checkoutData = await requestJson(`${apiBase}/bookings/${encodeURIComponent(bookingId)}/checkout-session`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${manageToken}` },
+        body: JSON.stringify({ manageToken, kind: "full" }),
+      });
+      const checkout = asRecord(checkoutData.checkout);
+      const checkoutUrl = asText(checkout.url);
+      if (!/^https:\/\//.test(checkoutUrl)) throw new RequestFailure(502);
+      track("payment_checkout_started", { step: 3, service: selectedService(), mode: selectedMode() });
+      window.location.assign(checkoutUrl);
+    } catch (error) {
+      const failure = error instanceof RequestFailure ? error : new RequestFailure(500);
+      track("payment_failed", {
+        status: failure.status === 503 ? "setup_required" : failure.status === 409 ? "slot_taken" : "checkout_failed",
+        service: selectedService(),
+        mode: selectedMode(),
+        step: 3,
+      });
+      if (processingState) processingState.hidden = true;
+      if (failure.status === 409 && !bookingId) {
+        if (slotError) slotError.hidden = false;
+        showStep(1);
+        await loadAvailability({ refresh: true });
+        if (slotError) slotError.hidden = false;
+      } else if (paymentError) {
+        paymentError.hidden = false;
+      }
+    } finally {
+      submitting = false;
+      if (payButton) {
+        payButton.disabled = false;
+        updatePaymentReview();
+      }
+    }
+  };
+
+  bookingForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void createBookingAndCheckout();
+  });
+
+  const showWaitlist = () => {
+    if (waitlistState) waitlistState.hidden = false;
+    document.querySelector<HTMLElement>("[data-booking-step='1']")?.setAttribute("hidden", "");
+  };
+  const hideWaitlist = () => {
+    if (waitlistState) waitlistState.hidden = true;
+    document.querySelector<HTMLElement>("[data-booking-step='1']")?.removeAttribute("hidden");
+  };
+
+  waitlistOpenButtons.forEach((button) => button.addEventListener("click", showWaitlist));
+  document.querySelector<HTMLButtonElement>("[data-booking-close-waitlist]")?.addEventListener("click", hideWaitlist);
+
+  document.querySelector<HTMLButtonElement>("[data-booking-submit-waitlist]")?.addEventListener("click", async () => {
+    const name = document.querySelector<HTMLInputElement>("[data-booking-wait-name]")?.value.trim() || "";
+    const email = document.querySelector<HTMLInputElement>("[data-booking-wait-email]")?.value.trim() || "";
+    const emailError = document.querySelector<HTMLElement>("[data-booking-wait-email-error]");
+    if (!email.includes("@")) {
+      if (emailError) emailError.hidden = false;
+      return;
+    }
+    if (emailError) emailError.hidden = true;
+    try {
+      await requestJson(`${apiBase}/waitlist`, {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          email,
+          serviceSlug: selectedService(),
+          mode: selectedMode(),
+          timezone: selectedTimezone(),
+        }),
+      });
+      document.querySelector<HTMLElement>("[data-booking-wait-form]")?.setAttribute("hidden", "");
+      document.querySelector<HTMLElement>("[data-booking-wait-done]")?.removeAttribute("hidden");
+    } catch {
+      if (emailError) emailError.hidden = false;
+    }
+  });
+
+  const initializeBooking = async () => {
+    // A reader arriving back at step one is starting again, so any half-finished
+    // hold from a previous pass is no longer theirs to resume.
+    forgetAccess();
+    try {
+      catalog = await loadCatalog();
+    } catch {
+      catalog = {};
+    }
+    const firstService = bookingForm?.querySelector<HTMLInputElement>("input[name='service']");
+    if (firstService && !selectedInput("service")) firstService.checked = true;
+    await loadAvailability();
+  };
+
+  // Paint the month skeleton before the first availability round trip, so the reader
+  // never sees an empty frame while Calendly is being read.
+  renderCalendarGrid();
+  void initializeBooking();
+</script>

@@ -1,0 +1,448 @@
+---
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import VeraFrame from "../components/vera/VeraFrame.astro";
+import VeraImage from "../components/vera/VeraImage.astro";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "letters");
+const { content, builderEdit, chromeEdit } = page;
+const requestedView = Astro.url.searchParams.get("view");
+const isConfirmed = Astro.url.searchParams.get("confirmed") === "1" || requestedView === "confirmed";
+const initialView = isConfirmed
+  ? "confirmed"
+  : requestedView === "pending" || requestedView === "sample"
+    ? requestedView
+    : "signup";
+const isSubscribed = Astro.url.searchParams.get("subscribed") === "1";
+const previewEmail = content.email_placeholder;
+const previewName = content.pending_preview_name_fallback;
+const fill = (template: string, values: Record<string, string>) =>
+  Object.entries(values).reduce(
+    (result, [key, value]) => result.replaceAll(`{{ ${key} }}`, value),
+    template,
+  );
+---
+
+<VeraFrame {...page} currentPath="/letters">
+  <section
+    class="vera-letter-state vera-letter-signup"
+    data-letter-screen="signup"
+    hidden={initialView !== "signup"}
+  >
+    <div class="vera-letter-signup__grid">
+      <div>
+        <p class="vera-status-pill" {...builderEdit("letter_kicker")}>
+          <span aria-hidden="true">✷</span>{content.letter_kicker}
+        </p>
+        <h1 class="vera-display vera-letter-state__title" tabindex="-1" data-letter-state-heading {...builderEdit("letter_title") }>
+          {content.letter_title}
+        </h1>
+        <p class="vera-lede" {...builderEdit("letter_intro")}>{content.letter_intro}</p>
+
+        <div class="vera-stats vera-letter-stats">
+          {[1, 2, 3].map((index) => (
+            <div class="vera-stat">
+              <strong {...builderEdit(`stat_${index}_value`)}>{content[`stat_${index}_value`]}</strong>
+              <span {...builderEdit(`stat_${index}_label`)}>{content[`stat_${index}_label`]}</span>
+            </div>
+          ))}
+        </div>
+
+        <h2 class="vera-letter-parts__title" {...builderEdit("parts_title")}>{content.parts_title}</h2>
+        <ol class="vera-reading-prepare vera-letter-parts">
+          {[1, 2, 3].map((index) => (
+            <li>
+              <span aria-hidden="true">{String(index).padStart(2, "0")}</span>
+              <h3 {...builderEdit(`part_${index}_title`)}>{content[`part_${index}_title`]}</h3>
+              <p {...builderEdit(`part_${index}_body`)}>{content[`part_${index}_body`]}</p>
+            </li>
+          ))}
+        </ol>
+
+        <a class="vera-letter-sample-card" href="/letters?view=sample">
+          <VeraImage alt={content.sample_alt} altField="sample_alt" edit={builderEdit} />
+          <div>
+            <div class="vera-card-meta" {...builderEdit("sample_label")}>{content.sample_label}</div>
+            <h2 {...builderEdit("sample_title")}>{content.sample_title}</h2>
+            <p {...builderEdit("sample_dek")}>{content.sample_dek}</p>
+            <div class="vera-card-meta" {...builderEdit("sample_cta")}>{content.sample_cta}</div>
+          </div>
+        </a>
+      </div>
+
+      <form class="vera-form-card vera-letter-signup__form" data-letter-signup data-newsletter-form>
+        <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" hidden />
+        <fieldset>
+          <legend {...builderEdit("signup_title")}>{content.signup_title}</legend>
+          <p class="vera-form-note" {...builderEdit("signup_intro")}>{content.signup_intro}</p>
+          <label class="vera-field">
+            <span class="vera-label" {...builderEdit("name_label")}>{content.name_label}</span>
+            <input
+              class="vera-input"
+              name="name"
+              autocomplete="name"
+              placeholder={content.name_placeholder}
+              {...builderEdit("name_placeholder")}
+            />
+          </label>
+          <label class="vera-field">
+            <span class="vera-label" {...builderEdit("email_label")}>{content.email_label}</span>
+            <input
+              class="vera-input"
+              name="email"
+              type="email"
+              autocomplete="email"
+              required
+              placeholder={content.email_placeholder}
+              {...builderEdit("email_placeholder")}
+            />
+          </label>
+          <div>
+            <div class="vera-label" {...builderEdit("birth_label")}>{content.birth_label}</div>
+            <p class="vera-form-note" {...builderEdit("birth_note")}>{content.birth_note}</p>
+          </div>
+          <div class="vera-field-row">
+            <input
+              class="vera-input"
+              name="birth-date"
+              aria-label={content.birth_date_placeholder}
+              placeholder={content.birth_date_placeholder}
+              {...builderEdit("birth_date_placeholder")}
+            />
+            <input
+              class="vera-input"
+              name="birth-time"
+              aria-label={content.birth_time_placeholder}
+              placeholder={content.birth_time_placeholder}
+              {...builderEdit("birth_time_placeholder")}
+            />
+          </div>
+          <button class="vera-button vera-button--mustard" type="submit" {...builderEdit("signup_cta") }>
+            {content.signup_cta}
+          </button>
+          <p class="vera-form-note" data-newsletter-status hidden aria-live="polite" {...chromeEdit("newsletter_email_error") }>
+            {content.newsletter_email_error}
+          </p>
+          <p class="vera-form-note" {...builderEdit("signup_note")}>{content.signup_note}</p>
+        </fieldset>
+      </form>
+    </div>
+  </section>
+
+  <section
+    class="vera-letter-state vera-letter-pending"
+    data-letter-screen="pending"
+    hidden={initialView !== "pending"}
+    aria-live="polite"
+  >
+    <div class="vera-letter-pending__grid">
+      <div>
+        <p class="vera-status-pill vera-status-pill--success" {...builderEdit("pending_kicker") }>
+          <span aria-hidden="true">✓</span>{content.pending_kicker}
+        </p>
+        <h1 class="vera-display" tabindex="-1" data-letter-state-heading {...builderEdit("pending_title") }>
+          {content.pending_title}
+        </h1>
+        <p
+          class="vera-lede"
+          data-letter-pending-body
+          data-template={content.pending_body}
+          {...builderEdit("pending_body")}
+        >
+          {fill(content.pending_body, { email: previewEmail })}
+        </p>
+
+        <h2 class="vera-letter-help__title" {...builderEdit("pending_help_title") }>
+          {content.pending_help_title}
+        </h2>
+        <ol class="vera-numbered-list vera-letter-help">
+          {[1, 2, 3].map((index) => (
+            <li>
+              <strong>{String(index).padStart(2, "0")}</strong>
+              <span {...builderEdit(`pending_help_${index}`)}>{content[`pending_help_${index}`]}</span>
+            </li>
+          ))}
+        </ol>
+        <div class="vera-actions vera-letter-pending__actions">
+          <button class="vera-button vera-button--paper vera-button--small" type="button" data-newsletter-resend {...builderEdit("pending_resend_cta") }>
+            {content.pending_resend_cta}
+          </button>
+          <button class="vera-button vera-button--paper vera-button--small" type="button" data-letter-restart {...builderEdit("pending_restart_cta") }>
+            {content.pending_restart_cta}
+          </button>
+          <span class="vera-card-meta vera-letter-resent" data-letter-resent hidden {...builderEdit("pending_resent_status") }>
+            {content.pending_resent_status}
+          </span>
+        </div>
+
+        <aside class="vera-letter-wait-note">
+          <strong {...builderEdit("pending_wait_lead")}>{content.pending_wait_lead}</strong>{" "}
+          <a href="/letters?view=sample" {...builderEdit("pending_wait_sample")}>{content.pending_wait_sample}</a>{" "}
+          <span {...builderEdit("pending_wait_tail")}>{content.pending_wait_tail}</span>
+        </aside>
+      </div>
+
+      <aside class="vera-letter-preview">
+        <div class="vera-card-meta" {...builderEdit("pending_preview_label")}>{content.pending_preview_label}</div>
+        <div class="vera-letter-preview__paper">
+          <header>
+            <div>
+              <span {...builderEdit("pending_preview_from_label")}>{content.pending_preview_from_label}</span>{" "}
+              <strong {...builderEdit("pending_preview_from_value")}>{content.pending_preview_from_value}</strong>
+            </div>
+            <div>
+              <span {...builderEdit("pending_preview_to_label")}>{content.pending_preview_to_label}</span>{" "}
+              <strong data-letter-preview-email>{previewEmail}</strong>
+            </div>
+            <strong {...builderEdit("pending_preview_subject")}>{content.pending_preview_subject}</strong>
+          </header>
+          <div class="vera-letter-preview__body">
+            <div class="vera-letter-preview__brand" {...builderEdit("pending_preview_brand")}>{content.pending_preview_brand}</div>
+            <p
+              data-letter-preview-greeting
+              data-template={content.pending_preview_greeting}
+              data-fallback={content.pending_preview_name_fallback}
+              {...builderEdit("pending_preview_greeting")}
+            >
+              {fill(content.pending_preview_greeting, { name: previewName })}
+            </p>
+            <p {...builderEdit("pending_preview_body")}>{content.pending_preview_body}</p>
+            <div class="vera-button vera-button--burnt" aria-hidden="true" {...builderEdit("pending_preview_cta") }>
+              {content.pending_preview_cta}
+            </div>
+            <p {...builderEdit("pending_preview_ignore")}>{content.pending_preview_ignore}</p>
+            <div class="vera-signature" {...builderEdit("pending_preview_signature")}>{content.pending_preview_signature}</div>
+            <footer {...builderEdit("pending_preview_footer")}>{content.pending_preview_footer}</footer>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section
+    class="vera-letter-state vera-letter-confirmed"
+    data-letter-screen="confirmed"
+    data-letter-confirmed
+    hidden={initialView !== "confirmed"}
+    aria-live="polite"
+  >
+    <div class="vera-letter-confirmed__inner">
+      <p class="vera-status-pill vera-status-pill--success" {...builderEdit("confirmed_kicker") }>
+        <span aria-hidden="true">✓</span>{content.confirmed_kicker}
+      </p>
+      <h1 class="vera-display" tabindex="-1" data-letter-state-heading {...builderEdit("confirmed_title") }>
+        {content.confirmed_title}
+      </h1>
+      <p class="vera-lede" {...builderEdit("confirmed_body")}>{content.confirmed_body}</p>
+      <div class="vera-actions">
+        <a class="vera-button vera-button--burnt vera-button--shadow" href="/letters?view=sample&amp;subscribed=1" {...builderEdit("confirmed_primary_cta") }>
+          {content.confirmed_primary_cta}
+        </a>
+        <a class="vera-button vera-button--paper" href="/readings" {...builderEdit("confirmed_secondary_cta") }>
+          {content.confirmed_secondary_cta}
+        </a>
+      </div>
+      <div class="vera-method-grid vera-letter-confirmed__notes">
+        {[1, 2, 3].map((index) => (
+          <article class="vera-info-card">
+            <div class="vera-info-card__tag" {...builderEdit(`confirmed_${index}_tag`)}>
+              {content[`confirmed_${index}_tag`]}
+            </div>
+            <h2 {...builderEdit(`confirmed_${index}_title`)}>{content[`confirmed_${index}_title`]}</h2>
+            <p {...builderEdit(`confirmed_${index}_body`)}>{content[`confirmed_${index}_body`]}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <article
+    class="vera-letter-state vera-letter-sample"
+    data-letter-screen="sample"
+    data-letter-sample
+    hidden={initialView !== "sample"}
+  >
+    <nav class="vera-letter-archive" aria-label={content.earlier_title}>
+      <a href="/letters" {...builderEdit("sample_back_cta")}>{content.sample_back_cta}</a>
+      <div>
+        {[1, 2, 3, 4, 5, 6].map((index) => (
+          <a
+            href="/letters?view=sample"
+            aria-current={index === 1 ? "page" : undefined}
+            {...builderEdit(`archive_${index}`)}
+          >
+            {content[`archive_${index}`]}
+          </a>
+        ))}
+      </div>
+    </nav>
+
+    <header class="vera-letter-sample__header">
+      <p class="vera-eyebrow" {...builderEdit("sample_meta")}>{content.sample_meta}</p>
+      <h1 class="vera-display" tabindex="-1" data-letter-state-heading {...builderEdit("sample_heading") }>
+        {content.sample_heading}
+      </h1>
+      <div class="vera-letter-author">
+        <VeraImage
+          alt={content.sample_author_alt}
+          altField="sample_author_alt"
+          edit={builderEdit}
+          shape="circle"
+        />
+        <div class="vera-card-meta">
+          <span {...builderEdit("sample_byline")}>{content.sample_byline}</span><br />
+          <span {...builderEdit("sample_place")}>{content.sample_place}</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="vera-letter-sample__grid">
+      <div class="vera-prose">
+        <p class="vera-prose__lead" {...builderEdit("sample_p1")}>{content.sample_p1}</p>
+        <p {...builderEdit("sample_p2")}>{content.sample_p2}</p>
+        <aside class="vera-info-card vera-letter-month">
+          <div class="vera-card-meta" {...builderEdit("month_title")}>{content.month_title}</div>
+          <p {...builderEdit("month_body")}>{content.month_body}</p>
+        </aside>
+        <h2 {...builderEdit("section_1_title")}>{content.section_1_title}</h2>
+        <p {...builderEdit("section_1_p1")}>{content.section_1_p1}</p>
+        <p {...builderEdit("section_1_p2")}>{content.section_1_p2}</p>
+        <p {...builderEdit("section_1_p3")}>{content.section_1_p3}</p>
+        <h2 {...builderEdit("section_2_title")}>{content.section_2_title}</h2>
+        <p {...builderEdit("section_2_p1")}>{content.section_2_p1}</p>
+        <p {...builderEdit("section_2_p2")}>{content.section_2_p2}</p>
+        <blockquote class="vera-pullquote" {...builderEdit("sample_quote")}>{content.sample_quote}</blockquote>
+        <p {...builderEdit("section_2_p3")}>{content.section_2_p3}</p>
+        <h2 {...builderEdit("section_3_title")}>{content.section_3_title}</h2>
+        <p {...builderEdit("section_3_p1")}>{content.section_3_p1}</p>
+        <p {...builderEdit("section_3_p2")}>{content.section_3_p2}</p>
+        <p {...builderEdit("section_3_p3")}>{content.section_3_p3}</p>
+        <div class="vera-signature" {...builderEdit("signature")}>{content.signature}</div>
+        <p class="vera-letter-sample__footer" {...builderEdit("sample_footer")}>{content.sample_footer}</p>
+      </div>
+
+      <aside class="vera-sidebar vera-letter-sample__rail">
+        {isSubscribed ? (
+          <div class="vera-letter-subscribed">
+            <h2 {...builderEdit("subscribed_title")}>{content.subscribed_title}</h2>
+            <p {...builderEdit("subscribed_body")}>{content.subscribed_body}</p>
+          </div>
+        ) : (
+          <form class="vera-sidebar-card vera-sidebar-card--dark" data-newsletter-form>
+            <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" hidden />
+            <h2 {...builderEdit("next_title")}>{content.next_title}</h2>
+            <p {...builderEdit("next_body")}>{content.next_body}</p>
+            <input class="vera-input" type="email" name="email" required autocomplete="email" placeholder={content.email_placeholder} {...builderEdit("email_placeholder") } />
+            <button class="vera-button vera-button--mustard vera-button--small" type="submit" {...builderEdit("next_cta") }>
+              {content.next_cta}
+            </button>
+            <p class="vera-form-note" data-newsletter-status hidden aria-live="polite" {...chromeEdit("newsletter_email_error") }>
+              {content.newsletter_email_error}
+            </p>
+          </form>
+        )}
+
+        <nav class="vera-sidebar-card vera-letter-earlier" aria-label={content.earlier_title}>
+          <div class="vera-card-meta" {...builderEdit("earlier_title")}>{content.earlier_title}</div>
+          {[1, 2, 3, 4].map((index) => (
+            <a href="/letters?view=sample">
+              <span {...builderEdit(`back_${index}_date`)}>{content[`back_${index}_date`]}</span>
+              <strong {...builderEdit(`back_${index}_title`)}>{content[`back_${index}_title`]}</strong>
+            </a>
+          ))}
+        </nav>
+
+        <div class="vera-sidebar-card vera-letter-long">
+          <h2 {...builderEdit("long_title")}>{content.long_title}</h2>
+          <p {...builderEdit("long_body")}>{content.long_body}</p>
+          <a href="/readings" {...builderEdit("long_cta")}>{content.long_cta}</a>
+        </div>
+      </aside>
+    </div>
+  </article>
+</VeraFrame>
+
+<script>
+  const letterSignup = document.querySelector<HTMLFormElement>("[data-letter-signup]");
+  const letterScreens = Array.from(document.querySelectorAll<HTMLElement>("[data-letter-screen]"));
+  const pendingBody = document.querySelector<HTMLElement>("[data-letter-pending-body]");
+  const previewEmailNode = document.querySelector<HTMLElement>("[data-letter-preview-email]");
+  const previewGreeting = document.querySelector<HTMLElement>("[data-letter-preview-greeting]");
+  const resentStatus = document.querySelector<HTMLElement>("[data-letter-resent]");
+  let resendRequested = false;
+
+  const fillTemplate = (template: string, values: Record<string, string>) =>
+    Object.entries(values).reduce(
+      (result, [key, value]) => result.replaceAll(`{{ ${key} }}`, value),
+      template,
+    );
+
+  const showLetterScreen = (name: string, focus = true) => {
+    letterScreens.forEach((screen) => {
+      screen.hidden = screen.dataset.letterScreen !== name;
+    });
+    const heading = document.querySelector<HTMLElement>(
+      `[data-letter-screen="${name}"] [data-letter-state-heading]`,
+    );
+    if (focus) heading?.focus();
+  };
+
+  const updatePendingIdentity = () => {
+    if (!letterSignup) return;
+    const formData = new FormData(letterSignup);
+    const email = String(formData.get("email") ?? "").trim();
+    const name = String(formData.get("name") ?? "").trim().split(/\s+/)[0] ||
+      previewGreeting?.dataset.fallback || "";
+    if (pendingBody?.dataset.template) {
+      pendingBody.textContent = fillTemplate(pendingBody.dataset.template, { email });
+    }
+    if (previewEmailNode) previewEmailNode.textContent = email;
+    if (previewGreeting?.dataset.template) {
+      previewGreeting.textContent = fillTemplate(previewGreeting.dataset.template, { name });
+    }
+  };
+
+  document.addEventListener("astropages:newsletter-pending", (event) => {
+    const requestedForm = (event as CustomEvent<{ form?: HTMLFormElement }>).detail?.form;
+    if (requestedForm !== letterSignup) return;
+    updatePendingIdentity();
+    showLetterScreen("pending");
+    if (resendRequested && resentStatus) resentStatus.hidden = false;
+    resendRequested = false;
+  });
+
+  document.addEventListener("astropages:newsletter-error", (event) => {
+    const requestedForm = (event as CustomEvent<{ form?: HTMLFormElement }>).detail?.form;
+    if (requestedForm !== letterSignup) return;
+    resendRequested = false;
+    showLetterScreen("signup", false);
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-newsletter-resend]")?.addEventListener("click", () => {
+    resendRequested = true;
+    letterSignup?.requestSubmit();
+  });
+
+  document.querySelector<HTMLButtonElement>("[data-letter-restart]")?.addEventListener("click", () => {
+    letterSignup?.reset();
+    if (resentStatus) resentStatus.hidden = true;
+    const status = letterSignup?.querySelector<HTMLElement>("[data-newsletter-status]");
+    if (status) status.hidden = true;
+    showLetterScreen("signup");
+  });
+
+  const letterParams = new URLSearchParams(window.location.search);
+  if (letterParams.get("confirmed") === "1") {
+    window.addEventListener("load", () => {
+      window.astroPagesTrack?.("letter_opt_in_confirmed", {
+        status: "confirmed",
+        source: "email",
+      });
+    }, { once: true });
+  }
+  if (letterParams.get("confirmation") === "invalid-or-expired") {
+    const status = letterSignup?.querySelector<HTMLElement>("[data-newsletter-status]");
+    if (status) status.hidden = false;
+  }
+</script>

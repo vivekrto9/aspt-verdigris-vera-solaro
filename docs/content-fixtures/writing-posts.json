@@ -1,0 +1,447 @@
+{
+  "$comment": "English source copy for the Vera Solaro `posts` collection. Load through the EmDash admin or MCP content tools — nothing under src/ imports this file, and no article may be hardcoded in theme code. See README.md in this directory.",
+  "collection": "posts",
+  "locale": "en",
+  "posts": [
+    {
+      "slug": "saturn-is-not-punishing-you",
+      "status": "published",
+      "title": "Saturn is not punishing you",
+      "excerpt": "On the difference between a hard transit and a bad life — and why the second one is usually a story we add.",
+      "category": "Transits",
+      "featured_image": {
+        "src": "/_assets/aliases/ephemeris-pages/ephemeris-pages.webp",
+        "alt": "Ephemeris pages, close up"
+      },
+      "publishedAt": "2024-03-12T00:00:00.000Z",
+      "content": [
+        {
+          "_type": "block",
+          "_key": "k1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "k0",
+              "text": "A woman came to me in February, thirty-one years old, convinced she had ruined her life. She had left a job, a flat and a long engagement inside eleven months. She wanted to know what she had done to deserve the year she'd had.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "k3",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "k2",
+              "text": "Nothing. That is the whole answer, and it takes an hour to make it land.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "k5",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "k4",
+              "text": "Saturn had been sitting on her Sun since the previous spring — the first crossing since she was born. In the older books this is written up in language that would frighten anybody: loss, restriction, the heavy hand. The books are not wrong about the weather. They are catastrophically wrong about the tone.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "k7",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "k6",
+              "text": "What the old texts actually say",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "k9",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "k8",
+              "text": "Read the tradition carefully and Saturn is not a judge. He is a surveyor. He arrives with a measuring tape and asks, with no interest whatsoever in your feelings, whether the thing you built will hold weight. Not whether it is beautiful. Not whether you love it. Whether it holds.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "kb",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ka",
+              "text": "Anything that cannot bear the load comes down during that visit. The engagement she had been quietly negotiating with herself for four years could not bear the load. Neither could the job she had taken for the title. Saturn did not remove them. Saturn removed the possibility of continuing to pretend.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "kd",
+          "style": "blockquote",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "kc",
+              "text": "A hard transit tells you what is load-bearing. The suffering comes almost entirely from the year you spend insisting the answer is different.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "kf",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ke",
+              "text": "Where the punishment story comes from",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "kh",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "kg",
+              "text": "Astrology inherited its vocabulary from centuries in which almost everyone read the sky morally. A bad year had to be a debt. If you were ill, something had been done. If you were poor, somebody was owed. That grammar survives in the texts long after nobody sensible believes it, and it survives in us — which is why my clients arrive asking what they did, not what they are being asked to notice.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "kj",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ki",
+              "text": "I have drawn just over four thousand charts. I have never once seen a transit deliver a verdict. I have seen hundreds deliver a bill that was already outstanding.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "kl",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "kk",
+              "text": "*Fig. 1 — Saturn crossing a natal Sun in the seventh house. Drawn for a client in 2019, reproduced with her blessing.*",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "kn",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "km",
+              "text": "A better set of questions",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "kp",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ko",
+              "text": "When Saturn crosses something of yours, three questions do more work than any forecast:",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "kr",
+          "style": "normal",
+          "listItem": "bullet",
+          "level": 1,
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "kq",
+              "text": "What have I been maintaining with effort rather than conviction? That is the thing under survey.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "kt",
+          "style": "normal",
+          "listItem": "bullet",
+          "level": 1,
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ks",
+              "text": "What would I keep even if nobody clapped? That is what will still be standing in three years.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "kv",
+          "style": "normal",
+          "listItem": "bullet",
+          "level": 1,
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ku",
+              "text": "Where am I negotiating with reality instead of arranging my affairs around it?",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "kx",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "kw",
+              "text": "None of those questions require you to believe a planet is doing anything to you. They work just as well if you consider the chart a very old, very precise mirror. I don't mind which you think it is; I mind whether you answer honestly.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "kz",
+          "style": "h2",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "ky",
+              "text": "What happened to her",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "k11",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "k10",
+              "text": "She wrote in November. She is teaching, badly paid and clearly delighted, and living alone for the first time at thirty-two. Her letter said the year had not been a punishment; it had been an eviction, and she had needed one. Saturn will cross her Sun again when she is sixty. My guess is she'll recognise the knock.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "k13",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "k12",
+              "text": "If you are in the middle of one of these years, I can tell you the timing, the sequence and roughly what is under survey. What I cannot do — and would not, if I could — is tell you it was deserved.",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "seo": {
+        "title": "Saturn is not punishing you · Vera Solaro",
+        "description": "On the difference between a hard transit and a bad life, and why punishment is usually a story we add.",
+        "canonical": "/writing/saturn-is-not-punishing-you"
+      }
+    },
+    {
+      "slug": "why-i-still-draw-by-hand",
+      "status": "draft",
+      "title": "Why I still draw by hand",
+      "excerpt": "Forty minutes with a compass teaches you things a rendered wheel will never bother to mention.",
+      "category": "Craft",
+      "featured_image": null,
+      "publishedAt": "2025-11-01T00:00:00.000Z",
+      "content": [],
+      "seo": {
+        "title": "Why I still draw by hand · Vera Solaro",
+        "description": "Forty minutes with a compass teaches you things a rendered wheel will never bother to mention.",
+        "canonical": "/writing/why-i-still-draw-by-hand"
+      }
+    },
+    {
+      "slug": "find-your-birth-time",
+      "status": "draft",
+      "title": "Find your birth time",
+      "excerpt": "Hospital records, birth certificates, and what to do when your mother says “sometime after lunch”.",
+      "category": "Basics",
+      "featured_image": null,
+      "publishedAt": "2025-09-01T00:00:00.000Z",
+      "content": [],
+      "seo": {
+        "title": "Find your birth time · Vera Solaro",
+        "description": "Hospital records, birth certificates, and what to do when your mother says “sometime after lunch”.",
+        "canonical": "/writing/find-your-birth-time"
+      }
+    },
+    {
+      "slug": "the-twelfth-house-is-not-a-curse",
+      "status": "draft",
+      "title": "The twelfth house is not a curse",
+      "excerpt": "The most feared place in the chart is mostly just the part of your life nobody watched you build.",
+      "category": "Houses",
+      "featured_image": null,
+      "publishedAt": "2025-06-01T00:00:00.000Z",
+      "content": [],
+      "seo": {
+        "title": "The twelfth house is not a curse · Vera Solaro",
+        "description": "The most feared place in the chart is mostly just the part of your life nobody watched you build.",
+        "canonical": "/writing/the-twelfth-house-is-not-a-curse"
+      }
+    },
+    {
+      "slug": "what-a-retrograde-actually-does",
+      "status": "draft",
+      "title": "What a retrograde actually does",
+      "excerpt": "It does not break your laptop. It does reliably surface the conversation you have been avoiding.",
+      "category": "Transits",
+      "featured_image": null,
+      "publishedAt": "2025-02-01T00:00:00.000Z",
+      "content": [],
+      "seo": {
+        "title": "What a retrograde actually does · Vera Solaro",
+        "description": "It does not break your laptop. It does reliably surface the conversation you have been avoiding.",
+        "canonical": "/writing/what-a-retrograde-actually-does"
+      }
+    },
+    {
+      "slug": "whole-signs-and-why-i-left-placidus",
+      "status": "draft",
+      "title": "Whole signs, and why I left Placidus",
+      "excerpt": "A technical piece for practitioners. I changed house systems in 1991 and never went back.",
+      "category": "Method",
+      "featured_image": null,
+      "publishedAt": "2024-10-01T00:00:00.000Z",
+      "content": [],
+      "seo": {
+        "title": "Whole signs, and why I left Placidus · Vera Solaro",
+        "description": "A technical piece for practitioners. I changed house systems in 1991 and never went back.",
+        "canonical": "/writing/whole-signs-and-why-i-left-placidus"
+      }
+    },
+    {
+      "slug": "reading-for-people-who-dont-believe-it",
+      "status": "draft",
+      "title": "Reading for people who don't believe it",
+      "excerpt": "Sceptics make the best clients. They ask better questions and never confuse me with a priest.",
+      "category": "Practice",
+      "featured_image": null,
+      "publishedAt": "2024-05-01T00:00:00.000Z",
+      "content": [],
+      "seo": {
+        "title": "Reading for people who don't believe it · Vera Solaro",
+        "description": "Sceptics make the best clients. They ask better questions and never confuse me with a priest.",
+        "canonical": "/writing/reading-for-people-who-dont-believe-it"
+      }
+    },
+    {
+      "slug": "your-saturn-return-is-not-a-deadline",
+      "status": "draft",
+      "title": "Your Saturn return is not a deadline",
+      "excerpt": "Twenty-nine is not a verdict on your twenties. What the return actually asks, and when it lets go.",
+      "category": "Transits",
+      "featured_image": null,
+      "publishedAt": "2023-01-01T00:00:00.000Z",
+      "content": [],
+      "seo": {
+        "title": "Your Saturn return is not a deadline · Vera Solaro",
+        "description": "Twenty-nine is not a verdict on your twenties. What the return actually asks, and when it lets go.",
+        "canonical": "/writing/your-saturn-return-is-not-a-deadline"
+      }
+    },
+    {
+      "slug": "the-three-questions-i-ask-first",
+      "status": "draft",
+      "title": "The three questions I ask first",
+      "excerpt": "Before a single placement. They tell me more in four minutes than the chart does in forty.",
+      "category": "Practice",
+      "featured_image": null,
+      "publishedAt": "2021-08-01T00:00:00.000Z",
+      "content": [],
+      "seo": {
+        "title": "The three questions I ask first · Vera Solaro",
+        "description": "Before a single placement. They tell me more in four minutes than the chart does in forty.",
+        "canonical": "/writing/the-three-questions-i-ask-first"
+      }
+    },
+    {
+      "slug": "on-almanacs-and-my-grandmothers-ephemeris",
+      "status": "draft",
+      "title": "On almanacs, and my grandmother's ephemeris",
+      "excerpt": "The oldest piece here, and the only one I would not change a word of. A kitchen, a pharmacist, a stolen book.",
+      "category": "Craft",
+      "featured_image": null,
+      "publishedAt": "1998-03-01T00:00:00.000Z",
+      "content": [],
+      "seo": {
+        "title": "On almanacs, and my grandmother's ephemeris · Vera Solaro",
+        "description": "The oldest piece here, and the only one I would not change a word of. A kitchen, a pharmacist, a stolen book.",
+        "canonical": "/writing/on-almanacs-and-my-grandmothers-ephemeris"
+      }
+    }
+  ]
+}

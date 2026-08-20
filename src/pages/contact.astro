@@ -1,0 +1,245 @@
+---
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import VeraFrame from "../components/vera/VeraFrame.astro";
+import VeraImage from "../components/vera/VeraImage.astro";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "contact");
+const { content, builderEdit } = page;
+const selectedTopic = Astro.url.searchParams.get("topic") === "gift-certificate" ? 3 : 1;
+---
+
+<VeraFrame {...page} currentPath="/contact">
+  <section class="vera-page-hero">
+    <p class="vera-eyebrow" {...builderEdit("contact_eyebrow")}>{content.contact_eyebrow}</p>
+    <h1 class="vera-display" {...builderEdit("contact_title")}>{content.contact_title}</h1>
+    <p class="vera-lede" {...builderEdit("contact_intro")}>{content.contact_intro}</p>
+  </section>
+
+  <section class="vera-section vera-section--paper vera-contact-layout">
+    <div>
+      <div class="vera-support-table-wrap">
+        <table class="vera-support-table">
+          <tbody>
+            {[1, 2, 3, 4].map((index) => (
+              <tr>
+                <th scope="row" {...builderEdit(`card_${index}_tag`)}>
+                  {content[`card_${index}_tag`]}
+                </th>
+                <td>
+                  <strong {...builderEdit(`card_${index}_value`)}>{content[`card_${index}_value`]}</strong>
+                  <span {...builderEdit(`card_${index}_note`)}>{content[`card_${index}_note`]}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <figure style="margin: 0">
+        <VeraImage alt={content.map_alt} altField="map_alt" edit={builderEdit} class="vera-contact-map" />
+        <figcaption class="vera-card-meta" style="margin-top: 10px" {...builderEdit("map_caption")}>
+          {content.map_caption}
+        </figcaption>
+      </figure>
+      <aside class="vera-info-card" style="margin-top: 26px">
+        <h2 {...builderEdit("limits_title")}>{content.limits_title}</h2>
+        <p {...builderEdit("limits_body")}>{content.limits_body}</p>
+      </aside>
+    </div>
+
+    <div class="vera-sidebar" style="position: static">
+      <form class="vera-form-card vera-contact-form" data-contact-form novalidate tabindex="-1">
+        <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" hidden />
+        <fieldset>
+          <legend style="font-family: var(--vera-font-display); font-size: 28px; color: var(--vera-aubergine); letter-spacing: 0; text-transform: none" {...builderEdit("form_title")}>
+            {content.form_title}
+          </legend>
+          <p class="vera-form-note" {...builderEdit("form_intro")}>{content.form_intro}</p>
+          <div
+            class="vera-booking-alert vera-contact-alert"
+            data-contact-alert
+            data-message-missing={content.error_missing}
+            data-message-long={content.error_long}
+            data-message-rate={content.error_rate}
+            hidden
+            role="alert"
+            aria-live="assertive"
+            tabindex="-1"
+          >
+            <span class="vera-booking-alert__symbol" aria-hidden="true">!</span>
+            <div>
+              <h2 {...builderEdit("error_title")}>{content.error_title}</h2>
+              <p data-contact-alert-message>{content.error_body}</p>
+            </div>
+          </div>
+          <label class="vera-field">
+            <span class="vera-label" {...builderEdit("name_label")}>{content.name_label}</span>
+            <input class="vera-input" name="name" autocomplete="name" required minlength="2" />
+          </label>
+          <label class="vera-field">
+            <span class="vera-label" {...builderEdit("email_label")}>{content.email_label}</span>
+            <input
+              class="vera-input"
+              name="email"
+              type="email"
+              autocomplete="email"
+              required
+              placeholder={content.email_placeholder}
+              {...builderEdit("email_placeholder")}
+            />
+            <p class="vera-form-note" data-contact-error hidden aria-live="polite" tabindex="-1" {...builderEdit("email_error")}>
+              {content.email_error}
+            </p>
+          </label>
+          <fieldset class="vera-form-section">
+            <legend {...builderEdit("topic_label")}>{content.topic_label}</legend>
+            <div class="vera-filter-pills" style="margin-top: 0">
+              {[1, 2, 3, 4].map((index) => (
+                <label class="vera-pill">
+                  <input type="radio" name="topic" value={index} checked={index === selectedTopic} />
+                  <span {...builderEdit(`topic_${index}`)}>{content[`topic_${index}`]}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <label class="vera-field">
+            <span class="vera-label" {...builderEdit("note_label")}>{content.note_label}</span>
+            <textarea
+              class="vera-textarea"
+              name="note"
+              required
+              minlength="10"
+              maxlength="4000"
+            ></textarea>
+          </label>
+          <button class="vera-button vera-button--burnt vera-button--shadow" type="submit" {...builderEdit("form_cta")}>
+            {content.form_cta}
+          </button>
+        </fieldset>
+      </form>
+
+      <div class="vera-form-card vera-contact-success" data-contact-success hidden aria-live="polite" tabindex="-1">
+        <p class="vera-status-pill vera-status-pill--success" {...builderEdit("success_kicker") }>
+          <span aria-hidden="true">✓</span>{content.success_kicker}
+        </p>
+        <h2 class="vera-heading" style="font-size: 30px" {...builderEdit("success_title")}>{content.success_title}</h2>
+        <p class="vera-lede" style="font-size: 15px" {...builderEdit("success_body")}>{content.success_body}</p>
+        <button class="vera-button vera-button--paper vera-button--small" type="button" data-contact-reset {...builderEdit("success_reset")}>
+          {content.success_reset}
+        </button>
+      </div>
+    </div>
+  </section>
+</VeraFrame>
+
+<script>
+  const contactEndpoint = "/api/astropages/generated-site/vera/contact";
+  const noteLimit = 4_000;
+  const contactForm = document.querySelector<HTMLFormElement>("[data-contact-form]");
+  const contactSuccess = document.querySelector<HTMLElement>("[data-contact-success]");
+  const contactReset = document.querySelector<HTMLButtonElement>("[data-contact-reset]");
+  const contactError = contactForm?.querySelector<HTMLElement>("[data-contact-error]");
+  const contactAlert = contactForm?.querySelector<HTMLElement>("[data-contact-alert]");
+  const contactAlertMessage = contactAlert?.querySelector<HTMLElement>("[data-contact-alert-message]");
+  const contactSubmit = contactForm?.querySelector<HTMLButtonElement>("button[type='submit']");
+  const contactMessages = {
+    generic: contactAlertMessage?.textContent?.trim() || "That note did not send. Please try again.",
+    missing: contactAlert?.dataset.messageMissing?.trim()
+      || "Add your name, an email address, and a note of at least ten characters.",
+    long: contactAlert?.dataset.messageLong?.trim()
+      || `Keep the note under ${noteLimit.toLocaleString()} characters.`,
+    rate: contactAlert?.dataset.messageRate?.trim()
+      || "That's a few notes in a short while. Wait about fifteen minutes, then try again.",
+  };
+
+  const hideContactAlert = () => {
+    if (contactAlert) contactAlert.hidden = true;
+  };
+
+  const showContactAlert = (message: string) => {
+    if (!contactAlert) return;
+    if (contactAlertMessage) contactAlertMessage.textContent = message;
+    contactAlert.hidden = false;
+    contactAlert.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    contactAlert.focus();
+  };
+
+  contactForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (contactError) contactError.hidden = true;
+    hideContactAlert();
+
+    const formData = new FormData(contactForm);
+    const name = String(formData.get("name") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+    const message = String(formData.get("note") ?? "").trim();
+    const topicInput = contactForm.querySelector<HTMLInputElement>("input[name='topic']:checked");
+    const topic = topicInput?.nextElementSibling?.textContent?.trim() ?? "";
+    const emailInput = contactForm.elements.namedItem("email");
+    const noteInput = contactForm.elements.namedItem("note");
+    if (message.length > noteLimit) {
+      showContactAlert(contactMessages.long);
+      if (noteInput instanceof HTMLElement) noteInput.focus();
+      return;
+    }
+    const firstInvalid = Array.from(contactForm.elements).find((control) =>
+      control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement
+        ? !control.validity.valid
+        : false
+    );
+    if (name.length < 2 || message.length < 10 || !topic || firstInvalid) {
+      const invalidEmail = emailInput instanceof HTMLInputElement && !emailInput.validity.valid;
+      if (contactError) contactError.hidden = !invalidEmail;
+      showContactAlert(contactMessages.missing);
+      if (invalidEmail) contactError?.focus();
+      else if (firstInvalid instanceof HTMLElement) firstInvalid.focus();
+      return;
+    }
+
+    if (contactSubmit) contactSubmit.disabled = true;
+    try {
+      const response = await fetch(contactEndpoint, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          topic,
+          message,
+          website: String(formData.get("website") ?? ""),
+          consentContact: true,
+          consentMarketing: false,
+        }),
+      });
+      const result = await response.json().catch(() => null) as
+        { status?: string; message?: string } | null;
+      if (!response.ok || result?.status !== "ready") {
+        if (response.status === 429) showContactAlert(contactMessages.rate);
+        else if (response.status === 413) showContactAlert(contactMessages.long);
+        else showContactAlert(result?.message?.trim() || contactMessages.generic);
+        window.astroPagesTrack?.("contact_submitted", { status: "failed" });
+        return;
+      }
+      contactForm.hidden = true;
+      if (contactSuccess) {
+        contactSuccess.hidden = false;
+        contactSuccess.focus();
+      }
+      window.astroPagesTrack?.("contact_submitted", { status: "submitted" });
+    } catch {
+      showContactAlert(contactMessages.generic);
+    } finally {
+      if (contactSubmit) contactSubmit.disabled = false;
+    }
+  });
+  contactReset?.addEventListener("click", () => {
+    contactForm?.reset();
+    if (contactError) contactError.hidden = true;
+    hideContactAlert();
+    if (contactForm) contactForm.hidden = false;
+    if (contactSuccess) contactSuccess.hidden = true;
+    contactForm?.focus();
+  });
+</script>

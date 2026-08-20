@@ -1,0 +1,131 @@
+---
+import { loadPublicPageContent } from "../../builder/public-page.ts";
+import VeraFrame from "../../components/vera/VeraFrame.astro";
+import VeraPortalNav from "../../components/vera/VeraPortalNav.astro";
+import { getRuntimeEnv } from "../../server/generated-site/request.ts";
+import { getVeraAccountPortal } from "../../server/vera/account.ts";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "account");
+const { content, builderEdit, chromeEdit } = page;
+const env = await getRuntimeEnv(Astro);
+const portal = await getVeraAccountPortal(env as never, Astro.request);
+if (!portal.ok) {
+  return Astro.redirect(`/login?next=${encodeURIComponent(`${Astro.url.pathname}${Astro.url.search}`)}`, 302);
+}
+type BillingRow = Record<string, unknown>;
+const accountBookings = portal.bookings as BillingRow[];
+const accountInvoices = portal.invoices as BillingRow[];
+
+const pageSize = 10;
+const requestedPage = Number.parseInt(Astro.url.searchParams.get("billingPage") || "1", 10);
+const totalPages = Math.max(1, Math.ceil(accountInvoices.length / pageSize));
+const currentPage = Math.min(Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1, totalPages);
+const invoices = accountInvoices.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+const bookingById = new Map(accountBookings.map((booking) => [String(booking.id), booking]));
+const openBalances = accountBookings.filter((booking) =>
+  Number(booking.balance_cents) > 0 &&
+  !["cancelled", "expired", "refunded", "completed"].includes(String(booking.status)),
+);
+const money = (cents: unknown, currency: unknown) => {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: String(currency || "USD"),
+      minimumFractionDigits: Number(cents) % 100 === 0 ? 0 : 2,
+      maximumFractionDigits: 2,
+    }).format(Number(cents) / 100);
+  } catch {
+    return `$${(Number(cents) / 100).toFixed(2)}`;
+  }
+};
+const date = (value: unknown) => value
+  ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(String(value)))
+  : "";
+const statusCopy = (status: unknown) => {
+  const value = String(status || "").toLowerCase();
+  if (value === "refunded") return content.billing_status_refunded;
+  if (value === "partially_refunded") return content.billing_status_partial;
+  return content.billing_status_paid;
+};
+const pageHref = (value: number) => value === 1 ? "/account/billing" : `/account/billing?billingPage=${value}`;
+---
+
+<VeraFrame {...page} currentPath="/account">
+  <VeraPortalNav content={content} chromeEdit={chromeEdit} active="billing" />
+
+  <section class="vera-page-hero vera-billing-hero">
+    <p class="vera-eyebrow" {...builderEdit("billing_eyebrow")}>{content.billing_eyebrow}</p>
+    <h1 class="vera-display" {...builderEdit("billing_title")}>{content.billing_title}</h1>
+    <p class="vera-lede" {...builderEdit("billing_intro")}>{content.billing_intro}</p>
+  </section>
+
+  <section class="vera-section vera-section--paper vera-billing-layout">
+    <div>
+      {openBalances.length > 0 && (
+        <article class="vera-billing-balance">
+          <div>
+            <p class="vera-card-meta" {...builderEdit("billing_balance_title")}>{content.billing_balance_title}</p>
+            <h2>{money(openBalances.reduce((total, booking) => total + Number(booking.balance_cents || 0), 0), openBalances[0]?.currency)}</h2>
+            <p {...builderEdit("billing_balance_body")}>{content.billing_balance_body}</p>
+          </div>
+          <a class="vera-button vera-button--mustard vera-button--small" href="/account#overview" {...builderEdit("billing_balance_cta")}>{content.billing_balance_cta}</a>
+        </article>
+      )}
+
+      <header class="vera-billing-section-heading">
+        <h2 class="vera-heading" {...builderEdit("billing_history_title")}>{content.billing_history_title}</h2>
+        {accountInvoices.length > 0 && <span class="vera-card-meta">{accountInvoices.length}</span>}
+      </header>
+
+      {invoices.length > 0 ? (
+        <div class="vera-billing-ledger">
+          {invoices.map((invoice) => {
+            const booking = bookingById.get(String(invoice.booking_id));
+            return (
+              <article class="vera-billing-row">
+                <span class="vera-billing-row__mark" aria-hidden="true">✷</span>
+                <div class="vera-billing-row__main">
+                  <div>
+                    <span class="vera-card-meta" {...builderEdit("billing_invoice_label")}>{content.billing_invoice_label}</span>
+                    <h3>{String(invoice.invoice_number)}</h3>
+                  </div>
+                  <div>
+                    <span class="vera-card-meta" {...builderEdit("billing_booking_label")}>{content.billing_booking_label}</span>
+                    <p>{String(booking?.booking_number || "—")}</p>
+                  </div>
+                  <div>
+                    <span class="vera-card-meta">{date(invoice.issued_at)}</span>
+                    <p>{statusCopy(invoice.status)}</p>
+                  </div>
+                </div>
+                <strong>{money(invoice.amount_cents, invoice.currency)}</strong>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <article class="vera-account-empty vera-billing-empty">
+          <span class="vera-account-empty__symbol" aria-hidden="true">✷</span>
+          <h2 {...builderEdit("billing_empty_title")}>{content.billing_empty_title}</h2>
+          <p {...builderEdit("billing_empty_body")}>{content.billing_empty_body}</p>
+        </article>
+      )}
+
+      {totalPages > 1 && (
+        <nav class="vera-billing-pagination" aria-label={content.billing_history_title}>
+          <a class="vera-button vera-button--paper vera-button--small" href={pageHref(Math.max(1, currentPage - 1))} aria-disabled={currentPage === 1}>←</a>
+          <span class="vera-card-meta">{currentPage} / {totalPages}</span>
+          <a class="vera-button vera-button--paper vera-button--small" href={pageHref(Math.min(totalPages, currentPage + 1))} aria-disabled={currentPage === totalPages}>→</a>
+        </nav>
+      )}
+    </div>
+
+    <aside class="vera-sidebar-card">
+      <h2 {...builderEdit("help_title")}>{content.help_title}</h2>
+      <p {...builderEdit("help_body")}>{content.help_body}</p>
+      <a class="vera-card-meta" href="/contact?topic=payment" {...builderEdit("help_cta")}>{content.help_cta}</a>
+    </aside>
+  </section>
+</VeraFrame>

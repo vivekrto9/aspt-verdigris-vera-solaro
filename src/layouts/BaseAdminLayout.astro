@@ -1,0 +1,17 @@
+---
+import "./BaseLayout.astro";
+const { title = "Generated Site Admin" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <link rel="stylesheet" href="/src/styles/base.css" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

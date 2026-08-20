@@ -1,0 +1,563 @@
+---
+import { loadPublicPageContent } from "../../../builder/public-page.ts";
+import BookingProgress from "../../../components/vera/booking/BookingProgress.astro";
+import VeraFrame from "../../../components/vera/VeraFrame.astro";
+import { loadVeraBookingForPage } from "../../../server/vera/booking-session.ts";
+import { listVeraCatalog } from "../../../server/vera/catalog.ts";
+import { getRuntimeEnv } from "../../../server/generated-site/request.ts";
+import { getCustomerSession } from "../../../server/aggregator/customer-auth.ts";
+import { bookingDefaults } from "../../../data/vera/content.ts";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "booking");
+const { content, builderEdit, chromeEdit } = page;
+const env = await getRuntimeEnv(Astro);
+const bookingId = String(Astro.params.id ?? "");
+
+const status = await loadVeraBookingForPage({ env: env as never, request: Astro.request, bookingId });
+if (!status.ok) return Astro.redirect("/booking", 302);
+const booking = status.booking;
+const customerSession = await getCustomerSession(env as never, Astro.request);
+const accountCsrfToken = customerSession?.csrfToken ?? "";
+
+// Return query parameters only choose helpful interim copy. The state returned by
+// the server remains authoritative; only Stripe's signed webhook can move payment.
+const returnHint = Astro.url.searchParams.get("payment");
+const authoritativeState = String(booking.confirmationState || "awaiting_payment");
+const initialState = authoritativeState === "confirmed" || authoritativeState === "action_required" || authoritativeState === "paid_scheduling"
+  ? authoritativeState
+  : returnHint === "processing"
+    ? "processing"
+    : returnHint === "cancelled"
+      ? "failed"
+      : authoritativeState;
+const confirmed = authoritativeState === "confirmed";
+const parseStateRows = (value: string) => String(value ?? "").split("\n").map((row) => {
+  const [
+    key = "", kicker = "", title = "", body = "", checkAgain = "", retryPayment = "", support = "",
+    paymentStatus = "", schedulingStatus = "", referenceLabel = "", paymentLabel = "", schedulingLabel = "",
+    checkedCopy = "", checkingCopy = "",
+  ] = row.split("|");
+  return {
+    key, kicker, title, body, checkAgain, retryPayment, support, paymentStatus, schedulingStatus,
+    referenceLabel, paymentLabel, schedulingLabel, checkedCopy, checkingCopy,
+  };
+});
+const defaultStateRows = parseStateRows(bookingDefaults.confirmation_state_copy);
+const stateRows = parseStateRows(String(content.confirmation_state_copy ?? "")).map((row) => {
+  const fallback = defaultStateRows.find((candidate) => candidate.key === row.key) ?? defaultStateRows[0];
+  if (!fallback) return row;
+  return Object.fromEntries(
+    Object.entries(row).map(([key, value]) => [key, value || fallback[key as keyof typeof fallback] || ""]),
+  ) as typeof row;
+});
+const stateCopy = stateRows.find((row) => row.key === initialState) ?? stateRows[0] ?? { kicker: "", title: "", body: "" };
+const confirmationActions = stateRows[0] ?? { checkAgain: "", retryPayment: "", support: "" };
+const catalog = await listVeraCatalog(env as never);
+const service = catalog.services.find((row) => row.slug === booking.serviceSlug);
+const currency = booking.currency || "USD";
+const money = (cents: number) => {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+      maximumFractionDigits: 2,
+    }).format(cents / 100);
+  } catch {
+    return `$${(cents / 100).toFixed(2)}`;
+  }
+};
+const fill = (template: string, values: Record<string, string>) =>
+  String(template ?? "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_match, key: string) => values[key] ?? "");
+const when = booking.selectedStartAt
+  ? new Intl.DateTimeFormat("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "Europe/Rome",
+    }).format(new Date(booking.selectedStartAt))
+  : "";
+const summary = {
+  serviceName: service?.name ?? "",
+  when,
+  modeCopy: booking.mode === "in_person" ? content.summary_mode_room : content.summary_mode_call,
+  paid: money(Number(booking.paidCents)),
+  balanceCopy: fill(content.confirmed_balance_template, { balance: money(Number(booking.balanceCents)) }),
+};
+const summaryLabels = String(content.summary_labels ?? "").split("\n");
+const paymentCompactCopy = String(content.payment_compact_intro ?? "").split("\n");
+const durationMinutes = Number(service?.durationMinutes ?? 0);
+const durationCopy = durationMinutes > 0
+  ? durationMinutes < 60
+    ? `${durationMinutes} minutes`
+    : durationMinutes % 60 === 0
+      ? `${durationMinutes / 60} ${durationMinutes === 60 ? "hour" : "hours"}`
+      : `${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60}m`
+  : "";
+const dueNow = money(Number(booking.balanceCents));
+const retrySubmitCopy = fill(content.submit_cta, { due_now: dueNow });
+const referenceCopy = fill(content.confirmed_reference_template, { reference: booking.bookingNumber });
+const showBalanceNote = Number(booking.balanceCents) > 0;
+const birthTimeUnknown = booking.birthTimeUnknown === true;
+const confirmationPrep = [1, 2, 3].map((index) =>
+  String(content[`confirmed_prep_${index}`] ?? "").split("\n"),
+);
+const confirmationEmailReply = String(content.confirmed_email_reply ?? "").split("\n");
+---
+
+<VeraFrame {...page} currentPath="/booking">
+  <section class="vera-section vera-section--paper vera-section--booking">
+    <div
+      class="vera-booking-shell"
+      data-vera-booking
+      data-booking-id={bookingId}
+      data-start-at={booking.selectedStartAt}
+      data-service-slug={booking.serviceSlug}
+      data-mode={booking.mode}
+      data-confirmed={confirmed ? "true" : "false"}
+      data-confirmation-state={initialState}
+      data-confirmation-copy={JSON.stringify(stateRows)}
+      data-account-csrf-token={accountCsrfToken}
+    >
+      <BookingProgress content={content} builderEdit={builderEdit} active={4} />
+
+      <section class="vera-booking-confirmed" data-booking-confirmed hidden={!confirmed} aria-live="polite">
+        <header class="vera-booking-confirmed__header">
+          <p class="vera-status-pill">
+            <span aria-hidden="true">✓</span>
+            <span {...builderEdit("confirmed_kicker")}>{content.confirmed_kicker}</span>{" "}
+            <span data-booking-confirmed-reference {...builderEdit("confirmed_reference_template")}>{referenceCopy}</span>
+          </p>
+          <h2 class="vera-display" {...builderEdit("confirmed_title")}>{content.confirmed_title}</h2>
+          <p class="vera-lede" data-booking-confirmed-body {...builderEdit("confirmed_body")}>{content.confirmed_body}</p>
+        </header>
+
+        <div class="vera-booking-confirmed__grid">
+          <div>
+            <article class="vera-booking-confirmed__sitting">
+              <div>
+                <div class="vera-card-meta" {...builderEdit("confirmed_sitting_label")}>{content.confirmed_sitting_label}</div>
+                <h3 data-booking-confirmed-service>{summary.serviceName}</h3>
+                <p><span data-booking-confirmed-when>{summary.when}</span>{" "}<span {...builderEdit("summary_time_suffix")}>{content.summary_time_suffix}</span><br /><span data-booking-confirmed-mode>{summary.modeCopy}</span></p>
+              </div>
+              <div class="vera-booking-confirmed__paid">
+                <div class="vera-card-meta" {...builderEdit("confirmed_paid_label")}>{content.confirmed_paid_label}</div>
+                <strong data-booking-confirmed-paid>{summary.paid}</strong>
+                <p data-booking-confirmed-balance hidden={!showBalanceNote} {...builderEdit("confirmed_balance_template")}>{summary.balanceCopy}</p>
+              </div>
+              <div class="vera-actions vera-booking-confirmed__actions">
+                <button class="vera-button vera-button--mustard vera-button--small" type="button" data-booking-add-calendar {...builderEdit("confirmed_calendar_cta")}>{content.confirmed_calendar_cta}</button>
+                <a class="vera-button vera-button--paper vera-button--small" href="/account#reschedule" data-booking-account-link data-account-panel-link="reschedule" {...builderEdit("confirmed_move_cta")}>{content.confirmed_move_cta}</a>
+                <a class="vera-button vera-button--paper vera-button--small" href="/account#receipt" data-booking-account-link data-account-panel-link="receipt" {...builderEdit("confirmed_receipt_cta")}>{content.confirmed_receipt_cta}</a>
+              </div>
+            </article>
+
+            <section class="vera-booking-confirmed__prep">
+              <div class="vera-card-meta" {...builderEdit("confirmed_prep_kicker")}>{content.confirmed_prep_kicker}</div>
+              <h3 {...builderEdit("confirmed_prep_title")}>{content.confirmed_prep_title}</h3>
+              <div class="vera-booking-confirmed__prep-list">
+                {confirmationPrep.map((parts, index) => (
+                  <article {...builderEdit(`confirmed_prep_${index + 1}`)}>
+                    <span>{parts[0]}</span>
+                    <div>
+                      <strong>{parts[1]}</strong>
+                      <p>{parts.slice(2).join("\n")}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <p data-booking-confirmed-unknown hidden={!birthTimeUnknown} {...builderEdit("confirmed_unknown_time_note")}>{content.confirmed_unknown_time_note}</p>
+            </section>
+          </div>
+
+          <aside class="vera-booking-confirmed__email" data-booking-confirmed-email>
+            <div class="vera-card-meta" {...builderEdit("confirmed_email_preview_label")}>{content.confirmed_email_preview_label}</div>
+            <div class="vera-booking-email-preview">
+              <div class="vera-booking-email-preview__headers" data-booking-confirmed-email-headers {...builderEdit("confirmed_email_headers")}>{content.confirmed_email_headers}</div>
+              <div class="vera-booking-email-preview__body">
+                <div class="vera-booking-email-preview__brand" {...chromeEdit("brand_name")}>{content.brand_name}</div>
+                <p data-booking-confirmed-email-greeting {...builderEdit("confirmed_email_greeting")}>{content.confirmed_email_greeting}</p>
+                <p data-booking-confirmed-email-sitting {...builderEdit("confirmed_email_sitting")}>{content.confirmed_email_sitting}</p>
+                <div class="vera-booking-email-preview__ledger" data-booking-confirmed-email-ledger {...builderEdit("confirmed_email_ledger")}>{content.confirmed_email_ledger}</div>
+                <button class="vera-button vera-button--burnt vera-button--small" type="button" data-booking-add-calendar {...builderEdit("confirmed_calendar_cta")}>{content.confirmed_calendar_cta}</button>
+                <p {...builderEdit("confirmed_email_reply")}>{confirmationEmailReply[0]}</p>
+                <div class="vera-booking-email-preview__signature" {...builderEdit("confirmed_email_reply")}>{confirmationEmailReply.slice(1).join("\n")}</div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="vera-page-hero vera-booking-confirmation-state" data-booking-state-panel hidden={confirmed} aria-live="polite">
+        <div class="vera-booking-confirmation-state__grid">
+          <div class="vera-booking-confirmation-state__copy">
+            <p class="vera-status-pill">
+              <span aria-hidden="true">◌</span>
+              <span data-booking-state-kicker {...builderEdit("confirmation_state_copy")}>{stateCopy.kicker}</span>
+            </p>
+            <h2 class="vera-display" data-booking-state-title {...builderEdit("confirmation_state_copy")}>
+              {stateCopy.title}
+            </h2>
+            <p class="vera-lede" data-booking-state-body {...builderEdit("confirmation_state_copy")}>{stateCopy.body}</p>
+            <div class="vera-actions vera-booking-confirmation-state__actions">
+              <button
+                class="vera-button vera-button--burnt"
+                type="button"
+                data-booking-check-again
+                hidden={!['processing', 'paid_scheduling', 'timeout'].includes(initialState)}
+                {...builderEdit("confirmation_state_copy")}
+              >{confirmationActions.checkAgain}</button>
+              <button class="vera-button vera-button--mustard" type="button" data-booking-retry-payment data-booking-open-payment {...builderEdit("confirmation_state_copy")}>{confirmationActions.retryPayment}</button>
+              <a class="vera-button vera-button--paper" href="tel:+390405550112" {...builderEdit("confirmation_state_copy")}>{confirmationActions.support}</a>
+            </div>
+            <p class="vera-booking-confirmation-state__feedback" data-booking-check-feedback role="status" hidden></p>
+          </div>
+
+          <aside class="vera-booking-status-ledger" aria-label={content.summary_kicker}>
+            <p class="vera-card-meta" {...builderEdit("summary_kicker")}>{content.summary_kicker}</p>
+            <h3>{summary.serviceName}</h3>
+            <dl>
+              <div>
+                <dt {...builderEdit("confirmation_state_copy")}>{confirmationActions.referenceLabel}</dt>
+                <dd>{booking.bookingNumber}</dd>
+              </div>
+              <div>
+                <dt>{summaryLabels[1]}</dt>
+                <dd><span data-booking-state-when>{summary.when}</span><small>{summary.modeCopy}</small></dd>
+              </div>
+              <div>
+                <dt {...builderEdit("confirmation_state_copy")}>{confirmationActions.paymentLabel}</dt>
+                <dd data-booking-payment-status>{stateCopy.paymentStatus}</dd>
+              </div>
+              <div>
+                <dt {...builderEdit("confirmation_state_copy")}>{confirmationActions.schedulingLabel}</dt>
+                <dd data-booking-scheduling-status>{stateCopy.schedulingStatus}</dd>
+              </div>
+            </dl>
+          </aside>
+        </div>
+      </section>
+
+      <div class="vera-payment-dialog" data-booking-payment-dialog hidden>
+        <div class="vera-payment-dialog__backdrop" data-booking-close-payment aria-hidden="true"></div>
+        <section
+          class="vera-payment-dialog__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="vera-payment-dialog-title"
+          tabindex="-1"
+          data-booking-payment-panel
+        >
+          <button class="vera-payment-dialog__close" type="button" data-booking-close-payment aria-label={content.back_cta}>×</button>
+          <p class="vera-eyebrow" {...builderEdit("summary_kicker")}>{content.summary_kicker}</p>
+          <h2 class="vera-heading" id="vera-payment-dialog-title" {...builderEdit("payment_title")}>{content.payment_title}</h2>
+          <p class="vera-payment-dialog__intro" {...builderEdit("payment_compact_intro")}>{paymentCompactCopy[0]}</p>
+
+          <dl class="vera-payment-dialog__ledger">
+            <div>
+              <dt>{summaryLabels[3]}</dt>
+              <dd><strong>{summary.serviceName}</strong>{durationCopy && <span>{durationCopy}</span>}</dd>
+            </div>
+            <div>
+              <dt>{summaryLabels[1]}</dt>
+              <dd><strong data-booking-payment-when>{summary.when}</strong><span>{summary.modeCopy}</span></dd>
+            </div>
+            <div class="vera-payment-dialog__total">
+              <dt>{summaryLabels[5]}</dt>
+              <dd>{dueNow}</dd>
+            </div>
+          </dl>
+
+          <p class="vera-payment-dialog__secure" {...builderEdit("secure_note")}><span aria-hidden="true">◇</span> {content.secure_note}</p>
+          <p class="vera-form-error" data-booking-payment-error role="alert" hidden {...builderEdit("payment_compact_intro")}>{paymentCompactCopy[1]}</p>
+          <div class="vera-payment-dialog__actions">
+            <button class="vera-button vera-button--paper" type="button" data-booking-close-payment {...builderEdit("back_cta")}>{content.back_cta}</button>
+            <button class="vera-button vera-button--mustard" type="button" data-booking-confirm-payment {...builderEdit("submit_cta")}>{retrySubmitCopy}</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+</VeraFrame>
+
+<script>
+  import {
+    apiBase,
+    asRecord,
+    asText,
+    browserTimezone,
+    forgetAccess,
+    readAccess,
+    requestJson,
+    slotDateLabel,
+    slotTimeLabel,
+    track,
+  } from "../../../scripts/vera/booking/shared.ts";
+
+  const shell = document.querySelector<HTMLElement>("[data-vera-booking]");
+  const bookingId = shell?.dataset.bookingId || "";
+  const startAt = shell?.dataset.startAt || "";
+  const stateKicker = document.querySelector<HTMLElement>("[data-booking-state-kicker]");
+  const stateTitle = document.querySelector<HTMLElement>("[data-booking-state-title]");
+  const stateBody = document.querySelector<HTMLElement>("[data-booking-state-body]");
+  const checkAgainButton = document.querySelector<HTMLButtonElement>("[data-booking-check-again]");
+  const checkFeedback = document.querySelector<HTMLElement>("[data-booking-check-feedback]");
+  const paymentStatus = document.querySelector<HTMLElement>("[data-booking-payment-status]");
+  const schedulingStatus = document.querySelector<HTMLElement>("[data-booking-scheduling-status]");
+  const retryPaymentButton = document.querySelector<HTMLButtonElement>("[data-booking-retry-payment]");
+  const paymentDialog = document.querySelector<HTMLElement>("[data-booking-payment-dialog]");
+  const paymentPanel = document.querySelector<HTMLElement>("[data-booking-payment-panel]");
+  const confirmPaymentButton = document.querySelector<HTMLButtonElement>("[data-booking-confirm-payment]");
+  const paymentError = document.querySelector<HTMLElement>("[data-booking-payment-error]");
+  const serviceSlug = shell?.dataset.serviceSlug || "";
+  const bookingMode = shell?.dataset.mode || "";
+  const access = readAccess(bookingId);
+  const returnToken = new URLSearchParams(window.location.search).get("token")?.trim() || "";
+  const manageToken = access?.manageToken || returnToken;
+  const accountCsrfToken = shell?.dataset.accountCsrfToken || "";
+  const hasActionAccess = Boolean(manageToken || accountCsrfToken);
+  const mutationHeaders = () => ({
+    ...(manageToken ? { authorization: `Bearer ${manageToken}` } : {}),
+    ...(accountCsrfToken ? { "x-csrf-token": accountCsrfToken } : {}),
+  });
+  const stateCopy = (() => {
+    try {
+      const rows = JSON.parse(shell?.dataset.confirmationCopy || "[]") as Array<Record<string, string>>;
+      return new Map(rows.map((row) => [row.key || "", row]));
+    } catch {
+      return new Map<string, Record<string, string>>();
+    }
+  })();
+  let currentState = shell?.dataset.confirmationState || "awaiting_payment";
+  let polling = false;
+  let paymentOpening = false;
+  let paymentDialogOpener: HTMLElement | null = null;
+  const pollStartedAt = Date.now();
+  const pollDeadline = pollStartedAt + 35 * 60_000;
+
+  // The reader's own clock, applied over the server's Trieste rendering.
+  if (startAt) {
+    const zone = access?.customerTimezone || browserTimezone;
+    const whenNode = document.querySelector<HTMLElement>("[data-booking-confirmed-when]");
+    if (whenNode) whenNode.textContent = `${slotDateLabel(startAt, zone)}, ${slotTimeLabel(startAt, zone)}`;
+    const stateWhenNode = document.querySelector<HTMLElement>("[data-booking-state-when]");
+    if (stateWhenNode) stateWhenNode.textContent = `${slotDateLabel(startAt, zone)}, ${slotTimeLabel(startAt, zone)}`;
+    const paymentWhenNode = document.querySelector<HTMLElement>("[data-booking-payment-when]");
+    if (paymentWhenNode) paymentWhenNode.textContent = `${slotDateLabel(startAt, zone)}, ${slotTimeLabel(startAt, zone)}`;
+  }
+
+  if (shell?.dataset.confirmed === "true") {
+    // The sitting is paid for, so the hold token has nothing left to protect.
+    forgetAccess();
+    track("booking_confirmed", { step: 4, booking: bookingId });
+  }
+
+  const renderState = (state: string) => {
+    currentState = state;
+    const copy = stateCopy.get(state) || stateCopy.get("timeout");
+    if (stateKicker && copy?.kicker) stateKicker.textContent = copy.kicker;
+    if (stateTitle && copy?.title) stateTitle.textContent = copy.title;
+    if (stateBody && copy?.body) stateBody.textContent = copy.body;
+    if (paymentStatus && copy?.paymentStatus) paymentStatus.textContent = copy.paymentStatus;
+    if (schedulingStatus && copy?.schedulingStatus) schedulingStatus.textContent = copy.schedulingStatus;
+    const paymentCanRetry = ["awaiting_payment", "failed", "timeout"].includes(state);
+    const checkable = ["processing", "paid_scheduling", "timeout"].includes(state);
+    if (retryPaymentButton) retryPaymentButton.hidden = !paymentCanRetry || !hasActionAccess;
+    if (checkAgainButton) checkAgainButton.hidden = !checkable || !hasActionAccess;
+    if (checkFeedback && state === "action_required") checkFeedback.hidden = true;
+  };
+
+  const readAuthoritativeState = async () => {
+    if (!bookingId || !hasActionAccess) return currentState;
+    const data = await requestJson(
+      `${apiBase}/bookings/${encodeURIComponent(bookingId)}/status`,
+      { headers: mutationHeaders() },
+    );
+    const booking = asRecord(data.booking);
+    const state = asText(booking.confirmationState) || "awaiting_payment";
+    if (state === "confirmed") {
+      window.location.reload();
+      return state;
+    }
+    renderState(state);
+    return state;
+  };
+
+  const retryPaidScheduling = async () => {
+    if (!bookingId || !hasActionAccess) return;
+    track("scheduling_retry_requested", {
+      status: "action_required",
+      service: serviceSlug,
+      mode: bookingMode,
+      step: 4,
+    });
+    try {
+      await requestJson(`${apiBase}/bookings/${encodeURIComponent(bookingId)}/status`, {
+        method: "POST",
+        headers: mutationHeaders(),
+        body: JSON.stringify({ action: "retry_scheduling", manageToken }),
+      });
+      await readAuthoritativeState();
+    } catch {
+      renderState("action_required");
+    }
+  };
+
+  const pollBookingStatus = async () => {
+    if (polling || !bookingId || !hasActionAccess || currentState === "confirmed") return;
+    polling = true;
+    try {
+      while (Date.now() < pollDeadline) {
+        const state = await readAuthoritativeState().catch(() => currentState);
+        if (["confirmed", "failed", "awaiting_payment"].includes(state)) return;
+        if (state === "action_required") {
+          await retryPaidScheduling();
+          return;
+        }
+        const elapsed = Date.now() - pollStartedAt;
+        await new Promise((resolve) => window.setTimeout(resolve, elapsed < 60_000 ? 2_000 : 10_000));
+      }
+      renderState("timeout");
+    } finally {
+      polling = false;
+    }
+  };
+
+  checkAgainButton?.addEventListener("click", async () => {
+    const commonCopy = stateCopy.get("awaiting_payment");
+    checkAgainButton.disabled = true;
+    checkAgainButton.setAttribute("aria-busy", "true");
+    const originalLabel = checkAgainButton.textContent || "";
+    if (commonCopy?.checkingCopy) checkAgainButton.textContent = commonCopy.checkingCopy;
+    if (checkFeedback) checkFeedback.hidden = true;
+    try {
+      const state = await readAuthoritativeState();
+      if (["processing", "paid_scheduling"].includes(state)) void pollBookingStatus();
+      if (state === "action_required") await retryPaidScheduling();
+      if (checkFeedback && commonCopy?.checkedCopy) {
+        checkFeedback.textContent = commonCopy.checkedCopy;
+        checkFeedback.hidden = false;
+      }
+    } catch {
+      renderState("timeout");
+    } finally {
+      checkAgainButton.disabled = false;
+      checkAgainButton.removeAttribute("aria-busy");
+      checkAgainButton.textContent = originalLabel;
+    }
+  });
+
+  const paymentDialogFocusables = () => Array.from(paymentPanel?.querySelectorAll<HTMLElement>(
+    "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
+  ) ?? []).filter((node) => !node.hidden);
+
+  const openPaymentDialog = (opener: HTMLElement) => {
+    if (!paymentDialog || !paymentPanel || paymentOpening) return;
+    paymentDialogOpener = opener;
+    if (paymentError) paymentError.hidden = true;
+    paymentDialog.hidden = false;
+    document.body.classList.add("vera-dialog-open");
+    window.requestAnimationFrame(() => {
+      paymentDialog.classList.add("is-open");
+      paymentPanel.focus();
+    });
+  };
+
+  const closePaymentDialog = () => {
+    if (!paymentDialog || paymentOpening) return;
+    paymentDialog.classList.remove("is-open");
+    document.body.classList.remove("vera-dialog-open");
+    window.setTimeout(() => {
+      paymentDialog.hidden = true;
+      paymentDialogOpener?.focus();
+    }, 180);
+  };
+
+  retryPaymentButton?.addEventListener("click", () => openPaymentDialog(retryPaymentButton));
+  document.querySelectorAll<HTMLElement>("[data-booking-close-payment]").forEach((button) => {
+    button.addEventListener("click", closePaymentDialog);
+  });
+  paymentDialog?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closePaymentDialog();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusables = paymentDialogFocusables();
+    if (!focusables.length) {
+      event.preventDefault();
+      paymentPanel?.focus();
+      return;
+    }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first?.focus();
+    }
+  });
+
+  confirmPaymentButton?.addEventListener("click", async () => {
+    if (!bookingId || !hasActionAccess || paymentOpening) return;
+    paymentOpening = true;
+    confirmPaymentButton.disabled = true;
+    if (paymentError) paymentError.hidden = true;
+    try {
+      const data = await requestJson(`${apiBase}/bookings/${encodeURIComponent(bookingId)}/checkout-session`, {
+        method: "POST",
+        headers: mutationHeaders(),
+        body: JSON.stringify({ manageToken, kind: "full" }),
+      });
+      const url = asText(asRecord(data.checkout).url);
+      if (!/^https:\/\//.test(url)) throw new Error("invalid checkout");
+      window.location.assign(url);
+    } catch {
+      renderState("failed");
+      paymentOpening = false;
+      confirmPaymentButton.disabled = false;
+      if (paymentError) paymentError.hidden = false;
+    }
+  });
+
+  window.addEventListener("pageshow", () => {
+    paymentOpening = false;
+    if (confirmPaymentButton) confirmPaymentButton.disabled = false;
+  });
+
+  renderState(currentState);
+  if (["processing", "paid_scheduling"].includes(currentState)) void pollBookingStatus();
+
+  document.querySelectorAll<HTMLButtonElement>("[data-booking-add-calendar]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (!startAt) return;
+      const start = new Date(startAt);
+      const end = new Date(start.getTime() + 30 * 60_000);
+      const stamp = (value: Date) => value.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+      const title = document.querySelector<HTMLElement>("[data-booking-confirmed-service]")?.textContent?.trim() || "";
+      const lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "BEGIN:VEVENT",
+        `DTSTART:${stamp(start)}`,
+        `DTEND:${stamp(end)}`,
+        `SUMMARY:${title}`,
+        "END:VEVENT",
+        "END:VCALENDAR",
+      ].join("\r\n");
+      const url = URL.createObjectURL(new Blob([lines], { type: "text/calendar" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "sitting.ics";
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+  });
+</script>

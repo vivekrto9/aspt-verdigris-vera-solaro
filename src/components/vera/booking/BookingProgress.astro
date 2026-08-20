@@ -1,0 +1,27 @@
+---
+// Steps one through three share the booking wizard; confirmation is the only
+// id-scoped route. The client updates data-active as the local wizard advances.
+type Edit = (field: string) => Record<string, unknown>;
+
+const { content, builderEdit, active } = Astro.props as {
+  content: Record<string, string>;
+  builderEdit: Edit;
+  active: number;
+};
+---
+
+<div class="vera-booking-progress-row">
+  <div class="vera-booking-progress" aria-label={content.booking_title}>
+    {[1, 2, 3, 4].map((index) => (
+      <span data-booking-progress={index} data-active={index === active ? "" : undefined}>
+        {index} · <i style="font-style: normal" {...builderEdit(`step_${index}_label`)}>
+          {content[`step_${index}_label`]}
+        </i>
+      </span>
+    ))}
+  </div>
+  <p class="vera-booking-hold" data-booking-hold hidden aria-live="off">
+    <span {...builderEdit("hold_label")}>{content.hold_label}</span>{" "}
+    <strong data-booking-hold-label></strong>
+  </p>
+</div>

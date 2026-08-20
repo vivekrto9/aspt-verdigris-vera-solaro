@@ -1,0 +1,6196 @@
+:root {
+  --vera-cream: #f1f3ec;
+  --vera-paper: #e6ebdf;
+  --vera-paper-pale: #f1f3ec;
+  --vera-burnt: #8e2f53;
+  --vera-mustard: #7fcbb1;
+  --vera-aubergine: #0e241e;
+  --vera-aubergine-soft: #16352c;
+  --vera-ink: #0e241e;
+  --vera-ink-soft: #2b473f;
+  --vera-clay: #3e8c77;
+  --vera-sage: #3e8c77;
+  --vera-sage-pale: #dde3d6;
+  --vera-sand: #dde3d6;
+  --vera-sand-deep: #c6cebf;
+  --vera-muted: #5b7168;
+  --vera-line: #b6bfaf;
+  --vera-font-display: "Ultra", Georgia, serif;
+  --vera-font-body: "Newsreader", Georgia, serif;
+  --vera-font-label: "Familjen Grotesk", Arial, sans-serif;
+  --vera-gutter: clamp(24px, 5.55vw, 80px);
+  --vera-border: 1px solid var(--vera-ink);
+  --vera-radius: 2px;
+  --vera-shadow: 4px 4px 0 var(--vera-burnt);
+}
+
+.vera-body {
+  margin: 0;
+  background: var(--vera-ink);
+  color: var(--vera-ink);
+  font-family: var(--vera-font-body);
+}
+
+.vera-body * {
+  box-sizing: border-box;
+}
+
+.vera-body a {
+  color: inherit;
+}
+
+.vera-body button,
+.vera-body input,
+.vera-body select,
+.vera-body textarea {
+  font: inherit;
+}
+
+.vera-site {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0 auto;
+  overflow: clip;
+  background: var(--vera-cream);
+  isolation: isolate;
+}
+
+#vera-main {
+  width: 100%;
+  margin: 0;
+}
+
+.vera-site::before {
+  position: absolute;
+  z-index: 40;
+  inset: 0;
+  width: 100%;
+  margin: 0 auto;
+  pointer-events: none;
+  background-image: radial-gradient(#0e241e 0.5px, transparent 0.6px);
+  background-size: 4px 4px;
+  content: "";
+  opacity: 0.35;
+}
+
+.vera-skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 10px;
+  left: 10px;
+  translate: 0 -160%;
+  border: 2px solid var(--vera-ink);
+  border-radius: 999px;
+  padding: 10px 18px;
+  background: var(--vera-mustard);
+  color: var(--vera-ink);
+  font-family: var(--vera-font-label);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.vera-skip-link:focus {
+  translate: 0;
+}
+
+.vera-visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.vera-header {
+  position: relative;
+  /* Above the sticky account portal bar (z-index 34) and below the halftone overlay (40):
+     the mobile nav panel is a child of the header, so a lower value lets the portal bar
+     paint over its first links. */
+  z-index: 36;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 34px;
+  min-height: 82px;
+  padding: 22px var(--vera-gutter);
+  background: var(--vera-aubergine);
+  color: var(--vera-cream);
+}
+
+.vera-brand {
+  display: inline-flex;
+  align-items: center;
+  min-width: max-content;
+  text-decoration: none;
+}
+
+.vera-brand__logo {
+  display: block;
+  width: auto;
+  height: 42px;
+  flex: 0 0 auto;
+}
+
+[data-vera-brand-logo][hidden],
+[data-vera-brand-fallback][hidden] {
+  display: none;
+}
+
+.vera-brand-fallback {
+  color: var(--vera-cream);
+  font-family: var(--vera-font-display);
+  font-size: clamp(22px, 2vw, 30px);
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.vera-brand-mark .vera-brand-fallback {
+  color: inherit;
+  font-size: clamp(28px, 4vw, 42px);
+}
+
+.vera-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(18px, 2.35vw, 34px);
+}
+
+.vera-nav a {
+  position: relative;
+  padding: 7px 0;
+  color: var(--vera-cream);
+  font-family: var(--vera-font-label);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.vera-nav a::after {
+  position: absolute;
+  right: 0;
+  bottom: 1px;
+  left: 0;
+  height: 2px;
+  scale: 0 1;
+  background: var(--vera-mustard);
+  content: "";
+  transform-origin: left;
+  transition: scale 180ms ease;
+}
+
+.vera-nav a:hover,
+.vera-nav a[aria-current="page"] {
+  color: var(--vera-mustard);
+}
+
+.vera-nav a:hover::after,
+.vera-nav a[aria-current="page"]::after {
+  scale: 1;
+}
+
+.vera-nav__book {
+  display: none;
+}
+
+.vera-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: max-content;
+}
+
+.vera-header__help {
+  border: 2px solid var(--vera-clay);
+  border-radius: 999px;
+  padding: 9px 16px;
+  color: var(--vera-cream);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.vera-header__help:hover {
+  border-color: var(--vera-mustard);
+  color: var(--vera-mustard);
+}
+
+.vera-account-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: max-content;
+  color: #a9c4b8;
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.vera-account-identity[hidden] {
+  display: none;
+}
+
+.vera-account-identity .vera-account-actions {
+  margin-top: 0;
+}
+
+.vera-account-identity .vera-button {
+  border-color: var(--vera-mustard);
+  background: transparent;
+  color: var(--vera-mustard);
+  box-shadow: none;
+}
+
+.vera-account-identity .vera-button:hover {
+  background: var(--vera-mustard);
+  color: var(--vera-ink);
+}
+
+.vera-account-identity .vera-image {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  border-color: var(--vera-mustard);
+  background: var(--vera-aubergine-soft);
+}
+
+.vera-account-identity [data-account-header-ref] {
+  color: #6e8c81;
+}
+
+.vera-holiday-bar {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border-bottom: 3px solid var(--vera-ink);
+  padding: 12px var(--vera-gutter);
+  background: var(--vera-mustard);
+  color: var(--vera-ink);
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.vera-books-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #7fcbb1;
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.vera-books-status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentcolor;
+  box-shadow: 0 0 0 4px rgb(62 140 119 / 0.12);
+}
+
+.vera-nav-toggle {
+  display: none;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--vera-clay);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--vera-cream);
+  cursor: pointer;
+}
+
+.vera-nav-toggle span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  margin: 4px auto;
+  background: currentcolor;
+}
+
+.vera-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border: 2px solid var(--vera-ink);
+  border-radius: 999px;
+  padding: 14px 28px;
+  font-family: var(--vera-font-label);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: translate 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.vera-button:hover {
+  translate: 0 -2px;
+}
+
+.vera-button:active {
+  translate: 2px 2px;
+  box-shadow: 1px 1px 0 var(--vera-ink);
+}
+
+.vera-button--small {
+  min-height: 42px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.vera-button--mustard {
+  background: var(--vera-mustard);
+  color: var(--vera-aubergine);
+}
+
+.vera-button--burnt {
+  background: var(--vera-burnt);
+  color: var(--vera-paper);
+}
+
+.vera-button--aubergine {
+  background: var(--vera-aubergine);
+  color: var(--vera-mustard);
+}
+
+.vera-button--paper {
+  background: var(--vera-paper);
+  color: var(--vera-ink);
+}
+
+.vera-button--shadow {
+  box-shadow: 5px 5px 0 var(--vera-ink);
+}
+
+.vera-button:focus-visible,
+.vera-body input:focus-visible,
+.vera-body select:focus-visible,
+.vera-body textarea:focus-visible,
+.vera-body summary:focus-visible,
+.vera-body button:focus-visible,
+.vera-body a:focus-visible {
+  outline: 4px solid rgb(127 203 177 / 0.72);
+  outline-offset: 4px;
+}
+
+.vera-section {
+  padding: clamp(68px, 6.4vw, 92px) var(--vera-gutter);
+}
+
+.vera-section--paper {
+  background: var(--vera-cream);
+}
+
+.vera-section--sand {
+  background: var(--vera-sand);
+}
+
+.vera-section--aubergine {
+  background: var(--vera-aubergine);
+  color: var(--vera-cream);
+}
+
+.vera-section--burnt {
+  background: var(--vera-burnt);
+  color: var(--vera-paper);
+}
+
+.vera-eyebrow {
+  margin: 0;
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.vera-section--aubergine .vera-eyebrow,
+.vera-section--burnt .vera-eyebrow {
+  color: var(--vera-mustard);
+}
+
+.vera-display,
+.vera-heading {
+  margin: 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.vera-display {
+  font-size: clamp(50px, 5vw, 72px);
+  line-height: 1;
+}
+
+.vera-heading {
+  font-size: clamp(40px, 3.9vw, 56px);
+  line-height: 1.04;
+}
+
+.vera-section--aubergine .vera-display,
+.vera-section--aubergine .vera-heading,
+.vera-section--burnt .vera-display,
+.vera-section--burnt .vera-heading {
+  color: var(--vera-paper);
+}
+
+.vera-lede {
+  max-width: 660px;
+  margin: 18px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: clamp(16px, 1.25vw, 18px);
+  line-height: 1.8;
+}
+
+.vera-section--aubergine .vera-lede,
+.vera-section--burnt .vera-lede {
+  color: var(--vera-sand);
+}
+
+.vera-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.vera-section-header > p {
+  max-width: 380px;
+  margin: 0 0 8px;
+  color: var(--vera-ink-soft);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.vera-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(58px, 5.3vw, 76px) var(--vera-gutter) 64px;
+  background: var(--vera-cream);
+}
+
+.vera-hero::before {
+  position: absolute;
+  top: -280px;
+  left: 50%;
+  width: 1100px;
+  height: 1100px;
+  translate: -50%;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgb(127 203 177 / 0.5) 0deg 3.2deg,
+    rgb(241 243 236 / 0) 3.2deg 9deg
+  );
+  content: "";
+  opacity: 0.55;
+}
+
+.vera-hero__grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 480px;
+  align-items: center;
+  gap: 64px;
+}
+
+.vera-hero__badge,
+.vera-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 2px solid currentcolor;
+  border-radius: 999px;
+  padding: 7px 18px 6px;
+  background: var(--vera-paper);
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.vera-hero__badge {
+  margin: 0;
+}
+
+.vera-hero h1 {
+  max-width: 720px;
+  margin: 26px 0 0;
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: clamp(58px, 6.12vw, 88px);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 0.94;
+  text-shadow: 4px 4px 0 var(--vera-mustard);
+  text-wrap: balance;
+}
+
+.vera-hero__body {
+  max-width: 500px;
+  margin: 26px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.vera-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 34px;
+}
+
+.vera-stats {
+  display: flex;
+  gap: 44px;
+  margin-top: 52px;
+  padding-top: 26px;
+  border-top: 2px solid var(--vera-sand-deep);
+}
+
+.vera-stat strong {
+  display: block;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.vera-stat span {
+  display: block;
+  margin-top: 4px;
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vera-wheel {
+  position: relative;
+  display: flex;
+  width: 480px;
+  height: 480px;
+  align-items: center;
+  justify-content: center;
+}
+
+.vera-wheel__outer,
+.vera-wheel__ring,
+.vera-wheel__rays,
+.vera-wheel__inner,
+.vera-wheel__core {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.vera-wheel__outer {
+  inset: 0;
+  border: 3px solid var(--vera-ink);
+  background: var(--vera-aubergine);
+  box-shadow: 10px 10px 0 rgb(14 36 30 / 0.22);
+}
+
+.vera-wheel__ring {
+  inset: 16px;
+  border: 2px solid var(--vera-clay);
+}
+
+.vera-wheel__rays {
+  inset: 66px;
+  border: 2px solid #6e8c81;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgb(127 203 177 / 0.22) 0deg 1.4deg,
+    rgb(14 36 30 / 0) 1.4deg 15deg
+  );
+}
+
+.vera-wheel__inner {
+  inset: 112px;
+  border: 2px solid var(--vera-burnt);
+  background: var(--vera-cream);
+}
+
+.vera-wheel__core {
+  inset: 136px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--vera-ink);
+  padding: 0 26px;
+  background: var(--vera-mustard);
+  color: var(--vera-aubergine);
+  text-align: center;
+}
+
+.vera-wheel__core span {
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.vera-wheel__core .vera-wheel__title {
+  display: block;
+  margin: 4px 0 0;
+  font-family: var(--vera-font-display);
+  font-size: 34px;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.05;
+  text-transform: none;
+}
+
+.vera-wheel__title + span {
+  margin-top: 6px;
+}
+
+.vera-wheel__signs {
+  position: absolute;
+  inset: 0;
+}
+
+.vera-wheel__sign {
+  --angle: calc(var(--sign-index) * 30deg);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: rotate(var(--angle));
+}
+
+.vera-wheel__sign > span {
+  position: absolute;
+  top: -216px;
+  left: -22px;
+  width: 44px;
+  color: var(--vera-mustard);
+  font-family: "Newsreader", serif, "Noto Sans Symbols 2";
+  font-size: 24px;
+  font-variant-emoji: text;
+  text-align: center;
+  transform: rotate(calc(var(--angle) * -1));
+}
+
+.vera-wheel__sign:nth-child(even) > span {
+  color: var(--vera-clay);
+}
+
+.vera-ticker {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  border-top: var(--vera-border);
+  border-bottom: var(--vera-border);
+  padding: 15px var(--vera-gutter);
+  overflow: hidden;
+  background: var(--vera-burnt);
+  color: var(--vera-paper);
+  font-family: var(--vera-font-label);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.vera-ticker i {
+  color: var(--vera-mustard);
+  font-style: normal;
+}
+
+.vera-about-home {
+  display: grid;
+  grid-template-columns: 420px minmax(0, 1fr);
+  align-items: center;
+  gap: 72px;
+  padding-block: 90px;
+}
+
+.vera-portrait-shell {
+  position: relative;
+}
+
+.vera-portrait-shell::before {
+  position: absolute;
+  inset: -14px -14px 14px 14px;
+  border: 2px solid var(--vera-burnt);
+  border-radius: 210px 210px 14px 14px;
+  content: "";
+}
+
+.vera-portrait-shell .vera-image {
+  position: relative;
+  width: 100%;
+  height: 520px;
+  border: var(--vera-border);
+  border-radius: 210px 210px 8px 8px;
+}
+
+.vera-about-home p {
+  max-width: 590px;
+  color: var(--vera-ink-soft);
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+.vera-about-home .vera-heading {
+  margin-top: 14px;
+  font-size: 56px;
+  line-height: 1.02;
+}
+
+.vera-about-home .vera-heading + p {
+  max-width: 560px;
+  margin: 24px 0 0;
+}
+
+.vera-about-home .vera-heading + p + p {
+  max-width: 560px;
+  margin: 16px 0 0;
+}
+
+.vera-about-home .vera-method-pills {
+  gap: 28px;
+  margin-top: 32px;
+}
+
+.vera-about-home .vera-pill {
+  padding: 9px 20px;
+  background: var(--vera-cream);
+}
+
+.vera-method-pills,
+.vera-filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  margin-top: 28px;
+}
+
+.vera-pill {
+  display: inline-flex;
+  align-items: center;
+  border: 2px solid var(--vera-ink);
+  border-radius: 999px;
+  padding: 9px 18px;
+  background: var(--vera-paper);
+  color: var(--vera-ink);
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.vera-pill input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vera-pill:has(input:checked) {
+  background: var(--vera-aubergine);
+  color: var(--vera-mustard);
+}
+
+button.vera-pill {
+  cursor: pointer;
+}
+
+button.vera-pill[aria-pressed="true"] {
+  background: var(--vera-aubergine);
+  color: var(--vera-mustard);
+}
+
+.vera-signature {
+  display: inline-block;
+  margin-top: 34px;
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 34px;
+  rotate: -3deg;
+}
+
+.vera-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  margin-top: 46px;
+}
+
+.vera-reading-card,
+.vera-journal-card,
+.vera-panel {
+  position: relative;
+  border: var(--vera-border);
+  border-radius: var(--vera-radius);
+  background: var(--vera-paper);
+  box-shadow: var(--vera-shadow);
+}
+
+.vera-reading-card {
+  min-height: 0;
+  padding: 34px 30px 30px;
+}
+
+.vera-reading-card--featured {
+  background: var(--vera-aubergine);
+  color: var(--vera-paper);
+  box-shadow: 7px 7px 0 var(--vera-burnt);
+}
+
+.vera-card-badge {
+  position: absolute;
+  top: -17px;
+  left: 26px;
+  border: 2px solid var(--vera-ink);
+  border-radius: 999px;
+  padding: 5px 16px;
+  background: var(--vera-mustard);
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vera-reading-card__symbol {
+  color: var(--vera-burnt);
+  font-size: 30px;
+}
+
+.vera-reading-card--featured .vera-reading-card__symbol {
+  color: var(--vera-mustard);
+}
+
+.vera-reading-card h3,
+.vera-journal-card h3 {
+  margin: 12px 0 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.vera-reading-card--featured h3 {
+  color: var(--vera-mustard);
+}
+
+.vera-card-meta {
+  margin-top: 6px;
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+.vera-reading-card--featured .vera-card-meta {
+  color: var(--vera-clay);
+}
+
+.vera-reading-card > p {
+  margin: 16px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.vera-reading-card--featured > p,
+.vera-reading-card--featured .vera-feature-list {
+  color: var(--vera-sand);
+}
+
+.vera-feature-list {
+  display: grid;
+  gap: 9px;
+  margin: 20px 0 0;
+  padding: 18px 0 0;
+  border-top: 2px dashed var(--vera-sand-deep);
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.5;
+  list-style: none;
+}
+
+.vera-reading-card--featured .vera-feature-list {
+  border-color: #6e8c81;
+}
+
+.vera-feature-list li {
+  display: flex;
+  gap: 10px;
+}
+
+.vera-feature-list li::before {
+  flex: none;
+  color: var(--vera-burnt);
+  content: "✷";
+}
+
+.vera-reading-card--featured .vera-feature-list li::before {
+  color: var(--vera-mustard);
+}
+
+.vera-reading-card__footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 26px;
+}
+
+#readings .vera-heading {
+  margin-top: 14px;
+  font-size: 56px;
+  line-height: 1.02;
+}
+
+#readings .vera-card-grid {
+  margin-top: 48px;
+}
+
+.vera-testimonials-home {
+  padding-block: 88px;
+  border-top: var(--vera-border);
+}
+
+.vera-testimonials-home .vera-heading,
+#journal .vera-heading {
+  margin-top: 14px;
+  font-size: 52px;
+  line-height: 1.04;
+}
+
+.vera-price {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 38px;
+}
+
+.vera-reading-card--featured .vera-price {
+  color: var(--vera-mustard);
+}
+
+.vera-testimonial-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 26px;
+  margin-top: 46px;
+}
+
+.vera-testimonial {
+  margin: 0;
+  border: 2px solid #6e8c81;
+  border-radius: 20px;
+  padding: 30px 28px;
+  background: var(--vera-aubergine-soft);
+}
+
+.vera-testimonial__stars {
+  color: var(--vera-mustard);
+  font-size: 22px;
+  letter-spacing: 0.1em;
+}
+
+.vera-testimonial blockquote {
+  margin: 16px 0 0;
+  color: var(--vera-cream);
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.7;
+}
+
+.vera-testimonial figcaption {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 2px solid #6e8c81;
+  color: var(--vera-clay);
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vera-journal-card {
+  display: grid;
+  height: 100%;
+  grid-template-rows: 210px minmax(0, 1fr);
+  overflow: hidden;
+  box-shadow: none;
+  color: inherit;
+  text-decoration: none;
+}
+
+.vera-journal-card .vera-image {
+  height: 210px;
+  border: 0;
+  border-bottom: var(--vera-border);
+  border-radius: 0;
+}
+
+.vera-journal-card__copy {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 26px 28px;
+}
+
+.vera-journal-card h3 {
+  font-size: 24px;
+}
+
+.vera-journal-card p {
+  margin: 10px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+#journal .vera-card-grid {
+  margin-top: 44px;
+}
+
+#journal .vera-section-header > .vera-button {
+  min-height: 0;
+  margin-bottom: 10px;
+  padding: 12px 24px;
+}
+
+.vera-letter-band {
+  position: relative;
+  overflow: hidden;
+  border-top: var(--vera-border);
+  border-bottom: var(--vera-border);
+  padding-block: 84px;
+}
+
+.vera-letter-band::after {
+  position: absolute;
+  top: -160px;
+  right: -160px;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgb(127 203 177 / 0.55) 0deg 3deg,
+    rgb(142 47 83 / 0) 3deg 9deg
+  );
+  content: "";
+}
+
+.vera-letter-band__grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 480px;
+  align-items: center;
+  gap: 72px;
+}
+
+.vera-form-card {
+  border: var(--vera-border);
+  border-radius: var(--vera-radius);
+  padding: 30px 28px;
+  background: var(--vera-paper);
+  box-shadow: 8px 8px 0 var(--vera-aubergine);
+  color: var(--vera-ink);
+}
+
+.vera-form-card fieldset,
+.vera-form-section {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.vera-label,
+.vera-form-card legend,
+.vera-form-section legend {
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.vera-field {
+  display: grid;
+  gap: 7px;
+}
+
+.vera-input,
+.vera-select,
+.vera-textarea {
+  width: 100%;
+  border: 2px solid var(--vera-ink);
+  border-radius: 12px;
+  padding: 13px 15px;
+  background: var(--vera-paper-pale);
+  color: var(--vera-ink);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.vera-input::placeholder,
+.vera-textarea::placeholder {
+  color: #7d8c82;
+  opacity: 1;
+}
+
+.vera-textarea {
+  min-height: 130px;
+  resize: vertical;
+}
+
+.vera-field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.vera-booking-step--compact {
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+.vera-booking-step__header {
+  max-width: 720px;
+  margin: 28px 0 24px;
+}
+
+.vera-booking-step__header .vera-display {
+  margin: 0;
+  font-size: clamp(42px, 7vw, 76px);
+}
+
+.vera-booking-step__header .vera-lede {
+  margin-top: 10px;
+  font-size: clamp(17px, 2vw, 22px);
+}
+
+.vera-form-card--compact {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 22px 24px;
+  box-shadow: 6px 6px 0 var(--vera-aubergine);
+}
+
+.vera-form-card--compact > legend {
+  margin-bottom: 4px;
+  padding-inline: 8px;
+}
+
+.vera-form-card--compact .vera-input,
+.vera-form-card--compact .vera-select,
+.vera-form-card--compact .vera-textarea {
+  padding: 10px 13px;
+}
+
+.vera-form-card--compact .vera-textarea {
+  min-height: 86px;
+}
+
+.vera-field-row--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.vera-consent-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.vera-booking-review {
+  border: 3px solid var(--vera-ink);
+  border-radius: 22px;
+  padding: clamp(22px, 4vw, 38px);
+  background: var(--vera-paper-pale);
+  box-shadow: 8px 8px 0 var(--vera-burnt);
+}
+
+.vera-booking-review__reading {
+  padding-bottom: 20px;
+}
+
+.vera-booking-review__reading h3 {
+  margin: 6px 0 2px;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 400;
+}
+
+.vera-booking-review__reading > p:last-child {
+  margin: 0;
+  color: var(--vera-muted);
+}
+
+.vera-booking-review__ledger {
+  margin: 0;
+  border-block: 2px dashed var(--vera-line);
+}
+
+.vera-booking-review__ledger > div {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.35fr) 1fr;
+  gap: 18px;
+  align-items: baseline;
+  padding: 16px 0;
+}
+
+.vera-booking-review__ledger > div + div {
+  border-top: 1px solid var(--vera-line);
+}
+
+.vera-booking-review__ledger dt {
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.vera-booking-review__ledger dd {
+  margin: 0;
+  color: var(--vera-ink);
+  font-size: 18px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.vera-booking-review__total dd {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 34px;
+}
+
+.vera-booking-review__secure {
+  margin-top: 16px;
+}
+
+.vera-booking-review__error,
+.vera-booking-slot-error {
+  color: var(--vera-burnt);
+  font-weight: 700;
+}
+
+.vera-booking-review__actions {
+  justify-content: flex-start;
+  margin-top: 18px;
+}
+
+.vera-form-note {
+  margin: 0;
+  color: var(--vera-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.vera-form-note[data-auth-status="error"],
+.vera-form-note[data-auth-status="invalid"],
+.vera-form-note[data-auth-status="mismatch"],
+.vera-form-note[data-auth-status="verification-invalid"] {
+  color: var(--vera-burnt);
+  font-weight: 600;
+}
+
+.vera-form-note[data-auth-status="rate-limited"],
+.vera-form-note[data-auth-invalid] {
+  color: var(--vera-burnt);
+  font-weight: 600;
+}
+
+@supports (color: color-mix(in srgb, red 50%, black)) {
+  .vera-form-note[data-auth-status="error"],
+  .vera-form-note[data-auth-status="invalid"],
+  .vera-form-note[data-auth-status="mismatch"],
+  .vera-form-note[data-auth-status="rate-limited"],
+  .vera-form-note[data-auth-status="verification-invalid"],
+  .vera-form-note[data-auth-invalid] {
+    color: color-mix(in srgb, var(--vera-burnt) 82%, var(--vera-ink));
+  }
+}
+
+/* A field the reader still has to fix keeps the burnt outline the status notes use,
+   so the sentence under the box and the box itself read as one correction. */
+.vera-input[aria-invalid="true"] {
+  border-color: var(--vera-burnt);
+}
+
+.vera-letter-band .vera-heading {
+  margin-top: 14px;
+  font-size: 54px;
+  line-height: 1.02;
+}
+
+.vera-letter-band .vera-lede {
+  max-width: 520px;
+  margin-top: 20px;
+  color: #e6ebdf;
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+.vera-letter-band .vera-form-card legend {
+  margin-bottom: 2px;
+}
+
+.vera-letter-band .vera-input {
+  padding: 14px 16px;
+}
+
+.vera-letter-band .vera-button {
+  padding-block: 16px;
+}
+
+.vera-letter-band .vera-form-note {
+  line-height: 1.6;
+  text-align: center;
+}
+
+.vera-image {
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  margin: 0;
+  overflow: hidden;
+  border: 2px solid var(--vera-ink);
+  background: var(--vera-sand-deep);
+}
+
+.vera-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 1;
+  transition: opacity 180ms ease;
+}
+
+.vera-image__fallback {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  color: var(--vera-ink-soft);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.vera-image--missing > img {
+  display: none;
+}
+
+/* Keep a pending lazy image in layout so the browser is still able to discover and
+   fetch it. `display: none` here creates a deadlock: the image never loads, so the
+   placeholder can never be cleared. */
+.vera-image--pending > img {
+  opacity: 0;
+}
+
+.vera-image--pending > .vera-image__fallback,
+.vera-image--missing > .vera-image__fallback {
+  display: flex;
+}
+
+.vera-image--circle {
+  border-radius: 50%;
+}
+
+.vera-image--placeholder {
+  min-height: 180px;
+  background:
+    radial-gradient(circle at center, transparent 0 22%, rgb(142 47 83 / 0.16) 22.5% 23.5%, transparent 24%),
+    repeating-conic-gradient(from 0deg, rgb(127 203 177 / 0.34) 0deg 2deg, transparent 2deg 15deg),
+    var(--vera-sand-deep);
+  color: var(--vera-ink-soft);
+  text-align: center;
+}
+
+.vera-image--placeholder > span {
+  color: var(--vera-burnt);
+  font-size: 34px;
+}
+
+.vera-image--placeholder figcaption {
+  max-width: 75%;
+  border-radius: 999px;
+  padding: 7px 13px;
+  background: rgb(230 235 223 / 0.88);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.vera-footer {
+  padding: 62px var(--vera-gutter) 40px;
+  background: var(--vera-ink);
+  color: var(--vera-sand);
+}
+
+.vera-footer__grid {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(3, 1fr);
+  gap: 48px;
+}
+
+.vera-footer__logo {
+  display: block;
+  width: auto;
+  height: 48px;
+}
+
+/* The footer wordmark stands in for the logo when no logo asset is uploaded, so
+   it inherits the footer's own colour instead of the header's cream. */
+.vera-footer .vera-brand-fallback {
+  color: inherit;
+  font-size: clamp(24px, 2.4vw, 32px);
+}
+
+.vera-footer__about p {
+  max-width: 320px;
+  margin: 12px 0 0;
+  color: #a9c4b8;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.vera-footer__column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vera-footer__column h2 {
+  margin: 0;
+  color: #5b7168;
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.vera-footer__column a {
+  color: var(--vera-sand);
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.vera-footer__column a:hover {
+  color: var(--vera-mustard);
+}
+
+.vera-footer__fineprint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  margin-top: 44px;
+  padding-top: 22px;
+  border-top: 2px solid var(--vera-ink-soft);
+  color: #5b7168;
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.vera-footer__ornament {
+  color: var(--vera-burnt);
+  white-space: nowrap;
+}
+
+/* Interior page primitives */
+.vera-reading-detail {
+  padding-bottom: 80px;
+  background: var(--vera-cream);
+}
+
+.vera-reading-breadcrumb {
+  display: flex;
+  gap: 8px;
+  padding: 26px var(--vera-gutter) 0;
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vera-reading-breadcrumb a {
+  text-decoration: none;
+}
+
+.vera-reading-breadcrumb span[aria-hidden="true"] {
+  color: var(--vera-burnt);
+}
+
+.vera-reading-tabs {
+  display: flex;
+  gap: 12px;
+  padding: 22px var(--vera-gutter) 0;
+}
+
+.vera-reading-tab {
+  flex: none;
+  border: 2px solid var(--vera-ink);
+  border-radius: 999px;
+  padding: 9px 18px;
+  background: var(--vera-paper);
+  color: var(--vera-ink);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.vera-reading-tab[aria-current="page"] {
+  background: var(--vera-aubergine);
+  color: var(--vera-paper);
+}
+
+.vera-reading-detail__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 430px;
+  align-items: start;
+  gap: 56px;
+  padding: 34px var(--vera-gutter) 0;
+}
+
+.vera-reading-detail__main > .vera-display {
+  color: var(--vera-burnt);
+  text-shadow: 3px 3px 0 var(--vera-mustard);
+}
+
+.vera-reading-detail__main > .vera-lede {
+  max-width: 620px;
+  margin-top: 22px;
+}
+
+.vera-reading-facts {
+  display: flex;
+  gap: 40px;
+  margin: 28px 0 0;
+  border-top: 2px solid var(--vera-sand-deep);
+  border-bottom: 2px solid var(--vera-sand-deep);
+  padding: 22px 0;
+}
+
+.vera-reading-facts div {
+  min-width: 0;
+}
+
+.vera-reading-facts dt,
+.vera-reading-booking-card__price span {
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vera-reading-facts dd {
+  margin: 3px 0 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.vera-reading-detail__room {
+  height: 300px;
+  margin-top: 34px;
+  border-width: 3px;
+  border-radius: 20px;
+}
+
+.vera-reading-detail__section {
+  margin-top: 46px;
+}
+
+.vera-reading-detail__section > h2 {
+  margin: 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 34px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.vera-reading-detail__section > .vera-lede {
+  max-width: 620px;
+  margin-top: 10px;
+  font-size: 16px;
+}
+
+.vera-reading-includes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 32px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vera-reading-includes li {
+  display: flex;
+  gap: 12px;
+  border-bottom: 1px dashed var(--vera-sand-deep);
+  padding-bottom: 12px;
+  color: var(--vera-ink-soft);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.vera-reading-includes li::before {
+  flex: none;
+  color: var(--vera-burnt);
+  content: "✷";
+}
+
+.vera-reading-prepare {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vera-reading-prepare li {
+  border: 2px solid var(--vera-ink);
+  border-radius: 18px;
+  padding: 24px 22px 26px;
+  background: var(--vera-paper);
+  box-shadow: 5px 5px 0 var(--vera-sand-deep);
+}
+
+.vera-reading-prepare li > span {
+  color: var(--vera-mustard);
+  font-family: var(--vera-font-display);
+  font-size: 30px;
+  line-height: 1;
+}
+
+.vera-reading-prepare h3 {
+  margin: 10px 0 0;
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-label);
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.vera-reading-prepare p {
+  margin: 8px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.vera-reading-faqs {
+  margin-top: 20px;
+  border-top: 2px solid var(--vera-sand-deep);
+}
+
+.vera-reading-faqs details {
+  border-bottom: 2px solid var(--vera-sand-deep);
+}
+
+.vera-reading-faqs summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 4px;
+  color: var(--vera-aubergine);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.5;
+  list-style: none;
+}
+
+.vera-reading-faqs summary::-webkit-details-marker {
+  display: none;
+}
+
+.vera-reading-faqs summary::after {
+  color: var(--vera-burnt);
+  content: "+";
+  font-family: var(--vera-font-display);
+  font-size: 22px;
+  font-weight: 400;
+  text-align: center;
+}
+
+.vera-reading-faqs details[open] summary::after {
+  content: "−";
+}
+
+.vera-reading-faqs p {
+  max-width: 640px;
+  margin: 0 0 22px;
+  color: var(--vera-ink-soft);
+  font-size: 16px;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+
+.vera-reading-booking-card {
+  position: sticky;
+  top: 24px;
+  border: var(--vera-border);
+  border-radius: 24px;
+  padding: 30px 28px;
+  background: var(--vera-aubergine);
+  box-shadow: 8px 8px 0 var(--vera-burnt);
+  color: var(--vera-cream);
+}
+
+.vera-reading-booking-card__price {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+  border-bottom: 2px solid #6e8c81;
+  padding-bottom: 22px;
+}
+
+.vera-reading-booking-card__price span {
+  display: block;
+  color: var(--vera-clay);
+}
+
+.vera-reading-booking-card__price strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--vera-mustard);
+  font-family: var(--vera-font-display);
+  font-size: 46px;
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.vera-reading-booking-card__price p {
+  margin: 0;
+  color: var(--vera-sand);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  line-height: 1.5;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.vera-reading-booking-card__price p span {
+  display: inline;
+  color: inherit;
+}
+
+.vera-reading-booking-card .vera-card-meta {
+  color: var(--vera-clay);
+}
+
+.vera-reading-booking-card [data-reading-loading] {
+  min-height: 110px;
+  padding-top: 8px;
+}
+
+.vera-reading-booking-card__next {
+  margin: 6px 0 0;
+  color: var(--vera-cream);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.vera-reading-benefits {
+  display: grid;
+  gap: 10px;
+  margin: 22px 0 0;
+  padding: 0;
+  color: var(--vera-sand);
+  font-size: 14px;
+  line-height: 1.55;
+  list-style: none;
+}
+
+.vera-reading-benefits li {
+  display: flex;
+  gap: 10px;
+}
+
+.vera-reading-benefits li::before {
+  color: #7fcbb1;
+  content: "✓";
+}
+
+.vera-reading-booking-card .vera-button {
+  width: 100%;
+  margin-top: 26px;
+}
+
+.vera-reading-booking-card__note {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.vera-reading-closed-note {
+  border: 2px solid #6e8c81;
+  border-radius: 14px;
+  padding: 16px 18px;
+  background: var(--vera-aubergine-soft);
+}
+
+.vera-reading-closed-note .vera-card-meta {
+  color: var(--vera-mustard);
+}
+
+.vera-reading-closed-note p {
+  margin: 8px 0 0;
+  color: var(--vera-sand);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.vera-reading-closed-note > a {
+  color: var(--vera-mustard);
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.vera-letter-state {
+  position: relative;
+  padding: 62px var(--vera-gutter) 84px;
+  overflow: hidden;
+  background: var(--vera-cream);
+}
+
+.vera-letter-state::before,
+.vera-placeholder-page--404::before {
+  position: absolute;
+  top: -400px;
+  left: 50%;
+  width: 1100px;
+  height: 1100px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgb(127 203 177 / 0.42) 0deg 3deg,
+    transparent 3deg 9deg
+  );
+  content: "";
+  opacity: 0.55;
+  transform: translateX(-50%);
+}
+
+.vera-letter-state > * {
+  position: relative;
+}
+
+.vera-letter-signup__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 460px;
+  align-items: start;
+  gap: 64px;
+}
+
+.vera-letter-state__title,
+.vera-letter-confirmed .vera-display,
+.vera-letter-sample__header .vera-display {
+  margin-top: 22px;
+  color: var(--vera-burnt);
+  text-shadow: 3px 3px 0 var(--vera-mustard);
+}
+
+.vera-letter-stats {
+  max-width: 620px;
+  margin-top: 40px;
+  border-top: 2px solid var(--vera-sand-deep);
+  border-bottom: 2px solid var(--vera-sand-deep);
+  padding: 24px 0;
+}
+
+.vera-letter-parts__title,
+.vera-letter-help__title {
+  margin: 44px 0 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 34px;
+  font-weight: 400;
+}
+
+.vera-letter-parts {
+  margin-top: 20px;
+}
+
+.vera-letter-signup__form {
+  position: sticky;
+  top: 24px;
+  border-width: 3px;
+  padding: 32px 30px 34px;
+  background: var(--vera-aubergine);
+  box-shadow: 8px 8px 0 var(--vera-burnt);
+  color: var(--vera-cream);
+}
+
+.vera-letter-signup__form legend {
+  color: var(--vera-mustard);
+  font-family: var(--vera-font-display);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.vera-letter-signup__form .vera-label {
+  color: var(--vera-clay);
+}
+
+.vera-letter-signup__form .vera-form-note {
+  color: var(--vera-sand);
+}
+
+.vera-letter-sample-card {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  align-items: center;
+  gap: 26px;
+  margin-top: 34px;
+  border: 2px solid var(--vera-line);
+  border-radius: 20px;
+  padding: 24px 26px;
+  background: var(--vera-sand);
+  color: inherit;
+  text-decoration: none;
+  transition: background 160ms ease;
+}
+
+.vera-letter-sample-card:hover {
+  background: #c6cebf;
+}
+
+.vera-letter-sample-card .vera-image {
+  height: 150px;
+  border-radius: 14px;
+}
+
+.vera-letter-sample-card h2 {
+  margin: 6px 0 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 27px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.vera-letter-sample-card p {
+  margin: 6px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.vera-letter-sample-card .vera-card-meta:last-child {
+  margin-top: 12px;
+  color: var(--vera-burnt);
+  font-weight: 600;
+}
+
+.vera-letter-pending__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 480px;
+  align-items: start;
+  gap: 60px;
+}
+
+.vera-letter-pending .vera-display {
+  margin-top: 22px;
+  color: var(--vera-aubergine);
+}
+
+.vera-status-pill--success {
+  border-color: var(--vera-sage);
+  background: var(--vera-sage-pale);
+  color: #3e8c77;
+}
+
+.vera-letter-help {
+  margin-top: 14px;
+  border-top: 2px solid var(--vera-sand-deep);
+}
+
+.vera-letter-help li {
+  border-bottom: 2px solid var(--vera-sand-deep);
+  padding: 18px 4px;
+}
+
+.vera-letter-pending__actions {
+  align-items: center;
+  margin-top: 24px;
+}
+
+.vera-letter-resent {
+  color: #3e8c77;
+}
+
+.vera-letter-wait-note {
+  margin-top: 44px;
+  border: 2px dashed var(--vera-line);
+  border-radius: 18px;
+  padding: 24px 26px;
+  background: var(--vera-sand);
+  color: var(--vera-ink-soft);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.vera-letter-wait-note strong {
+  color: var(--vera-aubergine);
+}
+
+.vera-letter-wait-note a {
+  color: var(--vera-burnt);
+  font-weight: 700;
+}
+
+.vera-letter-preview > .vera-card-meta {
+  margin-bottom: 10px;
+}
+
+.vera-letter-preview__paper {
+  overflow: hidden;
+  border: var(--vera-border);
+  border-radius: 20px;
+  background: var(--vera-paper-pale);
+  box-shadow: 8px 8px 0 var(--vera-sand-deep);
+}
+
+.vera-letter-preview__paper > header {
+  display: grid;
+  gap: 4px;
+  border-bottom: 2px solid var(--vera-ink);
+  padding: 16px 20px;
+  background: var(--vera-sand);
+  color: var(--vera-ink-soft);
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+
+.vera-letter-preview__paper > header span {
+  color: var(--vera-muted);
+}
+
+.vera-letter-preview__body {
+  padding: 28px 26px 30px;
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.vera-letter-preview__brand {
+  border-bottom: 2px solid var(--vera-sand);
+  padding-bottom: 14px;
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 22px;
+}
+
+.vera-letter-preview__body p {
+  margin: 14px 0 0;
+}
+
+.vera-letter-preview__body .vera-button {
+  width: 100%;
+  margin-top: 22px;
+}
+
+.vera-letter-preview__body .vera-signature {
+  margin-top: 18px;
+  font-size: 20px;
+}
+
+.vera-letter-preview__body footer {
+  margin-top: 22px;
+  border-top: 1px dashed var(--vera-sand);
+  padding-top: 16px;
+  color: #7d8c82;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.vera-letter-confirmed {
+  min-height: 720px;
+  padding-top: 76px;
+  text-align: center;
+}
+
+.vera-letter-confirmed__inner {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.vera-letter-confirmed .vera-lede {
+  max-width: 560px;
+  margin-inline: auto;
+}
+
+.vera-letter-confirmed .vera-actions {
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.vera-letter-confirmed__notes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 56px;
+  text-align: left;
+}
+
+.vera-letter-sample {
+  padding-top: 26px;
+}
+
+.vera-letter-sample::before {
+  content: none;
+}
+
+.vera-letter-archive {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.vera-letter-archive > a {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.vera-letter-archive > div {
+  display: flex;
+  gap: 10px;
+}
+
+.vera-letter-archive > div a {
+  border: 2px solid var(--vera-ink);
+  border-radius: 999px;
+  padding: 6px 13px;
+  background: var(--vera-paper);
+  color: var(--vera-ink);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.vera-letter-archive > div a[aria-current="page"] {
+  background: var(--vera-aubergine);
+  color: var(--vera-mustard);
+}
+
+.vera-letter-sample__header {
+  max-width: 780px;
+  margin: 40px auto 0;
+  text-align: center;
+}
+
+.vera-letter-sample__header .vera-display {
+  margin-top: 16px;
+}
+
+.vera-letter-author {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 24px;
+  border-top: 2px solid var(--vera-sand-deep);
+  border-bottom: 2px solid var(--vera-sand-deep);
+  padding: 18px 0;
+  text-align: left;
+}
+
+.vera-letter-author .vera-image {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  flex: none;
+}
+
+.vera-letter-author .vera-card-meta span:last-child {
+  color: var(--vera-burnt);
+}
+
+.vera-letter-sample__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
+  gap: 60px;
+  max-width: 1140px;
+  margin: 44px auto 0;
+}
+
+.vera-letter-month {
+  margin-top: 36px;
+  border-color: var(--vera-line);
+  padding: 26px 28px;
+  background: var(--vera-sand);
+}
+
+.vera-letter-month p {
+  margin-top: 10px;
+}
+
+.vera-letter-sample__footer {
+  margin-top: 46px !important;
+  border-top: 2px solid var(--vera-sand-deep);
+  padding-top: 24px;
+  color: var(--vera-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.vera-letter-sample__rail .vera-input {
+  margin-top: 16px;
+}
+
+.vera-letter-sample__rail .vera-button {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.vera-letter-subscribed {
+  border: 2px solid var(--vera-sage);
+  border-radius: 22px;
+  padding: 24px;
+  background: var(--vera-sage-pale);
+  text-align: center;
+}
+
+.vera-letter-subscribed h2 {
+  margin: 0;
+  color: #3e8c77;
+  font-family: var(--vera-font-display);
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.vera-letter-subscribed p {
+  margin: 6px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.vera-letter-earlier {
+  display: grid;
+  gap: 12px;
+}
+
+.vera-letter-earlier a {
+  display: grid;
+  gap: 2px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.vera-letter-earlier a span {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.vera-letter-earlier a strong {
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.vera-letter-long {
+  border-color: var(--vera-line);
+  background: var(--vera-sand);
+}
+
+.vera-letter-long a {
+  display: block;
+  margin-top: 12px;
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.vera-closed-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 480px;
+  align-items: start;
+  gap: 60px;
+  padding: 60px var(--vera-gutter) 90px;
+  background: var(--vera-cream);
+}
+
+.vera-closed-page > div > .vera-display {
+  margin-top: 20px;
+  color: var(--vera-burnt);
+  text-shadow: 3px 3px 0 var(--vera-mustard);
+}
+
+.vera-closed-page > div > .vera-lede {
+  max-width: 600px;
+  margin-top: 20px;
+}
+
+.vera-closed-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 38px 0 0;
+}
+
+.vera-closed-facts div {
+  border-left: 3px solid var(--vera-mustard);
+  padding: 4px 0 4px 16px;
+}
+
+.vera-closed-facts dt {
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+.vera-closed-facts dd {
+  margin: 4px 0 0;
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.vera-closed-works {
+  margin-top: 44px;
+}
+
+.vera-closed-works > h2 {
+  margin: 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.vera-closed-works > div {
+  margin-top: 16px;
+  border-top: 2px solid var(--vera-sand-deep);
+}
+
+.vera-closed-works article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 2px solid var(--vera-sand-deep);
+  padding: 18px 4px;
+}
+
+.vera-closed-works h3 {
+  margin: 0;
+  color: var(--vera-aubergine);
+  font-size: 17px;
+}
+
+.vera-closed-works p {
+  margin: 3px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.vera-closed-works article > span {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.vera-closed-rail {
+  display: grid;
+  gap: 22px;
+}
+
+.vera-closed-rail .vera-sidebar-card--dark {
+  padding: 30px 28px;
+  box-shadow: 8px 8px 0 var(--vera-burnt);
+}
+
+.vera-closed-rail .vera-sidebar-card--dark > .vera-card-meta:first-child {
+  color: var(--vera-clay);
+}
+
+.vera-closed-rail .vera-sidebar-card--dark h2 {
+  margin-top: 6px;
+  font-size: 34px;
+}
+
+.vera-closed-rail .vera-button {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.vera-closed-rail .vera-sidebar-card--dark > .vera-card-meta:last-child {
+  margin-top: 12px;
+  color: var(--vera-clay);
+  text-align: center;
+}
+
+.vera-closed-photo {
+  height: 300px;
+  border-width: 3px;
+  border-radius: 20px;
+}
+
+.vera-closed-booked {
+  border: 2px dashed var(--vera-line);
+  border-radius: 18px;
+  padding: 22px 24px;
+  background: var(--vera-paper);
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.vera-closed-booked strong {
+  color: var(--vera-aubergine);
+}
+
+.vera-page-hero {
+  padding: clamp(62px, 5.6vw, 82px) var(--vera-gutter) clamp(56px, 4.8vw, 70px);
+  background: var(--vera-cream);
+}
+
+/* The booking hero runs straight into the wizard, so the usual page rhythm
+   leaves a dead gap between the lede and the first step. */
+.vera-page-hero--booking {
+  padding-bottom: 18px;
+}
+
+.vera-section--booking {
+  padding-top: 26px;
+}
+
+.vera-page-hero--split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 520px);
+  align-items: center;
+  gap: 64px;
+}
+
+.vera-page-hero .vera-display {
+  margin-top: 14px;
+}
+
+.vera-page-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+  align-items: start;
+  gap: 46px;
+}
+
+.vera-prose {
+  max-width: 760px;
+  color: #0e241e;
+  font-size: 17px;
+  line-height: 1.85;
+}
+
+.vera-prose > :first-child {
+  margin-top: 0;
+}
+
+.vera-prose h2 {
+  margin: 44px 0 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 34px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.vera-prose p {
+  margin: 18px 0 0;
+}
+
+.vera-prose__lead {
+  font-size: 20px;
+  line-height: 1.8;
+}
+
+.vera-pullquote {
+  margin: 40px 0;
+  border: var(--vera-border);
+  border-radius: var(--vera-radius);
+  padding: 30px 34px;
+  background: var(--vera-aubergine);
+  color: var(--vera-mustard);
+  font-size: 23px;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.vera-numbered-list {
+  display: grid;
+  gap: 16px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vera-numbered-list li {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.vera-numbered-list strong {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.vera-sidebar {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 22px;
+}
+
+.vera-sidebar-card {
+  border: 2px solid var(--vera-sand-deep);
+  border-radius: 18px;
+  padding: 22px 24px;
+  background: var(--vera-paper);
+}
+
+.vera-sidebar-card--dark {
+  border: var(--vera-border);
+  background: var(--vera-aubergine);
+  box-shadow: 6px 6px 0 var(--vera-burnt);
+  color: var(--vera-sand);
+}
+
+.vera-sidebar-card h2,
+.vera-sidebar-card h3 {
+  margin: 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.vera-sidebar-card--dark h2,
+.vera-sidebar-card--dark h3 {
+  color: var(--vera-mustard);
+}
+
+.vera-sidebar-card p {
+  margin: 8px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.vera-sidebar-card--dark p {
+  color: var(--vera-sand);
+}
+
+.vera-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vera-list-item {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) 200px 130px;
+  align-items: center;
+  gap: 30px;
+  border-bottom: 2px solid var(--vera-sand-deep);
+  padding: 26px 6px;
+  color: inherit;
+  text-decoration: none;
+  transition: background 160ms ease;
+}
+
+a.vera-list-item:hover {
+  background: var(--vera-sand);
+}
+
+.vera-list-item__number {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 26px;
+}
+
+.vera-list-item h2,
+.vera-list-item h3 {
+  margin: 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 27px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.vera-list-item p {
+  margin: 8px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.vera-list-item__meta {
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  line-height: 1.5;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.vera-list-item__category {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vera-writing-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  align-items: end;
+  gap: 28px 48px;
+}
+
+.vera-writing-hero__intro .vera-lede {
+  max-width: 700px;
+}
+
+.vera-writing-hero__meta {
+  margin: 0 0 8px;
+  border-left: 3px solid var(--vera-burnt);
+  padding-left: 18px;
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  line-height: 1.8;
+  text-transform: uppercase;
+}
+
+.vera-writing-hero > .vera-filter-pills {
+  grid-column: 1 / -1;
+}
+
+.vera-writing-featured-badge {
+  position: static;
+  display: inline-block;
+  background: var(--vera-burnt);
+  color: var(--vera-paper);
+}
+
+.vera-writing-featured-image {
+  height: 380px;
+  border-width: 3px;
+  border-radius: 22px;
+  box-shadow: 8px 8px 0 var(--vera-sand-deep);
+}
+
+.vera-article-header__inner {
+  max-width: 820px;
+  margin: 30px auto 0;
+  text-align: center;
+}
+
+.vera-article-hero {
+  padding-top: clamp(40px, 4vw, 58px);
+  padding-bottom: clamp(34px, 3.4vw, 48px);
+}
+
+.vera-article-layout {
+  padding-top: clamp(34px, 3.8vw, 54px);
+}
+
+.vera-article-header__inner > div:last-child {
+  justify-content: center;
+  border-top: 2px solid var(--vera-sand-deep);
+  border-bottom: 2px solid var(--vera-sand-deep);
+  padding: 18px 0;
+}
+
+.vera-article-avatar {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  flex: none;
+}
+
+.vera-article-figure {
+  height: auto;
+  aspect-ratio: 5 / 3;
+  border-width: 3px;
+  border-radius: 20px;
+}
+
+.vera-article-bio {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  margin-top: 50px;
+  border-color: var(--vera-line);
+  padding: 30px;
+  background: var(--vera-sand);
+}
+
+.vera-article-bio .vera-image {
+  width: 90px;
+  height: 90px;
+  min-height: 90px;
+  flex: none;
+  border-width: 3px;
+}
+
+.vera-article-bio h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.vera-article-bio p {
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.vera-article-contents,
+.vera-article-next {
+  display: grid;
+  gap: 11px;
+}
+
+.vera-article-contents a {
+  border-left: 3px solid var(--vera-sand-deep);
+  padding-left: 12px;
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.vera-article-contents a[aria-current="location"] {
+  border-color: var(--vera-burnt);
+  color: var(--vera-burnt);
+}
+
+.vera-article-next a {
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 20px;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.vera-detail-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.vera-details {
+  border: 2px solid var(--vera-sand-deep);
+  border-radius: 16px;
+  background: var(--vera-paper);
+}
+
+.vera-details[open] {
+  border-color: var(--vera-ink);
+  box-shadow: 4px 4px 0 var(--vera-sand-deep);
+}
+
+.vera-details summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 24px;
+  color: var(--vera-aubergine);
+  cursor: pointer;
+  font-family: var(--vera-font-display);
+  font-size: 22px;
+  line-height: 1.2;
+  list-style: none;
+}
+
+.vera-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.vera-details summary::after {
+  color: var(--vera-burnt);
+  content: "+";
+  font-size: 28px;
+  text-align: center;
+}
+
+.vera-details[open] summary::after {
+  content: "−";
+}
+
+.vera-details__body {
+  padding: 0 24px 24px;
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.vera-details__body p {
+  margin: 0;
+}
+
+.vera-faq-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  align-items: end;
+  gap: 60px;
+}
+
+.vera-faq-hero .vera-lede {
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.vera-faq-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  align-items: start;
+  gap: 56px;
+}
+
+.vera-faq-rail {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 18px;
+}
+
+.vera-faq-tabs {
+  display: grid;
+  gap: 10px;
+}
+
+.vera-faq-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  border: 2px solid var(--vera-ink);
+  border-radius: 12px;
+  padding: 13px 16px;
+  background: var(--vera-paper);
+  color: var(--vera-ink);
+  cursor: pointer;
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.vera-faq-tabs button[aria-selected="true"] {
+  background: var(--vera-aubergine);
+  color: var(--vera-paper);
+}
+
+.vera-faq-tabs button span:last-child {
+  opacity: 0.6;
+}
+
+.vera-faq-contact {
+  border-color: var(--vera-line);
+  background: var(--vera-sand);
+}
+
+.vera-faq-contact a {
+  display: block;
+  margin-top: 12px;
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.vera-faq-layout [role="tabpanel"] > .vera-heading {
+  color: var(--vera-burnt);
+  font-size: 36px;
+}
+
+.vera-faq-layout [role="tabpanel"] > .vera-lede {
+  max-width: 620px;
+  margin-top: 6px;
+  color: var(--vera-muted);
+  font-size: 16px;
+}
+
+.vera-faq-list {
+  margin-top: 26px;
+}
+
+.vera-timeline {
+  display: grid;
+  gap: 0;
+  margin-top: 28px;
+}
+
+.vera-timeline__item {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 24px;
+  border-top: 2px solid var(--vera-sand-deep);
+  padding: 20px 0;
+}
+
+.vera-timeline__item strong {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.vera-timeline__item span {
+  color: var(--vera-ink-soft);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.vera-contact-grid,
+.vera-method-grid,
+.vera-fact-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.vera-contact-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 520px;
+  align-items: start;
+  gap: 56px;
+}
+
+.vera-contact-layout .vera-contact-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.vera-support-table-wrap {
+  overflow: hidden;
+  border: 3px solid var(--vera-ink);
+  border-radius: 20px;
+  background: var(--vera-paper);
+  box-shadow: 8px 8px 0 var(--vera-mustard);
+}
+
+.vera-support-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.vera-support-table tr + tr {
+  border-top: 2px dashed var(--vera-sand-deep);
+}
+
+.vera-support-table th,
+.vera-support-table td {
+  padding: 22px 24px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.vera-support-table th {
+  width: 150px;
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vera-support-table strong,
+.vera-support-table span {
+  display: block;
+}
+
+.vera-support-table strong {
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.vera-support-table span {
+  margin-top: 7px;
+  color: var(--vera-ink-soft);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.vera-contact-layout figure {
+  margin-top: 22px !important;
+}
+
+.vera-contact-map {
+  height: 300px;
+  border-width: 3px;
+  border-radius: 20px;
+}
+
+.vera-contact-layout .vera-contact-form,
+.vera-contact-layout .vera-contact-success {
+  border-width: 3px;
+  padding: 32px 30px 34px;
+}
+
+.vera-info-card {
+  border: 2px solid var(--vera-sand-deep);
+  border-radius: 18px;
+  padding: 22px;
+  background: var(--vera-paper);
+}
+
+.vera-info-card__tag {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vera-info-card h2,
+.vera-info-card h3,
+.vera-info-card strong {
+  display: block;
+  margin: 8px 0 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.vera-info-card p {
+  margin: 8px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.vera-booking-shell {
+  position: relative;
+  display: grid;
+  gap: 28px;
+}
+
+.vera-booking-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.vera-booking-progress {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.vera-booking-hold {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  border: 2px solid var(--vera-burnt);
+  border-radius: 999px;
+  padding: 7px 14px 6px;
+  background: var(--vera-aubergine);
+  color: var(--vera-cream);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.vera-booking-hold[hidden] {
+  display: none;
+}
+
+.vera-booking-progress span {
+  border: 2px solid var(--vera-line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: #7d8c82;
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.vera-booking-progress span[data-active] {
+  border-color: var(--vera-ink);
+  background: var(--vera-burnt);
+  color: var(--vera-paper);
+}
+
+.vera-booking-payment-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(290px, 360px);
+  gap: clamp(28px, 4vw, 52px);
+  align-items: start;
+}
+
+.vera-booking-choice-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.vera-booking-choice-heading b {
+  color: inherit;
+  font-family: var(--vera-font-display);
+  font-size: 26px;
+  font-weight: 400;
+}
+
+.vera-payment-method {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.vera-payment-method > legend {
+  margin-bottom: 10px;
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vera-payment-method__choice {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border: 2px solid var(--vera-ink);
+  border-radius: 14px;
+  padding: 16px 18px;
+  background: var(--vera-paper-pale);
+  box-shadow: 4px 4px 0 var(--vera-sand-deep);
+}
+
+.vera-payment-method__radio {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  place-items: center;
+  border: 2px solid var(--vera-burnt);
+  border-radius: 50%;
+}
+
+.vera-payment-method__radio::after {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vera-burnt);
+  content: "";
+}
+
+.vera-payment-method__copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.vera-payment-method__copy strong {
+  color: var(--vera-aubergine);
+  font-size: 16px;
+}
+
+.vera-payment-method__copy small {
+  color: var(--vera-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.vera-payment-method__brands {
+  display: flex;
+  gap: 5px;
+  margin-left: auto;
+}
+
+.vera-payment-method__brands b {
+  border: 1px solid var(--vera-line);
+  border-radius: 4px;
+  padding: 4px 6px 3px;
+  background: var(--vera-paper);
+  color: var(--vera-ink);
+  font-family: var(--vera-font-label);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+.vera-payment-method__trust {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 11px;
+  color: var(--vera-muted);
+  font-size: 12px;
+}
+
+[data-booking-intake-error] {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.vera-booking-payment-summary {
+  position: sticky;
+  top: 24px;
+  border: 3px solid var(--vera-ink);
+  border-radius: 24px;
+  padding: 28px 26px;
+  background: var(--vera-aubergine);
+  box-shadow: 8px 8px 0 var(--vera-burnt);
+  color: var(--vera-cream);
+}
+
+.vera-booking-payment-summary > .vera-card-meta {
+  color: var(--vera-clay);
+}
+
+.vera-booking-payment-summary h3 {
+  margin: 6px 0 0;
+  color: var(--vera-mustard);
+  font-family: var(--vera-font-display);
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.vera-booking-payment-summary__duration {
+  margin: 4px 0 0;
+  color: var(--vera-sand);
+  font-size: 14px;
+}
+
+.vera-booking-summary--dark {
+  margin-top: 20px;
+  border-top: 2px solid var(--vera-aubergine-soft);
+  padding-top: 8px;
+}
+
+.vera-booking-summary--dark > div {
+  border-color: var(--vera-aubergine-soft);
+}
+
+.vera-booking-summary--dark dt {
+  color: var(--vera-clay);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.vera-booking-summary--dark dd {
+  max-width: 210px;
+  color: var(--vera-cream);
+  font-size: 14px;
+}
+
+.vera-booking-payment-summary__money dd {
+  font-size: 15px;
+}
+
+.vera-booking-payment-summary__due {
+  align-items: baseline;
+  border-top: 2px dashed var(--vera-aubergine-soft);
+}
+
+.vera-booking-payment-summary__due dd {
+  color: var(--vera-mustard);
+  font-family: var(--vera-font-display);
+  font-size: 30px;
+}
+
+.vera-booking-payment-summary > [data-booking-summary-balance] {
+  margin: 4px 0 0;
+  color: #a9c4b8;
+  font-size: 13px;
+}
+
+.vera-booking-payment-actions {
+  margin-top: 28px;
+}
+
+.vera-booking-payment-actions .vera-actions {
+  justify-content: flex-start;
+}
+
+.vera-booking-payment-actions > .vera-form-note {
+  margin-top: 11px;
+}
+
+.vera-booking-confirmed {
+  position: relative;
+  padding: clamp(24px, 5vw, 62px) 0 clamp(30px, 6vw, 80px);
+}
+
+.vera-booking-confirmation-state {
+  min-height: min(650px, 70vh);
+  padding-block: clamp(46px, 7vw, 86px);
+}
+
+.vera-booking-confirmation-state__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(350px, 0.75fr);
+  gap: clamp(42px, 7vw, 100px);
+  align-items: center;
+}
+
+.vera-booking-confirmation-state__copy .vera-display {
+  max-width: 900px;
+  margin-top: 20px;
+}
+
+.vera-booking-confirmation-state .vera-lede {
+  max-width: 720px;
+}
+
+.vera-booking-confirmation-state__actions {
+  justify-content: flex-start;
+  margin-top: 26px;
+}
+
+.vera-booking-confirmation-state__feedback {
+  margin: 14px 0 0;
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.vera-booking-status-ledger {
+  border: 3px solid var(--vera-ink);
+  border-radius: 24px;
+  padding: clamp(24px, 3vw, 36px);
+  background: var(--vera-paper-pale);
+  box-shadow: 9px 9px 0 var(--vera-mustard);
+}
+
+.vera-booking-status-ledger > .vera-card-meta {
+  color: var(--vera-burnt);
+}
+
+.vera-booking-status-ledger > h3 {
+  margin: 8px 0 20px;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 400;
+}
+
+.vera-booking-status-ledger dl {
+  margin: 0;
+  border-top: 2px solid var(--vera-ink);
+}
+
+.vera-booking-status-ledger dl > div {
+  display: grid;
+  grid-template-columns: minmax(115px, 0.65fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  border-bottom: 1px dashed var(--vera-line);
+  padding: 15px 0;
+}
+
+.vera-booking-status-ledger dt {
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.vera-booking-status-ledger dd {
+  margin: 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 17px;
+  text-align: right;
+}
+
+.vera-booking-status-ledger dd small {
+  display: block;
+  margin-top: 4px;
+  color: var(--vera-muted);
+  font-family: var(--vera-font-body);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.vera-button[aria-busy="true"] {
+  cursor: wait;
+  opacity: 0.75;
+}
+
+body.vera-dialog-open {
+  overflow: hidden;
+}
+
+.vera-payment-dialog[hidden] {
+  display: none;
+}
+
+.vera-payment-dialog {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 44px);
+}
+
+.vera-payment-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(14 36 30 / 82%);
+  cursor: default;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.vera-payment-dialog__panel {
+  position: relative;
+  overflow: auto;
+  width: min(100%, 690px);
+  max-height: calc(100dvh - 32px);
+  border: 3px solid var(--vera-ink);
+  border-radius: 26px;
+  padding: clamp(26px, 5vw, 46px);
+  background: var(--vera-paper-pale);
+  box-shadow: 12px 12px 0 var(--vera-burnt);
+  opacity: 0;
+  transform: translateY(18px) rotate(-0.25deg);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.vera-payment-dialog.is-open .vera-payment-dialog__backdrop,
+.vera-payment-dialog.is-open .vera-payment-dialog__panel {
+  opacity: 1;
+}
+
+.vera-payment-dialog.is-open .vera-payment-dialog__panel {
+  transform: translateY(0) rotate(0);
+}
+
+.vera-payment-dialog__panel:focus {
+  outline: none;
+}
+
+.vera-payment-dialog__close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 2px solid var(--vera-ink);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--vera-ink);
+  font-family: var(--vera-font-label);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.vera-payment-dialog__panel .vera-heading {
+  margin-top: 8px;
+  padding-right: 42px;
+  color: var(--vera-aubergine);
+  font-size: clamp(38px, 7vw, 62px);
+}
+
+.vera-payment-dialog__intro {
+  max-width: 560px;
+  margin: 12px 0 0;
+  color: var(--vera-ink-soft);
+  line-height: 1.65;
+}
+
+.vera-payment-dialog__ledger {
+  display: grid;
+  gap: 0;
+  margin: 28px 0 0;
+  border-block: 2px solid var(--vera-ink);
+}
+
+.vera-payment-dialog__ledger > div {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.34fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  border-bottom: 1px dashed var(--vera-sand-deep);
+  padding: 16px 0;
+}
+
+.vera-payment-dialog__ledger > div:last-child {
+  border-bottom: 0;
+}
+
+.vera-payment-dialog__ledger dt {
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.vera-payment-dialog__ledger dd {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  text-align: right;
+}
+
+.vera-payment-dialog__ledger dd strong {
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 19px;
+}
+
+.vera-payment-dialog__ledger dd span {
+  color: var(--vera-muted);
+  font-size: 13px;
+}
+
+.vera-payment-dialog__total dd {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 32px;
+}
+
+.vera-payment-dialog__secure {
+  margin: 18px 0 0;
+  color: var(--vera-muted);
+  font-size: 13px;
+}
+
+.vera-payment-dialog__secure span {
+  color: var(--vera-burnt);
+}
+
+.vera-payment-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.vera-booking-confirmed__header {
+  text-align: center;
+}
+
+.vera-booking-confirmed__header .vera-display {
+  margin-top: 22px;
+  color: var(--vera-burnt);
+  text-shadow: 3px 3px 0 var(--vera-mustard);
+}
+
+.vera-booking-confirmed__header .vera-lede {
+  max-width: 560px;
+  margin-inline: auto;
+}
+
+.vera-booking-confirmed__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 460px);
+  gap: clamp(28px, 4vw, 44px);
+  align-items: start;
+  margin-top: 50px;
+}
+
+.vera-booking-confirmed__sitting {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 28px;
+  border: 3px solid var(--vera-ink);
+  border-radius: 22px;
+  padding: 30px;
+  background: var(--vera-paper);
+  box-shadow: 7px 7px 0 var(--vera-sand-deep);
+}
+
+.vera-booking-confirmed__sitting h3 {
+  margin: 6px 0 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 32px;
+  font-weight: 400;
+}
+
+.vera-booking-confirmed__sitting p {
+  margin: 8px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.vera-booking-confirmed__paid {
+  text-align: right;
+}
+
+.vera-booking-confirmed__paid > strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 32px;
+  font-weight: 400;
+}
+
+.vera-booking-confirmed__paid > p {
+  margin-top: 4px;
+  color: var(--vera-muted);
+  font-size: 14px;
+}
+
+.vera-booking-confirmed__actions {
+  grid-column: 1 / -1;
+  margin-top: 0;
+  border-top: 2px dashed var(--vera-sand-deep);
+  padding-top: 22px;
+}
+
+.vera-booking-confirmed__prep {
+  margin-top: 22px;
+  border: 3px solid var(--vera-ink);
+  border-radius: 22px;
+  padding: 30px;
+  background: var(--vera-aubergine);
+  color: var(--vera-cream);
+}
+
+.vera-booking-confirmed__prep > .vera-card-meta {
+  color: var(--vera-clay);
+}
+
+.vera-booking-confirmed__prep > h3 {
+  margin: 6px 0 0;
+  color: var(--vera-mustard);
+  font-family: var(--vera-font-display);
+  font-size: 26px;
+  font-weight: 400;
+}
+
+.vera-booking-confirmed__prep-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.vera-booking-confirmed__prep-list article {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border-bottom: 1px solid var(--vera-aubergine-soft);
+  padding-bottom: 14px;
+}
+
+.vera-booking-confirmed__prep-list article > span {
+  color: var(--vera-clay);
+  font-family: var(--vera-font-display);
+  font-size: 20px;
+}
+
+.vera-booking-confirmed__prep-list strong {
+  font-size: 15px;
+}
+
+.vera-booking-confirmed__prep-list p {
+  margin: 3px 0 0;
+  color: var(--vera-sand);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.vera-booking-confirmed__prep > [data-booking-confirmed-unknown] {
+  margin: 18px 0 0;
+  border: 2px solid var(--vera-aubergine-soft);
+  border-radius: 14px;
+  padding: 16px 18px;
+  background: var(--vera-aubergine-soft);
+  color: var(--vera-sand);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.vera-booking-email-preview {
+  overflow: hidden;
+  margin-top: 10px;
+  border: 3px solid var(--vera-ink);
+  border-radius: 20px;
+  background: #f1f3ec;
+  box-shadow: 7px 7px 0 var(--vera-sand-deep);
+}
+
+.vera-booking-email-preview__headers {
+  padding: 16px 20px;
+  border-bottom: 2px solid var(--vera-ink);
+  background: var(--vera-sand);
+  color: var(--vera-ink-soft);
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  line-height: 1.65;
+  white-space: pre-line;
+}
+
+.vera-booking-email-preview__body {
+  padding: 26px 24px 28px;
+}
+
+.vera-booking-email-preview__brand,
+.vera-booking-email-preview__signature {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 22px;
+}
+
+.vera-booking-email-preview__body p {
+  margin: 14px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.vera-booking-email-preview__ledger {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  border: 2px solid var(--vera-sand-deep);
+  border-radius: 14px;
+  padding: 18px 20px;
+  background: var(--vera-cream);
+  color: var(--vera-ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.vera-booking-email-preview__body .vera-button {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.vera-booking-email-preview__signature {
+  margin-top: 16px;
+  transform: rotate(-2deg);
+  transform-origin: left center;
+}
+
+.vera-booking-step[hidden],
+.vera-booking-confirmed[hidden],
+.vera-booking-state[hidden],
+.vera-booking-alert[hidden],
+.vera-booking-processing[hidden],
+.vera-button[data-booking-check-again][hidden],
+.vera-button[data-booking-retry-payment][hidden],
+.vera-button[data-booking-open-waitlist][hidden],
+.vera-booking-waitlist [hidden],
+.vera-contact-form[hidden],
+.vera-contact-success[hidden],
+.vera-account-panel[hidden],
+.vera-account-cancelled[hidden],
+.vera-account-nav button[hidden],
+.vera-section-header[hidden],
+.vera-list[hidden],
+.vera-list-item[hidden],
+.vera-account-empty[hidden],
+.vera-account-nav[hidden],
+[data-account-files-ledger][hidden],
+[data-account-five-year][hidden],
+[data-account-report-download][hidden],
+[data-account-chart-download][hidden],
+[data-reading-books-open][hidden],
+[data-reading-books-closed][hidden],
+[data-reading-availability-error][hidden],
+[data-reading-loading][hidden],
+.vera-placeholder-page[hidden],
+.vera-letter-confirmed[hidden],
+[data-letter-base][hidden],
+.vera-letter-sample[hidden],
+[data-letter-screen][hidden],
+[data-faq-panel][hidden] {
+  display: none;
+}
+
+.vera-booking-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 26px;
+  border: 3px solid var(--vera-burnt);
+  border-radius: 18px;
+  padding: 22px 24px;
+  background: #dde3d6;
+}
+
+.vera-booking-alert--taken {
+  border-color: var(--vera-ink);
+  background: var(--vera-aubergine);
+  color: var(--vera-cream);
+}
+
+.vera-booking-alert__symbol {
+  display: grid;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--vera-burnt);
+  color: var(--vera-paper);
+  font-family: var(--vera-font-display);
+}
+
+.vera-booking-alert--taken .vera-booking-alert__symbol {
+  background: var(--vera-mustard);
+  color: var(--vera-aubergine);
+}
+
+.vera-booking-alert h2 {
+  margin: 0;
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.vera-booking-alert--taken h2 {
+  color: var(--vera-mustard);
+}
+
+.vera-booking-alert p {
+  margin: 6px 0 0;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.vera-booking-state {
+  padding: clamp(30px, 5vw, 70px) 0;
+}
+
+.vera-booking-summary {
+  display: grid;
+  gap: 0;
+  margin: 18px 0 0;
+}
+
+.vera-booking-summary > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px dashed var(--vera-sand-deep);
+  padding: 12px 0;
+}
+
+.vera-booking-summary dt {
+  color: var(--vera-muted);
+}
+
+.vera-booking-summary dd {
+  margin: 0;
+  text-align: right;
+}
+
+.vera-booking-processing {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(14 36 30 / 0.82);
+}
+
+.vera-booking-processing__card {
+  width: min(460px, 100%);
+  border: var(--vera-border);
+  border-radius: 24px;
+  padding: 40px 44px;
+  background: var(--vera-paper);
+  box-shadow: 10px 10px 0 var(--vera-burnt);
+  text-align: center;
+}
+
+.vera-booking-processing__card h2 {
+  margin: 22px 0 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.vera-booking-processing__card p {
+  color: var(--vera-ink-soft);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.vera-booking-spinner {
+  display: block;
+  width: 54px;
+  height: 54px;
+  margin: 0 auto;
+  border: 5px solid var(--vera-sand);
+  border-top-color: var(--vera-burnt);
+  border-radius: 50%;
+  animation: vera-spin 0.9s linear infinite;
+}
+
+@keyframes vera-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vera-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.vera-choice {
+  display: grid;
+  gap: 6px;
+  border: 2px solid var(--vera-ink);
+  border-radius: 18px;
+  padding: 20px 22px;
+  background: var(--vera-paper);
+  color: var(--vera-ink);
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 5px 5px 0 var(--vera-sand-deep);
+}
+
+.vera-choice:has(input:checked),
+.vera-choice[data-selected] {
+  background: var(--vera-aubergine);
+  color: var(--vera-paper);
+  box-shadow: 5px 5px 0 var(--vera-burnt);
+}
+
+.vera-choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vera-choice strong {
+  font-family: var(--vera-font-display);
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.vera-choice span {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.vera-calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+.vera-calendar-grid-shell {
+  position: relative;
+}
+
+.vera-calendar-month-control {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.vera-calendar-month-control strong {
+  min-width: 210px;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 28px;
+  font-weight: 400;
+  text-align: center;
+}
+
+.vera-calendar-month-control button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 2px solid var(--vera-ink);
+  border-radius: 50%;
+  background: var(--vera-paper);
+  color: var(--vera-ink);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.vera-calendar-month-control button:hover:not(:disabled) {
+  background: var(--vera-mustard);
+}
+
+.vera-calendar-month-control button:disabled {
+  border-color: var(--vera-line);
+  background: #dce7e0;
+  color: #b6bfaf;
+  cursor: default;
+}
+
+.vera-calendar-loading {
+  position: absolute;
+  z-index: 2;
+  inset: 12px 0 0;
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  border: 2px dashed var(--vera-line);
+  border-radius: 16px;
+  background: rgba(241, 243, 236, 0.9);
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  pointer-events: none;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.vera-calendar-loading[hidden] {
+  display: none;
+}
+
+.vera-calendar-loading__mark {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--vera-line);
+  border-radius: 50%;
+  border-top-color: var(--vera-burnt);
+  animation: vera-calendar-spin 0.8s linear infinite;
+}
+
+.vera-booking-primary-actions {
+  justify-content: flex-end;
+}
+
+@keyframes vera-calendar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vera-calendar-day--loading {
+  border-style: dashed;
+  border-color: var(--vera-line);
+  background: #dce7e0;
+  color: #b6bfaf;
+  cursor: default;
+  animation: vera-calendar-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes vera-calendar-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vera-calendar-loading__mark,
+  .vera-calendar-day--loading {
+    animation: none;
+  }
+}
+
+.vera-calendar-weekdays,
+.vera-calendar-month {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.vera-calendar-weekdays {
+  margin-top: 20px;
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.vera-calendar-month {
+  margin-top: 8px;
+}
+
+.vera-calendar-day {
+  display: flex;
+  min-width: 0;
+  height: 72px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 2px solid var(--vera-ink);
+  border-radius: 12px;
+  background: var(--vera-paper);
+  color: var(--vera-ink);
+  cursor: pointer;
+}
+
+.vera-calendar-day strong {
+  font-family: var(--vera-font-display);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.vera-calendar-day span {
+  overflow: hidden;
+  max-width: 100%;
+  font-family: var(--vera-font-label);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.vera-calendar-day[data-kind="closed"] {
+  border-color: var(--vera-line);
+  border-style: dashed;
+  background: #dce7e0;
+  color: #b6bfaf;
+  cursor: default;
+}
+
+.vera-calendar-day[data-selected] {
+  background: var(--vera-burnt);
+  color: var(--vera-paper);
+  box-shadow: 4px 4px 0 var(--vera-ink);
+}
+
+.vera-calendar-day--blank {
+  visibility: hidden;
+}
+
+.vera-calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-top: 16px;
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.vera-calendar-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.vera-calendar-legend i {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--vera-ink);
+  border-radius: 4px;
+  background: var(--vera-paper);
+}
+
+.vera-calendar-legend i[data-kind="chosen"] {
+  border-color: var(--vera-burnt);
+  background: var(--vera-burnt);
+}
+
+.vera-calendar-legend i[data-kind="closed"] {
+  border-color: var(--vera-line);
+  border-style: dashed;
+  background: #dce7e0;
+}
+
+.vera-calendar-day-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.vera-calendar-day-heading strong {
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 26px;
+  font-weight: 400;
+}
+
+.vera-calendar-day-heading span {
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.vera-calendar-local-note {
+  margin-top: 20px;
+  border-top: 1px dashed var(--vera-sand-deep);
+  padding-top: 16px;
+}
+
+[data-calendly-prompt] {
+  margin: 0;
+  padding: 8px;
+  color: var(--vera-muted);
+  text-align: center;
+}
+
+.vera-unknown-time {
+  margin-top: 20px;
+  border: 2px solid var(--vera-line);
+  border-radius: 16px;
+  padding: 22px 24px;
+  background: var(--vera-sand);
+}
+
+.vera-unknown-time h3 {
+  margin: 0;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.vera-unknown-time > p,
+.vera-unknown-time__lookup {
+  color: var(--vera-ink-soft);
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.vera-unknown-time fieldset {
+  margin-top: 18px;
+  border: 0;
+  padding: 0;
+}
+
+.vera-unknown-time fieldset[aria-invalid="true"] {
+  outline: 3px solid var(--vera-burnt);
+  outline-offset: 7px;
+}
+
+.vera-unknown-time legend {
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vera-unknown-time__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.vera-unknown-time__lookup {
+  display: grid;
+  gap: 3px;
+  margin-top: 18px;
+  border-top: 1px dashed var(--vera-line);
+  padding-top: 14px;
+}
+
+.vera-booking-policies {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.vera-booking-policies article {
+  border-left: 2px solid var(--vera-sand-deep);
+  padding-left: 16px;
+}
+
+.vera-booking-policies strong {
+  color: var(--vera-aubergine);
+}
+
+.vera-booking-policies p {
+  margin: 5px 0 0;
+  color: var(--vera-ink-soft);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.vera-calendar-slots {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+body:not([data-builder-edit-mode]) [data-calendly-preview][data-live-runtime] {
+  display: none;
+}
+
+.vera-calendar-slot {
+  display: grid;
+  gap: 5px;
+  border: 2px solid var(--vera-ink);
+  border-radius: 14px;
+  padding: 15px;
+  background: var(--vera-paper-pale);
+  cursor: pointer;
+  text-align: center;
+}
+
+.vera-calendar-slot[aria-disabled="true"] {
+  border-color: var(--vera-line);
+  background: #dce7e0;
+  color: #7d8c82;
+  cursor: default;
+  box-shadow: none;
+}
+
+.vera-calendar-slot:has(input:checked) {
+  background: var(--vera-burnt);
+  color: var(--vera-paper);
+  box-shadow: 4px 4px 0 var(--vera-ink);
+}
+
+.vera-calendar-slot input {
+  position: absolute;
+  opacity: 0;
+}
+
+.vera-calendar-slot strong {
+  font-family: var(--vera-font-display);
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.vera-calendar-slot span {
+  font-family: var(--vera-font-label);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.vera-stripe-mount {
+  min-height: 94px;
+  display: grid;
+  align-items: center;
+  border: 2px dashed var(--vera-line);
+  border-radius: 14px;
+  padding: 18px;
+  background: var(--vera-paper-pale);
+}
+
+.vera-stripe-mount[hidden] {
+  display: none;
+}
+
+.vera-payment-method .vera-stripe-mount {
+  margin-top: 14px;
+}
+
+.vera-stripe-mount:has(.StripeElement) {
+  border-style: solid;
+  border-color: var(--vera-ink);
+}
+
+.vera-legal-section {
+  border-top: 2px solid var(--vera-sand-deep);
+  padding: 34px 0;
+}
+
+.vera-legal-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 760px);
+  align-items: start;
+  gap: 56px;
+}
+
+.vera-legal-nav {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 8px;
+}
+
+.vera-legal-nav a {
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 11px 14px;
+  color: var(--vera-ink-soft);
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1.35;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.vera-legal-nav a:hover,
+.vera-legal-nav a[aria-current="location"] {
+  border-color: var(--vera-ink);
+  background: var(--vera-aubergine);
+  color: var(--vera-mustard);
+}
+
+.vera-legal-section h2 {
+  margin: 8px 0 0;
+}
+
+.vera-legal-section p {
+  margin: 16px 0 0;
+}
+
+.vera-account-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
+  align-items: start;
+  gap: 28px;
+}
+
+.vera-account-dashboard {
+  min-height: clamp(620px, 72vh, 900px);
+  padding-top: clamp(42px, 6vw, 76px);
+  padding-bottom: clamp(72px, 9vw, 124px);
+}
+
+.vera-account-dashboard__heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  border-bottom: 2px solid var(--vera-ink);
+  padding-bottom: 26px;
+}
+
+.vera-account-dashboard__heading .vera-eyebrow {
+  margin: 0 0 9px;
+}
+
+.vera-account-dashboard__heading .vera-heading {
+  margin: 0;
+  font-size: clamp(40px, 5vw, 68px);
+}
+
+.vera-account-dashboard__content {
+  display: grid;
+  gap: 58px;
+  max-width: 1040px;
+  margin-top: 42px;
+}
+
+.vera-account-section-title {
+  margin: 0 0 20px;
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vera-account-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.vera-account-section-heading .vera-account-section-title,
+.vera-account-section-heading p {
+  margin: 0;
+}
+
+.vera-account-payment-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 24px;
+  border-top: 2px dashed #6e8c81;
+  padding-top: 18px;
+}
+
+.vera-account-dashboard [data-account-action-required] {
+  margin-top: 16px;
+}
+
+.vera-account-dashboard [data-account-balance-payment] {
+  max-width: 720px;
+  margin-top: 22px;
+}
+
+.vera-account-dashboard [data-account-balance-submit] {
+  margin-top: 18px;
+}
+
+.vera-account-cancelled {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.6fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  border-top: 1px dashed var(--vera-line);
+  border-bottom: 1px dashed var(--vera-line);
+  padding: 24px 0;
+}
+
+.vera-account-cancelled h3,
+.vera-account-cancelled p {
+  margin: 0;
+}
+
+.vera-account-cancelled p {
+  margin-top: 5px;
+  color: var(--vera-muted);
+}
+
+.vera-account-history {
+  margin-top: 0;
+}
+
+.vera-upcoming {
+  border: var(--vera-border);
+  border-radius: 24px;
+  padding: 32px;
+  background: var(--vera-aubergine);
+  box-shadow: 7px 7px 0 var(--vera-burnt);
+  color: var(--vera-paper);
+}
+
+.vera-upcoming h2,
+.vera-upcoming h3 {
+  margin: 8px 0 0;
+  color: var(--vera-mustard);
+  font-family: var(--vera-font-display);
+  font-size: 38px;
+  font-weight: 400;
+}
+
+.vera-upcoming p {
+  margin: 8px 0 0;
+  color: var(--vera-sand);
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.vera-account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.vera-account-room-hero > .vera-button {
+  margin-bottom: 30px;
+}
+
+.vera-account-room-hero__copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 400px);
+  align-items: end;
+  gap: 40px;
+}
+
+.vera-account-room-hero__copy .vera-eyebrow {
+  margin: 0;
+}
+
+.vera-account-room-hero__copy .vera-display {
+  margin-top: 12px;
+}
+
+.vera-account-room-hero__copy .vera-lede {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.vera-account-recording-header,
+.vera-account-summary-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.vera-account-recording-header [data-account-recording-meta] {
+  color: #a9c4b8;
+  line-height: 1.8;
+  text-align: right;
+  white-space: pre-line;
+}
+
+.vera-account-summary-header .vera-button {
+  flex: none;
+}
+
+.vera-account-chart-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.vera-account-chart-actions .vera-button {
+  justify-content: center;
+  padding-inline: 12px;
+}
+
+.vera-account-chart-full.vera-image--runtime > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--vera-sand-deep);
+}
+
+.vera-account-chart-full.vera-image--runtime > span {
+  display: none;
+}
+
+.vera-account-destroy-note {
+  border: 2px dashed var(--vera-line);
+  border-radius: 16px;
+  padding: 18px 20px;
+  background: var(--vera-sand);
+  color: var(--vera-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.vera-card-grid:has(> .vera-reading-card:only-child) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.vera-reading-card:only-child {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: start;
+  column-gap: 46px;
+}
+
+.vera-reading-card:only-child > .vera-reading-card__symbol,
+.vera-reading-card:only-child > h3,
+.vera-reading-card:only-child > p {
+  grid-column: 1;
+}
+
+.vera-reading-card:only-child > ul,
+.vera-reading-card:only-child > .vera-reading-card__footer {
+  grid-column: 2;
+}
+
+@media (max-width: 900px) {
+  .vera-reading-card:only-child {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 6px;
+  }
+
+  .vera-reading-card:only-child > ul,
+  .vera-reading-card:only-child > .vera-reading-card__footer {
+    grid-column: 1;
+  }
+}
+
+.vera-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 14px 0 22px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.vera-check input[type="checkbox"] {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--vera-burnt);
+}
+
+.vera-portal-details {
+  display: grid;
+  gap: 14px;
+  margin: 18px 0 0;
+}
+
+.vera-portal-details > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px dashed var(--vera-line);
+  padding-bottom: 12px;
+}
+
+.vera-portal-details dt {
+  color: var(--vera-muted);
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.vera-portal-details dd {
+  margin: 0;
+  text-align: right;
+}
+
+.vera-portal-nav {
+  position: sticky;
+  z-index: 34;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 2px solid #2b473f;
+  padding: 10px var(--vera-gutter);
+  background: var(--vera-ink);
+}
+
+.vera-portal-nav__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vera-portal-nav__links a {
+  border: 1px solid #476056;
+  border-radius: 999px;
+  padding: 7px 14px;
+  color: #a9c4b8;
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.vera-portal-nav__links a:hover,
+.vera-portal-nav__links a[aria-current="page"] {
+  border-color: var(--vera-mustard);
+  background: var(--vera-mustard);
+  color: var(--vera-ink);
+}
+
+.vera-portal-nav .vera-account-actions {
+  margin-top: 0;
+}
+
+.vera-portal-nav .vera-button {
+  border-color: var(--vera-mustard);
+  background: transparent;
+  color: var(--vera-mustard);
+  box-shadow: none;
+}
+
+.vera-portal-nav .vera-button:hover {
+  background: var(--vera-mustard);
+  color: var(--vera-ink);
+}
+
+.vera-billing-hero .vera-lede {
+  max-width: 680px;
+}
+
+.vera-billing-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+  gap: clamp(28px, 5vw, 70px);
+  align-items: start;
+}
+
+.vera-billing-balance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 26px;
+  border: 3px solid var(--vera-ink);
+  border-radius: 22px;
+  padding: 24px 28px;
+  background: var(--vera-aubergine);
+  color: var(--vera-cream);
+  box-shadow: 7px 7px 0 var(--vera-burnt);
+}
+
+.vera-billing-balance h2 {
+  margin: 6px 0;
+  color: var(--vera-mustard);
+  font-family: var(--vera-font-display);
+  font-size: 34px;
+  font-weight: 400;
+}
+
+.vera-billing-balance p {
+  margin: 0;
+  color: #dde3d6;
+  line-height: 1.6;
+}
+
+.vera-billing-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 42px;
+}
+
+.vera-billing-ledger {
+  margin-top: 18px;
+  border-top: 2px solid var(--vera-ink);
+}
+
+.vera-billing-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  border-bottom: 1px dashed var(--vera-line);
+  padding: 20px 4px;
+}
+
+.vera-billing-row__mark {
+  color: var(--vera-burnt);
+  font-size: 23px;
+}
+
+.vera-billing-row__main {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(110px, 0.8fr) minmax(130px, 0.8fr);
+  gap: 20px;
+}
+
+.vera-billing-row h3,
+.vera-billing-row p {
+  margin: 4px 0 0;
+}
+
+.vera-billing-row h3,
+.vera-billing-row > strong {
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-display);
+  font-size: 18px;
+}
+
+.vera-billing-empty {
+  margin-top: 18px;
+}
+
+.vera-billing-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.vera-billing-pagination a[aria-disabled="true"] {
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.vera-billing-layout > .vera-sidebar-card .vera-card-meta {
+  display: block;
+  margin-top: 12px;
+  color: var(--vera-burnt);
+  text-decoration: none;
+}
+
+.vera-account-nav {
+  position: sticky;
+  z-index: 35;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 2px solid #2b473f;
+  padding: 12px var(--vera-gutter);
+  background: var(--vera-ink);
+  color: #5b7168;
+}
+
+.vera-account-nav > span,
+.vera-account-nav button {
+  font-family: var(--vera-font-label);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.vera-account-nav > div {
+  display: flex;
+  gap: 8px;
+}
+
+.vera-account-nav button {
+  border: 1px solid #476056;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: transparent;
+  color: #a9c4b8;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vera-account-nav button:hover,
+.vera-account-nav button[data-active] {
+  border-color: var(--vera-burnt);
+  background: var(--vera-burnt);
+  color: var(--vera-paper);
+}
+
+.vera-receipt {
+  max-width: 800px;
+  margin: 0 auto;
+  border: var(--vera-border);
+  border-radius: 24px;
+  padding: clamp(28px, 5vw, 50px);
+  background: var(--vera-paper-pale);
+  box-shadow: 10px 10px 0 var(--vera-sand-deep);
+}
+
+.vera-receipt__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 40px;
+  border-bottom: 3px solid var(--vera-ink);
+  padding-bottom: 26px;
+}
+
+.vera-receipt__header > :last-child {
+  text-align: right;
+}
+
+.vera-receipt__header h1,
+.vera-receipt__header h2 {
+  margin: 0;
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.vera-receipt__header h2 {
+  color: var(--vera-aubergine);
+  font-size: 26px;
+}
+
+.vera-receipt__header p {
+  margin: 6px 0 0;
+  color: var(--vera-muted);
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.vera-receipt__lines {
+  margin-top: 34px;
+  border-top: 2px solid var(--vera-sand);
+}
+
+.vera-receipt__line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px 120px;
+  align-items: baseline;
+  gap: 20px;
+  border-bottom: 2px solid var(--vera-sand);
+  padding: 16px 0;
+}
+
+.vera-receipt__line strong {
+  font-weight: 400;
+}
+
+.vera-receipt__line p {
+  margin: 3px 0 0;
+  color: var(--vera-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.vera-receipt__line > :last-child {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  text-align: right;
+}
+
+.vera-receipt__totals {
+  display: grid;
+  gap: 12px;
+  width: min(320px, 100%);
+  margin: 24px 0 0 auto;
+}
+
+.vera-receipt__totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.vera-receipt__totals dd {
+  margin: 0;
+}
+
+.vera-receipt__totals > div:last-child {
+  align-items: baseline;
+  border-top: 3px solid var(--vera-ink);
+  padding-top: 14px;
+}
+
+.vera-receipt__totals > div:last-child dd {
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 30px;
+}
+
+.vera-placeholder-page {
+  display: grid;
+  min-height: 68vh;
+  place-items: center;
+  padding: 72px var(--vera-gutter);
+  text-align: center;
+}
+
+.vera-placeholder-page__inner {
+  max-width: 700px;
+}
+
+.vera-brand-mark {
+  margin: 0;
+}
+
+.vera-brand-mark img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: 64px;
+}
+
+.vera-account-empty {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  border: var(--vera-border);
+  border-radius: var(--vera-radius);
+  padding: 34px 30px;
+  background: var(--vera-paper);
+  box-shadow: 7px 7px 0 var(--vera-sand-deep);
+}
+
+.vera-account-empty__symbol {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border: 2px solid var(--vera-ink);
+  border-radius: 50%;
+  background: var(--vera-mustard);
+  color: var(--vera-aubergine);
+  font-size: 26px;
+}
+
+.vera-account-empty h2 {
+  margin: 6px 0 0;
+}
+
+.vera-account-empty p {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--vera-ink-soft);
+}
+
+.vera-placeholder-page__symbol {
+  display: grid;
+  width: 130px;
+  height: 130px;
+  place-items: center;
+  margin: 0 auto;
+  border: var(--vera-border);
+  border-radius: 50%;
+  background: var(--vera-mustard);
+  color: var(--vera-aubergine);
+  font-size: 64px;
+  box-shadow: 8px 8px 0 var(--vera-burnt);
+}
+
+.vera-placeholder-page--404 {
+  position: relative;
+  min-height: 720px;
+  overflow: hidden;
+}
+
+.vera-placeholder-page--404 > * {
+  position: relative;
+}
+
+.vera-placeholder-page--404 .vera-placeholder-page__symbol {
+  display: block;
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--vera-burnt);
+  font-family: var(--vera-font-display);
+  font-size: 140px;
+  line-height: 0.9;
+  text-shadow: 6px 6px 0 var(--vera-mustard);
+  box-shadow: none;
+}
+
+@media (max-width: 1180px) {
+  .vera-header {
+    grid-template-columns: auto auto 1fr auto;
+    gap: 18px;
+  }
+
+  .vera-nav-toggle {
+    display: block;
+    grid-column: 2;
+  }
+
+  .vera-nav {
+    position: absolute;
+    top: calc(100% - 1px);
+    right: var(--vera-gutter);
+    left: var(--vera-gutter);
+    display: none;
+    align-items: stretch;
+    border: 2px solid var(--vera-ink);
+    border-top: 0;
+    padding: 18px;
+    background: var(--vera-aubergine);
+    box-shadow: 6px 6px 0 rgb(14 36 30 / 0.28);
+  }
+
+  .vera-nav[data-open] {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .vera-nav a {
+    text-align: center;
+  }
+
+  .vera-header__actions {
+    grid-column: 4;
+  }
+
+  .vera-account-identity {
+    grid-column: 4;
+  }
+
+  .vera-hero__grid {
+    grid-template-columns: minmax(0, 1fr) 390px;
+    gap: 34px;
+  }
+
+  .vera-wheel {
+    width: 390px;
+    height: 390px;
+  }
+
+  .vera-wheel__rays {
+    inset: 54px;
+  }
+
+  .vera-wheel__inner {
+    inset: 91px;
+  }
+
+  .vera-wheel__core {
+    inset: 111px;
+  }
+
+  .vera-wheel__sign > span {
+    top: -175px;
+  }
+
+  .vera-about-home {
+    grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+    gap: 48px;
+  }
+
+  .vera-portrait-shell .vera-image {
+    height: 480px;
+  }
+
+  .vera-reading-card {
+    padding: 30px 24px 26px;
+  }
+
+  .vera-contact-grid,
+  .vera-method-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vera-reading-detail__grid {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 36px;
+  }
+
+  .vera-letter-signup__grid,
+  .vera-letter-pending__grid {
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: 42px;
+  }
+
+  .vera-closed-page {
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: 42px;
+  }
+
+  .vera-contact-layout {
+    grid-template-columns: minmax(0, 1fr) 440px;
+    gap: 40px;
+  }
+
+  .vera-list-item {
+    grid-template-columns: 54px minmax(0, 1fr) 140px 110px;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 900px) {
+  .vera-account-dashboard__heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .vera-account-cancelled {
+    grid-template-columns: 1fr auto;
+  }
+
+  .vera-account-cancelled > .vera-card-meta {
+    grid-column: 1 / -1;
+  }
+
+  .vera-booking-confirmation-state__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-booking-status-ledger {
+    width: min(100%, 620px);
+  }
+
+  .vera-billing-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-billing-layout > .vera-sidebar-card {
+    max-width: 560px;
+  }
+
+  .vera-about-home,
+  .vera-testimonials-home,
+  .vera-letter-band {
+    padding-block: clamp(68px, 6.4vw, 92px);
+  }
+
+  .vera-about-home .vera-heading,
+  #readings .vera-heading,
+  .vera-testimonials-home .vera-heading,
+  #journal .vera-heading,
+  .vera-letter-band .vera-heading {
+    font-size: clamp(40px, 3.9vw, 56px);
+  }
+
+  .vera-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .vera-brand {
+    grid-column: 1;
+  }
+
+  .vera-nav-toggle {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .vera-header__actions {
+    display: none;
+  }
+
+  .vera-account-identity {
+    display: none;
+  }
+
+  .vera-nav[data-open] {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-nav__book {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--vera-ink);
+    border-radius: 999px;
+    padding: 12px 18px !important;
+    background: var(--vera-mustard);
+    color: var(--vera-aubergine) !important;
+    font-weight: 700 !important;
+  }
+
+  .vera-nav__book::after {
+    content: none !important;
+  }
+
+  .vera-hero__grid,
+  .vera-page-hero--split,
+  .vera-letter-band__grid,
+  .vera-page-grid,
+  .vera-account-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-wheel {
+    width: min(480px, 78vw);
+    height: min(480px, 78vw);
+    margin: 16px auto 0;
+  }
+
+  .vera-wheel__sign {
+    display: none;
+  }
+
+  .vera-about-home {
+    grid-template-columns: minmax(0, 420px);
+    justify-content: center;
+  }
+
+  .vera-card-grid,
+  .vera-testimonial-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-reading-card {
+    min-height: auto;
+  }
+
+  .vera-letter-band__grid {
+    gap: 38px;
+  }
+
+  .vera-sidebar {
+    position: static;
+  }
+
+  .vera-footer__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vera-footer__about {
+    grid-column: 1 / -1;
+  }
+
+  .vera-calendar-slots,
+  .vera-fact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vera-booking-payment-grid,
+  .vera-booking-confirmed__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-booking-payment-summary {
+    position: static;
+  }
+
+  .vera-calendar-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+
+  .vera-writing-hero,
+  .vera-account-room-hero__copy {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-writing-hero__meta {
+    margin: 0;
+  }
+
+  .vera-account-nav {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .vera-portal-nav {
+    align-items: center;
+    gap: 10px;
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .vera-portal-nav__links {
+    min-width: 0;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  .vera-portal-nav .vera-account-actions {
+    flex: 0 0 auto;
+  }
+
+  .vera-portal-nav .vera-button {
+    padding: 7px 14px;
+    font-size: 11px;
+  }
+
+  .vera-account-nav > div {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .vera-reading-detail__grid,
+  .vera-letter-signup__grid,
+  .vera-letter-pending__grid,
+  .vera-letter-sample__grid,
+  .vera-closed-page,
+  .vera-contact-layout,
+  .vera-faq-hero,
+  .vera-faq-layout,
+  .vera-legal-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-reading-booking-card,
+  .vera-letter-signup__form,
+  .vera-faq-rail,
+  .vera-legal-nav {
+    position: static;
+  }
+
+  .vera-letter-sample__grid {
+    gap: 38px;
+  }
+
+  .vera-faq-tabs,
+  .vera-legal-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .vera-account-dashboard {
+    min-height: 0;
+  }
+
+  .vera-account-dashboard__heading .vera-button {
+    width: 100%;
+  }
+
+  .vera-account-section-heading,
+  .vera-account-payment-line {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .vera-account-cancelled {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-account-cancelled > .vera-card-meta {
+    grid-column: auto;
+  }
+
+  .vera-account-cancelled .vera-button {
+    width: 100%;
+  }
+
+  :root {
+    --vera-gutter: 22px;
+  }
+
+  .vera-input,
+  .vera-select,
+  .vera-textarea {
+    font-size: 16px;
+  }
+
+  .vera-payment-dialog {
+    align-items: end;
+    padding: 10px;
+  }
+
+  .vera-booking-confirmation-state {
+    padding-block: 38px 48px;
+  }
+
+  .vera-booking-confirmation-state__grid {
+    gap: 34px;
+  }
+
+  .vera-booking-status-ledger {
+    border-radius: 20px;
+    padding: 22px 18px;
+    box-shadow: 6px 6px 0 var(--vera-mustard);
+  }
+
+  .vera-booking-status-ledger dl > div {
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .vera-payment-dialog__panel {
+    width: 100%;
+    max-height: calc(100dvh - 20px);
+    border-radius: 20px;
+    padding: 30px 20px 22px;
+    box-shadow: 6px 6px 0 var(--vera-burnt);
+  }
+
+  .vera-payment-dialog__panel .vera-heading {
+    font-size: 38px;
+  }
+
+  .vera-payment-dialog__ledger > div {
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .vera-payment-dialog__actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .vera-payment-dialog__actions .vera-button {
+    width: 100%;
+  }
+
+  .vera-billing-balance {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 22px 20px;
+  }
+
+  .vera-billing-balance .vera-button {
+    width: 100%;
+  }
+
+  .vera-billing-row {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .vera-billing-row__main {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .vera-billing-row > strong {
+    grid-column: 2;
+  }
+
+  .vera-site::before {
+    opacity: 0.12;
+  }
+
+  .vera-header {
+    min-height: 74px;
+    padding-block: 15px;
+  }
+
+  .vera-brand__logo {
+    height: 38px;
+  }
+
+  .vera-brand-mark img {
+    height: 52px;
+  }
+
+  .vera-hero {
+    padding-top: 48px;
+  }
+
+  .vera-hero h1 {
+    font-size: clamp(50px, 15vw, 68px);
+  }
+
+  .vera-hero__badge {
+    max-width: 100%;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+  }
+
+  .vera-actions {
+    align-items: stretch;
+  }
+
+  .vera-actions .vera-button {
+    width: 100%;
+  }
+
+  .vera-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .vera-stat strong {
+    font-size: 23px;
+  }
+
+  .vera-stat span {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+  }
+
+  .vera-wheel {
+    width: 82vw;
+    height: 82vw;
+  }
+
+  .vera-wheel__ring {
+    inset: 10px;
+  }
+
+  .vera-wheel__rays {
+    inset: 14%;
+  }
+
+  .vera-wheel__inner {
+    inset: 24%;
+  }
+
+  .vera-wheel__core {
+    inset: 30%;
+    padding: 0 10px;
+  }
+
+  .vera-wheel__core .vera-wheel__title {
+    font-size: 25px;
+  }
+
+  .vera-ticker {
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .vera-section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .vera-portrait-shell .vera-image {
+    height: min(125vw, 500px);
+  }
+
+  .vera-reading-card__footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .vera-reading-card__footer .vera-button {
+    width: 100%;
+  }
+
+  .vera-form-card {
+    padding: 24px 20px;
+  }
+
+  .vera-field-row,
+  .vera-field-row--three,
+  .vera-choice-grid,
+  .vera-contact-grid,
+  .vera-method-grid,
+  .vera-calendar-slots,
+  .vera-fact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-payment-method__choice {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .vera-payment-method__brands {
+    width: 100%;
+    margin-left: 31px;
+  }
+
+  .vera-footer__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 34px 24px;
+  }
+
+  .vera-footer__about,
+  .vera-footer__column:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .vera-footer__fineprint {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .vera-list-item {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .vera-list-item__meta {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .vera-list-item__category {
+    grid-column: 2;
+  }
+
+  .vera-timeline__item {
+    grid-template-columns: 72px 1fr;
+    gap: 14px;
+  }
+
+  .vera-receipt__header {
+    flex-direction: column;
+  }
+
+  .vera-receipt__header > :last-child {
+    text-align: left;
+  }
+
+  .vera-receipt__line {
+    grid-template-columns: 1fr auto;
+  }
+
+  .vera-receipt__line > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .vera-booking-progress {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vera-booking-progress-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .vera-booking-hold {
+    align-self: flex-start;
+  }
+
+  .vera-booking-confirmed__sitting {
+    grid-template-columns: 1fr;
+    padding: 24px 20px;
+  }
+
+  .vera-booking-confirmed__paid {
+    text-align: left;
+  }
+
+  .vera-booking-confirmed__actions {
+    grid-column: auto;
+  }
+
+  .vera-calendar-month-control {
+    width: 100%;
+  }
+
+  .vera-calendar-month-control strong {
+    min-width: 0;
+    flex: 1;
+    font-size: 24px;
+  }
+
+  .vera-calendar-weekdays,
+  .vera-calendar-month {
+    gap: 4px;
+  }
+
+  .vera-calendar-day {
+    height: 60px;
+    border-radius: 9px;
+  }
+
+  .vera-calendar-day strong {
+    font-size: 17px;
+  }
+
+  .vera-calendar-day span {
+    max-width: calc(100% - 4px);
+    font-size: 8px;
+    letter-spacing: 0.06em;
+  }
+
+  .vera-calendar-day-heading,
+  .vera-account-recording-header,
+  .vera-account-summary-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .vera-calendar-day-heading span,
+  .vera-account-recording-header [data-account-recording-meta] {
+    text-align: left;
+  }
+
+  .vera-booking-policies,
+  .vera-account-chart-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-unknown-time {
+    padding: 20px 18px;
+  }
+
+  .vera-account-nav > span {
+    display: none;
+  }
+
+  .vera-reading-tabs {
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+  }
+
+  .vera-reading-detail__grid {
+    padding-top: 26px;
+  }
+
+  .vera-reading-facts,
+  .vera-reading-includes,
+  .vera-reading-prepare,
+  .vera-letter-confirmed__notes,
+  .vera-closed-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-letter-state,
+  .vera-closed-page {
+    padding: 48px var(--vera-gutter) 64px;
+  }
+
+  .vera-letter-sample-card {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-letter-sample-card .vera-image {
+    height: 190px;
+  }
+
+  .vera-letter-archive,
+  .vera-letter-pending__actions,
+  .vera-article-bio {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .vera-letter-archive > div {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .vera-letter-pending__actions {
+    align-items: stretch;
+  }
+
+  .vera-faq-tabs,
+  .vera-legal-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-contact-layout .vera-contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-support-table th,
+  .vera-support-table td {
+    display: block;
+    width: auto;
+    padding: 18px 20px;
+  }
+
+  .vera-support-table th {
+    padding-bottom: 0;
+  }
+
+  .vera-support-table td {
+    padding-top: 8px;
+  }
+
+  .vera-closed-works article {
+    grid-template-columns: 1fr;
+  }
+
+  .vera-closed-works article > span {
+    text-align: left;
+  }
+
+  .vera-placeholder-page--404 .vera-placeholder-page__symbol {
+    font-size: clamp(82px, 28vw, 120px);
+  }
+
+  .vera-holiday-bar {
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vera-site *,
+  .vera-site *::before,
+  .vera-site *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+[data-analytics-consent-banner] {
+  position: fixed;
+  z-index: 120;
+  right: clamp(1rem, 3vw, 2.5rem);
+  bottom: clamp(1rem, 3vw, 2.5rem);
+  width: min(30rem, calc(100vw - 2rem));
+  border: 3px solid var(--vera-ink);
+  border-radius: 18px;
+  padding: 1.25rem;
+  background: var(--vera-paper);
+  box-shadow: 7px 7px 0 var(--vera-burnt);
+  color: var(--vera-ink);
+  font-family: var(--vera-font-body);
+}
+
+[data-analytics-consent-banner][hidden] {
+  display: none;
+}
+
+[data-analytics-consent-banner] strong {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--vera-aubergine);
+  font-family: var(--vera-font-label);
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+[data-analytics-consent-banner] p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+[data-analytics-consent-actions] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+[data-analytics-consent-banner] button {
+  min-height: 2.65rem;
+  border: 2px solid var(--vera-ink);
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  background: var(--vera-cream);
+  box-shadow: 3px 3px 0 var(--vera-mustard);
+  color: var(--vera-ink);
+  cursor: pointer;
+  font-family: var(--vera-font-label);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+[data-analytics-consent-banner] button[data-analytics-consent-accept] {
+  background: var(--vera-burnt);
+  color: var(--vera-paper-pale);
+}
+
+[data-analytics-consent-banner] button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--vera-mustard);
+}
+
+[data-analytics-consent-banner] button:focus-visible {
+  outline: 3px solid var(--vera-sage);
+  outline-offset: 3px;
+}
+
+@media (max-width: 560px) {
+  [data-analytics-consent-banner] {
+    right: 1rem;
+    bottom: 1rem;
+  }
+
+  [data-analytics-consent-actions],
+  [data-analytics-consent-banner] button {
+    width: 100%;
+  }
+}

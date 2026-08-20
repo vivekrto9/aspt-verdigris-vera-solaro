@@ -1,0 +1,76 @@
+---
+import { loadPublicPageContent } from "../../builder/public-page.ts";
+import ReadingsCatalog from "../../components/vera/ReadingsCatalog.astro";
+import VeraFrame from "../../components/vera/VeraFrame.astro";
+import { buildBreadcrumbJsonLd, buildFaqJsonLd } from "../../server/generated-site/seo.ts";
+
+export const prerender = false;
+
+const selectedBySlug: Record<string, number> = {
+  "natal-hour": 1,
+  "year-ahead": 2,
+  "two-charts": 3,
+};
+const selected = selectedBySlug[Astro.params.service ?? ""];
+if (!selected) return Astro.redirect("/404");
+
+const page = await loadPublicPageContent(Astro, "readings");
+const serviceSlug = Astro.params.service ?? "";
+const [serviceSeoTitle = "", serviceSeoDescription = "", serviceSeoCanonical = ""] = String(
+  page.content[`service_${selected}_seo`] ?? "",
+).split("\n");
+const detailContent = {
+  ...page.content,
+  seo_title: serviceSeoTitle,
+  seo_description: serviceSeoDescription,
+  seo_canonical_path: serviceSeoCanonical,
+  og_title: serviceSeoTitle,
+  og_description: serviceSeoDescription,
+  twitter_title: serviceSeoTitle,
+  twitter_description: serviceSeoDescription,
+};
+const detailPage = { ...page, content: detailContent };
+const faqItems = [1, 2, 3, 4, 5].map((index) => {
+  const [question = "", ...answer] = String(page.content[`detail_faq_${index}`] ?? "").split("\n");
+  return { question, answer: answer.join("\n") };
+});
+const servicePrice = String(page.content[`service_${selected}_price`] ?? "").replace(/[^0-9.]/g, "");
+const jsonLd = [
+  buildBreadcrumbJsonLd({
+    requestUrl: Astro.request.url,
+    items: [
+      { name: page.content.page_eyebrow, path: "/readings" },
+      { name: page.content[`service_${selected}_title`], path: `/readings/${serviceSlug}` },
+    ],
+  }),
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: page.content[`service_${selected}_title`],
+    description: page.content[`service_${selected}_blurb`],
+    url: new URL(`/readings/${serviceSlug}`, Astro.request.url).toString(),
+    provider: { "@type": "Person", name: page.content.brand_name },
+    offers: {
+      "@type": "Offer",
+      price: servicePrice,
+      priceCurrency: "USD",
+      url: new URL(`/booking?service=${serviceSlug}`, Astro.request.url).toString(),
+    },
+  },
+  buildFaqJsonLd(faqItems),
+].filter(Boolean) as Array<Record<string, unknown>>;
+---
+
+<VeraFrame {...detailPage} currentPath={`/readings/${Astro.params.service}`} jsonLd={jsonLd}>
+  <ReadingsCatalog
+    content={detailContent}
+    edit={page.builderEdit}
+    selected={selected}
+  />
+</VeraFrame>
+
+<script is:inline define:vars={{ service: Astro.params.service }}>
+  window.addEventListener("load", () => {
+    window.astroPagesTrack?.("reading_viewed", { service });
+  }, { once: true });
+</script>

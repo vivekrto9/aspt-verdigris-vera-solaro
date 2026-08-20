@@ -1,0 +1,61 @@
+{
+	"$schema": "https://emdashcms.com/seed.schema.json",
+	"version": "1",
+	"meta": {
+		"name": "Vera Solaro",
+		"description": "EmDash seed for the Vera Solaro astrology site.",
+		"author": "AstroPages"
+	},
+	"settings": {
+		"title": "Vera Solaro",
+		"tagline": "Astrologer"
+	},
+	"collections": [
+		{
+			"slug": "posts",
+			"label": "Writing",
+			"labelSingular": "Piece",
+			"supports": [
+				"drafts",
+				"revisions",
+				"search",
+				"seo"
+			],
+			"urlPattern": "/writing/{slug}",
+			"fields": [
+				{
+					"slug": "title",
+					"label": "Title",
+					"type": "string",
+					"required": true,
+					"searchable": true
+				},
+				{
+					"slug": "featured_image",
+					"label": "Featured Image",
+					"type": "image"
+				},
+				{
+					"slug": "content",
+					"label": "Content",
+					"type": "portableText",
+					"searchable": true
+				},
+				{
+					"slug": "excerpt",
+					"label": "Excerpt",
+					"type": "text"
+				},
+				{
+					"slug": "category",
+					"label": "Category",
+					"type": "string"
+				}
+			]
+		}
+	],
+	"taxonomies": [],
+	"menus": [],
+	"widgetAreas": [],
+	"content": {}
+}

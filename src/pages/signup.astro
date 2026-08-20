@@ -1,0 +1,159 @@
+---
+import {
+  getSafePublicNextPath,
+  loadPublicPageContent,
+} from "../builder/public-page.ts";
+import VeraBrandMark from "../components/vera/VeraBrandMark.astro";
+import VeraFrame from "../components/vera/VeraFrame.astro";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "signup");
+const { builderEdit } = page;
+const safeNext = getSafePublicNextPath(Astro.url);
+const loginHref = `/login?next=${encodeURIComponent(safeNext)}`;
+const content: Record<string, string> = {
+  ...page.content,
+  seo_title: page.content.signup_seo_title,
+  seo_description: page.content.signup_seo_description,
+  seo_canonical_path: page.content.signup_seo_canonical_path,
+  seo_robots: page.content.auth_seo_robots,
+  og_title: page.content.signup_seo_title,
+  og_description: page.content.signup_seo_description,
+  og_image: page.content.auth_social_image,
+  og_image_alt: page.content.auth_social_image_alt,
+  twitter_card: page.content.auth_twitter_card,
+  twitter_title: page.content.signup_seo_title,
+  twitter_description: page.content.signup_seo_description,
+  twitter_image: page.content.auth_social_image,
+};
+---
+
+<VeraFrame {...page} content={content} currentPath="/account" showHeader={false} showFooter={false}>
+  <section class="vera-page-hero vera-page-hero--split">
+    <div>
+      <VeraBrandMark
+        alt={content.auth_logo_alt}
+        field="auth_logo_alt"
+        edit={builderEdit}
+      />
+      <p class="vera-eyebrow" style="margin-top: 34px" {...builderEdit("auth_eyebrow")}>
+        {content.auth_eyebrow}
+      </p>
+      <h1 id="signup-title" class="vera-display" {...builderEdit("signup_title")}>
+        {content.signup_title}
+      </h1>
+      <p class="vera-lede" {...builderEdit("signup_intro")}>{content.signup_intro}</p>
+    </div>
+
+    <form
+      class="vera-form-card"
+      data-auth-form
+      data-login-path={loginHref}
+      data-next-path={safeNext}
+      aria-labelledby="signup-form-title"
+    >
+      <fieldset>
+        <legend
+          id="signup-form-title"
+          style="font-family: var(--vera-font-display); font-size: 30px; color: var(--vera-aubergine); letter-spacing: 0; text-transform: none"
+          {...builderEdit("signup_form_title")}
+        >
+          {content.signup_form_title}
+        </legend>
+        <label class="vera-field">
+          <span class="vera-label" {...builderEdit("signup_name_label")}>{content.signup_name_label}</span>
+          <input class="vera-input" type="text" name="name" autocomplete="name" required />
+        </label>
+        <label class="vera-field">
+          <span class="vera-label" {...builderEdit("email_label")}>{content.email_label}</span>
+          <input class="vera-input" type="email" name="email" autocomplete="email" required />
+        </label>
+        <label class="vera-field">
+          <span class="vera-label" {...builderEdit("password_label")}>{content.password_label}</span>
+          <input
+            class="vera-input"
+            type="password"
+            name="password"
+            autocomplete="new-password"
+            required
+            minlength="8"
+            aria-describedby="signup-password-hint"
+          />
+          <span id="signup-password-hint" class="vera-form-note" {...builderEdit("password_hint")}>
+            {content.password_hint}
+          </span>
+        </label>
+        <button
+          class="vera-button vera-button--burnt vera-button--shadow"
+          type="submit"
+          {...builderEdit("signup_submit_cta")}
+        >
+          {content.signup_submit_cta}
+        </button>
+        <div aria-live="polite" aria-atomic="true">
+          <p class="vera-form-note" data-auth-status="submitting" hidden {...builderEdit("signup_submitting_status")}>
+            {content.signup_submitting_status}
+          </p>
+          <p class="vera-form-note" data-auth-status="success" hidden {...builderEdit("signup_success_status")}>
+            {content.signup_success_status}
+          </p>
+          <p class="vera-form-note" data-auth-status="error" hidden {...builderEdit("signup_error_status")}>
+            {content.signup_error_status}
+          </p>
+          <p class="vera-form-note" data-auth-status="verification-invalid" hidden {...builderEdit("verification_invalid_status")}>
+            {content.verification_invalid_status}
+          </p>
+        </div>
+        <p class="vera-form-note">
+          <span {...builderEdit("signup_switch_prompt")}>{content.signup_switch_prompt}</span>{" "}
+          <a href={loginHref} style="color: var(--vera-burnt)" {...builderEdit("login_link")}>
+            {content.login_link}
+          </a>
+        </p>
+      </fieldset>
+    </form>
+  </section>
+</VeraFrame>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>("[data-auth-form]");
+  const submit = form?.querySelector<HTMLButtonElement>("button[type='submit']");
+  const statuses = [...document.querySelectorAll<HTMLElement>("[data-auth-status]")];
+  const showStatus = (state: string) => {
+    statuses.forEach((status) => {
+      status.hidden = status.dataset.authStatus !== state;
+    });
+  };
+
+  if (new URL(window.location.href).searchParams.get("verification") === "invalid") {
+    showStatus("verification-invalid");
+  }
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    showStatus("submitting");
+    if (submit) submit.disabled = true;
+
+    try {
+      const response = await fetch("/api/astropages/generated-site/customer-auth/signup", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: formData.get("name"),
+          email: formData.get("email"),
+          password: formData.get("password"),
+        }),
+      });
+      const payload = await response.json().catch(() => null) as { status?: string } | null;
+      if (!response.ok || payload?.status !== "ready") throw new Error("signup");
+      showStatus("success");
+      window.location.assign(form.dataset.nextPath || "/account");
+    } catch {
+      showStatus("error");
+      if (submit) submit.disabled = false;
+    }
+  });
+</script>

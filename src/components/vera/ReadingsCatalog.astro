@@ -1,0 +1,403 @@
+---
+import { isOfferedReading } from "../../data/vera/offered-readings.ts";
+import VeraImage from "./VeraImage.astro";
+
+type Edit = (field: string) => Record<string, unknown>;
+
+const {
+  content,
+  edit,
+  selected = 0,
+} = Astro.props as {
+  content: Record<string, string>;
+  edit: Edit;
+  selected?: number;
+};
+
+const services = [
+  { index: 1, slug: "natal-hour" },
+  { index: 2, slug: "year-ahead" },
+  { index: 3, slug: "two-charts" },
+].filter((service) => isOfferedReading(service.index));
+const selectedService = services.find((service) => service.index === selected);
+const detailFaqs = [1, 2, 3, 4, 5].map((index) => {
+  const [question = "", ...answerParts] = String(content[`detail_faq_${index}`] ?? "").split("\n");
+  return { index, question, answer: answerParts.join("\n") };
+});
+---
+
+{selectedService ? (
+  <div class="vera-reading-detail">
+    <nav class="vera-reading-breadcrumb" aria-label={content.page_eyebrow}>
+      <a href="/readings" {...edit("page_eyebrow")}>{content.page_eyebrow}</a>
+      <span aria-hidden="true">/</span>
+      <span {...edit(`service_${selected}_title`)}>{content[`service_${selected}_title`]}</span>
+    </nav>
+
+    <nav class="vera-reading-tabs" aria-label={content.page_title}>
+      {services.map(({ index, slug }) => (
+        <a
+          href={`/readings/${slug}`}
+          aria-current={index === selected ? "page" : undefined}
+          class="vera-reading-tab"
+        >
+          <span {...edit(`service_${index}_title`)}>
+            {content[`service_${index}_title`].replace(/^The /, "")}
+          </span>
+          <span aria-hidden="true"> · </span>
+          <span {...edit(`service_${index}_price`)}>{content[`service_${index}_price`]}</span>
+        </a>
+      ))}
+    </nav>
+
+    <div class="vera-reading-detail__grid">
+      <article class="vera-reading-detail__main">
+        <h1 class="vera-display" {...edit(`service_${selected}_title`)}>
+          {content[`service_${selected}_title`]}
+        </h1>
+        <p class="vera-lede" {...edit(`service_${selected}_blurb`)}>
+          {content[`service_${selected}_blurb`]}
+        </p>
+
+        <dl class="vera-reading-facts">
+          <div>
+            <dt {...edit("detail_length_label")}>{content.detail_length_label}</dt>
+            <dd {...edit(`service_${selected}_duration`)}>
+              {content[`service_${selected}_duration`]}
+            </dd>
+          </div>
+          <div>
+            <dt {...edit("detail_where_label")}>{content.detail_where_label}</dt>
+            <dd {...edit("detail_where_value")}>{content.detail_where_value}</dd>
+          </div>
+          <div>
+            <dt {...edit("detail_chart_label")}>{content.detail_chart_label}</dt>
+            <dd {...edit("detail_chart_value")}>{content.detail_chart_value}</dd>
+          </div>
+        </dl>
+
+        <VeraImage
+          alt={content.room_alt}
+          altField="room_alt"
+          edit={edit}
+          class="vera-reading-detail__room"
+        />
+
+        <section class="vera-reading-detail__section">
+          <h2 {...edit("includes_heading")}>{content.includes_heading}</h2>
+          <ul class="vera-reading-includes">
+            {[1, 2, 3, 4, 5, 6].map((item) => (
+              <li {...edit(`service_${selected}_item_${item}`)}>
+                {content[`service_${selected}_item_${item}`]}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section class="vera-reading-detail__section">
+          <h2 {...edit("prepare_heading")}>{content.prepare_heading}</h2>
+          <p class="vera-lede" {...edit("prepare_intro")}>{content.prepare_intro}</p>
+          <ol class="vera-reading-prepare">
+            {[1, 2, 3].map((index) => (
+              <li>
+                <span aria-hidden="true">{String(index).padStart(2, "0")}</span>
+                <h3 {...edit(`prepare_${index}_title`)}>{content[`prepare_${index}_title`]}</h3>
+                <p {...edit(`prepare_${index}_body`)}>{content[`prepare_${index}_body`]}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section class="vera-reading-detail__section">
+          <h2 {...edit("detail_questions_heading")}>{content.detail_questions_heading}</h2>
+          <div class="vera-reading-faqs">
+            {detailFaqs.map(({ index, question, answer }) => (
+              <details open={index === 1}>
+                <summary {...edit(`detail_faq_${index}`)}>{question}</summary>
+                <p {...edit(`detail_faq_${index}`)}>{answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      </article>
+
+      <aside
+        class="vera-reading-booking-card"
+        data-reading-availability
+        data-reading-service={selectedService.slug}
+        aria-busy="true"
+      >
+        <div class="vera-reading-booking-card__price">
+          <div>
+            <span {...edit("detail_per_sitting")}>{content.detail_per_sitting}</span>
+            <strong {...edit(`service_${selected}_price`)}>{content[`service_${selected}_price`]}</strong>
+          </div>
+          <p>
+            <span {...edit(`service_${selected}_duration`)}>
+              {content[`service_${selected}_duration`]}
+            </span><br />
+            <span {...edit("detail_one_to_one")}>{content.detail_one_to_one}</span>
+          </p>
+        </div>
+
+        <div data-reading-loading>
+          <div class="vera-card-meta" {...edit("detail_next_available_label")}>
+            {content.detail_next_available_label}
+          </div>
+        </div>
+
+        <div data-reading-books-open hidden>
+            <div class="vera-card-meta" {...edit("detail_next_available_label")}>
+              {content.detail_next_available_label}
+            </div>
+            <p class="vera-reading-booking-card__next" data-reading-next-copy {...edit("detail_next_available")}>
+              {content.detail_next_available}
+            </p>
+            <ul class="vera-reading-benefits">
+              {[1, 2, 3].map((index) => (
+                <li {...edit(`detail_benefit_${index}`)}>{content[`detail_benefit_${index}`]}</li>
+              ))}
+            </ul>
+            <a
+              class="vera-button vera-button--mustard"
+              href={`/booking?service=${selectedService.slug}`}
+              {...edit("reserve_cta")}
+            >
+              {content.reserve_cta}
+            </a>
+            <p class="vera-card-meta vera-reading-booking-card__note" {...edit("detail_takes_note")}>
+              {content.detail_takes_note}
+            </p>
+        </div>
+
+        <div data-reading-books-closed hidden>
+            <div class="vera-reading-closed-note">
+              <div class="vera-card-meta" {...edit("detail_closed_label")}>
+                {content.detail_closed_label}
+              </div>
+              <p {...edit("detail_closed_body")}>{content.detail_closed_body}</p>
+            </div>
+            <a
+              class="vera-button vera-button--mustard"
+              href={`/booking?service=${selectedService.slug}`}
+              {...edit("detail_waitlist_cta")}
+            >
+              {content.detail_waitlist_cta}
+            </a>
+            <p class="vera-card-meta vera-reading-booking-card__note" {...edit("detail_waitlist_note")}>
+              {content.detail_waitlist_note}
+            </p>
+        </div>
+
+        <div class="vera-reading-closed-note" data-reading-availability-error hidden>
+          <a href="tel:+390405550112" {...edit("detail_availability_error")}>
+            {content.detail_availability_error}
+          </a>
+        </div>
+      </aside>
+    </div>
+  </div>
+) : (
+  <>
+    <section class="vera-page-hero vera-page-hero--split">
+      <div>
+        <p class="vera-eyebrow" {...edit("page_eyebrow")}>{content.page_eyebrow}</p>
+        <h1 class="vera-display" {...edit("page_title")}>{content.page_title}</h1>
+        <p class="vera-lede" {...edit("page_intro")}>{content.page_intro}</p>
+      </div>
+      <VeraImage
+        alt={content.room_alt}
+        altField="room_alt"
+        edit={edit}
+        class="vera-reading-room-image"
+      />
+    </section>
+
+    <section class="vera-section vera-section--paper">
+      <div class="vera-card-grid">
+        {services.map(({ index, slug }) => (
+          <article
+            class:list={[
+              "vera-reading-card",
+              index === 2 && "vera-reading-card--featured",
+            ]}
+            id={slug}
+          >
+            <div class="vera-card-meta" {...edit(`service_${index}_duration`)}>
+              {content[`service_${index}_duration`]}
+            </div>
+            <h2 {...edit(`service_${index}_title`)}>{content[`service_${index}_title`]}</h2>
+            <p {...edit(`service_${index}_blurb`)}>{content[`service_${index}_blurb`]}</p>
+            <ul class="vera-feature-list">
+              {[1, 2, 3, 4, 5, 6].map((item) => (
+                <li {...edit(`service_${index}_item_${item}`)}>
+                  {content[`service_${index}_item_${item}`]}
+                </li>
+              ))}
+            </ul>
+            <footer class="vera-reading-card__footer">
+              <span class="vera-price" {...edit(`service_${index}_price`)}>
+                {content[`service_${index}_price`]}
+              </span>
+              <a
+                class:list={[
+                  "vera-button",
+                  "vera-button--small",
+                  index === 2 ? "vera-button--mustard" : "vera-button--paper",
+                ]}
+                href={`/readings/${slug}`}
+                {...edit("reserve_cta")}
+              >
+                {content.reserve_cta}
+              </a>
+            </footer>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="vera-section vera-section--sand">
+      <header>
+        <p class="vera-eyebrow" {...edit("prepare_heading")}>{content.prepare_heading}</p>
+        <h2 class="vera-heading" {...edit("includes_heading")}>{content.includes_heading}</h2>
+        <p class="vera-lede" {...edit("prepare_intro")}>{content.prepare_intro}</p>
+      </header>
+      <div class="vera-method-grid" style="margin-top: 38px">
+        {[1, 2, 3].map((index) => (
+          <article class="vera-info-card">
+            <span class="vera-info-card__tag">{String(index).padStart(2, "0")}</span>
+            <h3 {...edit(`prepare_${index}_title`)}>{content[`prepare_${index}_title`]}</h3>
+            <p {...edit(`prepare_${index}_body`)}>{content[`prepare_${index}_body`]}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  </>
+)}
+
+<script>
+  type AvailabilityEnvelope = {
+    status?: string;
+    data?: { times?: Array<{ startAt?: string }> };
+  };
+
+  const availability = document.querySelector<HTMLElement>("[data-reading-availability][data-reading-service]");
+  if (availability) {
+    const serviceSlug = availability.dataset.readingService || "";
+    const loading = availability.querySelector<HTMLElement>("[data-reading-loading]");
+    const open = availability.querySelector<HTMLElement>("[data-reading-books-open]");
+    const closed = availability.querySelector<HTMLElement>("[data-reading-books-closed]");
+    const error = availability.querySelector<HTMLElement>("[data-reading-availability-error]");
+    const nextCopy = availability.querySelector<HTMLElement>("[data-reading-next-copy]");
+    const availabilityCacheKey = `vera-solaro:reading-availability:${serviceSlug}`;
+
+    const showState = (state: "open" | "closed" | "error") => {
+      if (loading) loading.hidden = true;
+      if (open) open.hidden = state !== "open";
+      if (closed) closed.hidden = state !== "closed";
+      if (error) error.hidden = state !== "error";
+      availability.setAttribute("aria-busy", "false");
+      availability.dataset.readingAvailabilityState = state;
+    };
+
+    const showNextStart = (nextStart: string) => {
+      const parsed = new Date(nextStart);
+      if (!Number.isFinite(parsed.getTime())) throw new Error("availability");
+      if (nextCopy) {
+        nextCopy.textContent = new Intl.DateTimeFormat("en-US", {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          timeZone: "Europe/Rome",
+          timeZoneName: "short",
+        }).format(parsed);
+      }
+      showState("open");
+    };
+
+    const readAvailabilityCache = () => {
+      try {
+        const cached = JSON.parse(sessionStorage.getItem(availabilityCacheKey) || "{}") as {
+          expiresAt?: number;
+          state?: "open" | "closed";
+          nextStart?: string;
+        };
+        if (!cached.expiresAt || cached.expiresAt <= Date.now()) return false;
+        if (cached.state === "open" && cached.nextStart) showNextStart(cached.nextStart);
+        else if (cached.state === "closed") showState("closed");
+        else return false;
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    const writeAvailabilityCache = (state: "open" | "closed", nextStart = "") => {
+      try {
+        sessionStorage.setItem(availabilityCacheKey, JSON.stringify({
+          state,
+          nextStart,
+          expiresAt: Date.now() + 5 * 60_000,
+        }));
+      } catch {
+        // Provider truth still renders when storage is unavailable.
+      }
+    };
+
+    const readWindow = async (mode: "call" | "in_person", start: Date, end: Date) => {
+      const params = new URLSearchParams({
+        serviceSlug,
+        mode,
+        start: start.toISOString(),
+        end: end.toISOString(),
+      });
+      const response = await fetch(`/api/astropages/generated-site/vera/availability?${params}`, {
+        credentials: "same-origin",
+        headers: { accept: "application/json" },
+      });
+      const envelope = await response.json().catch(() => ({})) as AvailabilityEnvelope;
+      if (!response.ok || envelope.status !== "ready") throw new Error("availability");
+      return Array.isArray(envelope.data?.times) ? envelope.data.times : [];
+    };
+
+    const loadProviderAvailability = async () => {
+      let providerFailed = false;
+      const starts = new Map<string, string>();
+      const firstStart = new Date(Date.now() + 5 * 60_000);
+      for (let week = 0; week < 8 && starts.size === 0; week += 1) {
+        const start = new Date(firstStart.getTime() + week * 7 * 24 * 60 * 60_000);
+        const end = new Date(start.getTime() + 7 * 24 * 60 * 60_000 - 1_000);
+        const results = await Promise.allSettled([
+          readWindow("call", start, end),
+          readWindow("in_person", start, end),
+        ]);
+        results.forEach((result) => {
+          if (result.status === "rejected") {
+            providerFailed = true;
+            return;
+          }
+          result.value.forEach((slot) => {
+            const startAt = typeof slot.startAt === "string" ? slot.startAt : "";
+            if (startAt) starts.set(startAt, startAt);
+          });
+        });
+      }
+
+      const nextStart = [...starts.values()].sort()[0];
+      if (nextStart) {
+        showNextStart(nextStart);
+        writeAvailabilityCache("open", nextStart);
+        return;
+      }
+      if (providerFailed) showState("error");
+      else {
+        showState("closed");
+        writeAvailabilityCache("closed");
+      }
+    };
+
+    if (!readAvailabilityCache()) void loadProviderAvailability().catch(() => showState("error"));
+  }
+</script>

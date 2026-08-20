@@ -1,0 +1,267 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_deployment_id:
+        required: true
+        description: Control-plane production deployment id.
+        type: string
+      project_id:
+        required: true
+        description: Control-plane project id.
+        type: string
+      project_version_id:
+        required: true
+        description: Control-plane project version id.
+        type: string
+      project_branch_id:
+        required: true
+        description: Control-plane production branch id.
+        type: string
+      preview_deployment_id:
+        required: true
+        description: Control-plane preview deployment id being published.
+        type: string
+      commit_sha:
+        required: true
+        description: Exact commit SHA to deploy.
+        type: string
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: astropages-production-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-production:
+    name: Deploy production Worker
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_DEV_WORKERS_SUBDOMAIN: ${{ secrets.CLOUDFLARE_DEV_WORKERS_SUBDOMAIN }}
+      EMDASH_ENCRYPTION_KEY: ${{ secrets.EMDASH_ENCRYPTION_KEY }}
+      ASTROPAGES_PROJECT_ID: ${{ inputs.project_id }}
+      ASTROPAGES_SSO_PUBLIC_JWK: ${{ vars.ASTROPAGES_SSO_PUBLIC_JWK }}
+      CLOUDFLARE_SECRETS_STORE_ID: ${{ secrets.CLOUDFLARE_SECRETS_STORE_ID || vars.CLOUDFLARE_SECRETS_STORE_ID }}
+      GH_REPOSITORY_VARIABLES_TOKEN: ${{ secrets.GH_REPOSITORY_VARIABLES_TOKEN }}
+      ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN: ${{ secrets.ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN }}
+      ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL: ${{ secrets.ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL }}
+      PRODUCTION_SITE_D1_DATABASE_ID: ${{ vars.PRODUCTION_SITE_D1_DATABASE_ID }}
+      PRODUCTION_SITE_SESSION_KV_NAMESPACE_ID: ${{ vars.PRODUCTION_SITE_SESSION_KV_NAMESPACE_ID }}
+      PRODUCTION_SITE_URL: ${{ vars.PRODUCTION_SITE_URL }}
+      ASTROPAGES_DEPLOY_STAGE: starting
+    steps:
+      - name: Prepare control-plane callback
+        run: |
+          set -euo pipefail
+          if [ -z "${ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL:-}" ]; then
+            echo "ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL is required." >&2
+            exit 1
+          fi
+          case "${ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL}" in
+            http://*|https://*) ;;
+            *) echo "ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL must be an http(s) URL." >&2; exit 1 ;;
+          esac
+          callback_base="${ASTROPAGES_CONTROL_PLANE_CALLBACK_BASE_URL%/}"
+          echo "ASTROPAGES_CONTROL_PLANE_CALLBACK_URL=${callback_base}/callback/production-deployments/${{ inputs.production_deployment_id }}/status" >> "$GITHUB_ENV"
+
+      - name: Notify production deploying
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/production-status-deploying.json" <<JSON
+          {
+            "status": "deploying",
+            "workflowRunId": "${{ github.run_id }}",
+            "commitSha": "${{ inputs.commit_sha }}",
+            "evidence": {
+              "workflowRunUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "githubRepository": "${{ github.repository }}",
+              "githubRef": "${{ github.ref_name }}",
+              "productionDeploymentId": "${{ inputs.production_deployment_id }}",
+              "projectId": "${{ inputs.project_id }}",
+              "projectVersionId": "${{ inputs.project_version_id }}",
+              "projectBranchId": "${{ inputs.project_branch_id }}",
+              "previewDeploymentId": "${{ inputs.preview_deployment_id }}"
+            }
+          }
+          JSON
+          curl -sS --fail --max-time 60 \
+            -X POST "${ASTROPAGES_CONTROL_PLANE_CALLBACK_URL}" \
+            -H "Authorization: Bearer ${ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data @"$RUNNER_TEMP/production-status-deploying.json"
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit_sha }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=dependency_install" >> "$GITHUB_ENV"
+          pnpm install --frozen-lockfile
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=test" >> "$GITHUB_ENV"
+          pnpm run test
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=safety_scan" >> "$GITHUB_ENV"
+          pnpm run scan:safety
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=d1_schema_check" >> "$GITHUB_ENV"
+          pnpm run d1:schema:check
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=typecheck" >> "$GITHUB_ENV"
+          pnpm run typecheck
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=build" >> "$GITHUB_ENV"
+          pnpm run build
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=resource_repair" >> "$GITHUB_ENV"
+          node scripts/ensure-cloudflare-resources.mjs production
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=render_wrangler_config" >> "$GITHUB_ENV"
+          node scripts/render-wrangler-config.mjs production
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=write_worker_secrets" >> "$GITHUB_ENV"
+          node scripts/write-worker-secrets-file.mjs
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=d1_migrations" >> "$GITHUB_ENV"
+          pnpm exec wrangler d1 migrations apply aspt-verdigris-vera-solaro-production-site --env production --remote --config .wrangler/generated/wrangler.production.jsonc
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=worker_deploy" >> "$GITHUB_ENV"
+          pnpm exec wrangler deploy --env production --config .wrangler/generated/wrangler.production.jsonc --secrets-file "$RUNNER_TEMP/aspt-verdigris-vera-solaro-worker-secrets.json"
+      - run: |
+          echo "ASTROPAGES_DEPLOY_STAGE=prepare_emdash" >> "$GITHUB_ENV"
+          node scripts/prepare-deployed-emdash.mjs production
+      - name: Smoke production routes
+        run: |
+          set -euo pipefail
+          echo "ASTROPAGES_DEPLOY_STAGE=smoke_checks" >> "$GITHUB_ENV"
+          smoke() {
+            path="$1"
+            expected="$2"
+            deadline=$((SECONDS + 180))
+            last_status=""
+            while [ "$SECONDS" -le "$deadline" ]; do
+              status="$(curl -sS --max-time 30 -o /dev/null -w '%{http_code}' "${PRODUCTION_SITE_URL}${path}" || true)"
+              last_status="$status"
+              case ",${expected}," in
+                *,"${status}",*) echo "${path} -> ${status}"; return 0 ;;
+              esac
+              echo "${path} returned ${status}, expected ${expected}; retrying..." >&2
+              sleep 5
+            done
+            echo "${path} returned ${last_status}, expected ${expected}" >&2
+            exit 1
+          }
+          smoke "/api/astropages/generated-site/health" "200"
+          smoke "/api/astropages/generated-site/edit-readiness" "200"
+          smoke "/" "200"
+          smoke "/_emdash/admin" "200,302"
+          smoke "/_emdash/api/setup/status" "200"
+          verify_vera_readiness() {
+            path="/api/astropages/generated-site/vera/operations"
+            response_path="$RUNNER_TEMP/vera-production-readiness.json"
+            deadline=$((SECONDS + 180))
+            last_status=""
+            while [ "$SECONDS" -le "$deadline" ]; do
+              status="$(curl -sS --max-time 30 -o "$response_path" -w '%{http_code}' \
+                -H "Authorization: Bearer ${ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN}" \
+                "${PRODUCTION_SITE_URL}${path}" || true)"
+              last_status="$status"
+              if [ "$status" = "200" ] && node -e '
+                const fs = require("node:fs");
+                const body = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+                if (body.status !== "ready" || body.state !== "ready" || body.data?.ready !== true) process.exit(1);
+              ' "$response_path"; then
+                echo "${path} -> 200 (Vera providers and runtime ready)"
+                return 0
+              fi
+              echo "${path} returned ${status} without a ready Vera runtime; retrying..." >&2
+              sleep 5
+            done
+            echo "${path} returned ${last_status}; refusing to report production live while Vera provider/runtime configuration is incomplete" >&2
+            exit 1
+          }
+          verify_vera_readiness
+
+      - name: Notify production live
+        if: success()
+        run: |
+          set -euo pipefail
+          deployed_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          cat > "$RUNNER_TEMP/production-status-live.json" <<JSON
+          {
+            "status": "live",
+            "productionUrl": "${PRODUCTION_SITE_URL}",
+            "workflowRunId": "${{ github.run_id }}",
+            "commitSha": "${{ inputs.commit_sha }}",
+            "deployedAt": "${deployed_at}",
+            "evidence": {
+              "workflowRunUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "githubRepository": "${{ github.repository }}",
+              "githubRef": "${{ github.ref_name }}",
+              "productionDeploymentId": "${{ inputs.production_deployment_id }}",
+              "projectId": "${{ inputs.project_id }}",
+              "projectVersionId": "${{ inputs.project_version_id }}",
+              "projectBranchId": "${{ inputs.project_branch_id }}",
+              "previewDeploymentId": "${{ inputs.preview_deployment_id }}",
+              "failureStage": "${ASTROPAGES_DEPLOY_STAGE:-unknown}"
+            }
+          }
+          JSON
+          curl -sS --fail --max-time 60 \
+            -X POST "${ASTROPAGES_CONTROL_PLANE_CALLBACK_URL}" \
+            -H "Authorization: Bearer ${ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data @"$RUNNER_TEMP/production-status-live.json" \
+            -o "$RUNNER_TEMP/production-status-live-response.json"
+          node <<'NODE'
+          const fs = require("node:fs");
+          const responsePath = `${process.env.RUNNER_TEMP}/production-status-live-response.json`;
+          const deployment = JSON.parse(fs.readFileSync(responsePath, "utf8"));
+          if (deployment.status !== "live") {
+            console.error(`AstroPages production callback returned status ${deployment.status || "unknown"}.`);
+            if (deployment.evidence?.contentImportError) {
+              console.error(`Content import error: ${deployment.evidence.contentImportError}`);
+            }
+            process.exit(1);
+          }
+          NODE
+
+      - name: Notify production failed
+        if: failure()
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/production-status-failed.json" <<JSON
+          {
+            "status": "failed",
+            "workflowRunId": "${{ github.run_id }}",
+            "commitSha": "${{ inputs.commit_sha }}",
+            "evidence": {
+              "workflowRunUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "githubRepository": "${{ github.repository }}",
+              "githubRef": "${{ github.ref_name }}",
+              "productionDeploymentId": "${{ inputs.production_deployment_id }}",
+              "projectId": "${{ inputs.project_id }}",
+              "projectVersionId": "${{ inputs.project_version_id }}",
+              "projectBranchId": "${{ inputs.project_branch_id }}",
+              "previewDeploymentId": "${{ inputs.preview_deployment_id }}"
+            }
+          }
+          JSON
+          curl -sS --fail --max-time 60 \
+            -X POST "${ASTROPAGES_CONTROL_PLANE_CALLBACK_URL}" \
+            -H "Authorization: Bearer ${ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data @"$RUNNER_TEMP/production-status-failed.json"

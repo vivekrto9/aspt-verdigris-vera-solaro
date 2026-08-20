@@ -1,0 +1,9 @@
+-- Vera Solaro runtime schema reference.
+-- EmDash core tables are managed by the EmDash Cloudflare integration and
+-- mirrored in migrations/0000_emdash_schema_bootstrap.sql.
+--
+-- Generated-site starter tables are applied by migrations/0001_base_runtime.sql:
+-- - ap_runtime_config
+-- - ap_business_settings
+-- - ap_admin_sessions
+-- - ap_admin_sso_exchanges

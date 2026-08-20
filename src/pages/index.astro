@@ -1,0 +1,216 @@
+---
+import { isOfferedReading } from "../data/vera/offered-readings.ts";
+import { blogImageAt, getBlogLocale, listBlogPosts } from "../data/blog-posts.ts";
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import VeraFrame from "../components/vera/VeraFrame.astro";
+import VeraImage from "../components/vera/VeraImage.astro";
+import deskAssetUrl from "../../astropages/assets/ephemeris-pages.webp?url";
+import portraitAssetUrl from "../../astropages/assets/vera-portrait.webp?url";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "home");
+const { content, builderEdit, chromeEdit } = page;
+
+const readings = [1, 2, 3].filter(isOfferedReading);
+const readingSlugs = ["", "natal-hour", "year-ahead", "two-charts"];
+const testimonials = [1, 2, 3];
+const practiceLabels = ["Lineage", "Method", "Practice"];
+const locale = getBlogLocale(Astro.request.url);
+const { posts } = await listBlogPosts(locale);
+const journal = posts.slice(0, 3).map((post, index) => {
+  const image = blogImageAt(post, index);
+  return { ...post, src: image.src, imageAlt: image.alt };
+});
+const deskSrc = import.meta.env.DEV
+  ? deskAssetUrl
+  : "/_assets/aliases/ephemeris-pages/ephemeris-pages.webp";
+const portraitSrc = import.meta.env.DEV
+  ? portraitAssetUrl
+  : "/_assets/aliases/vera-portrait/vera-portrait.webp";
+---
+
+<VeraFrame {...page} currentPath="/">
+  <div class="verdigris-home">
+    <section class="va-home-hero" aria-labelledby="home-title">
+      <aside class="va-home-rail va-home-facts" aria-label="Vera's practice in numbers">
+        <p class="va-rail-title">The desk in numbers</p>
+        {[1, 2, 3].map((index) => (
+          <div class="va-fact">
+            <strong {...builderEdit(`hero_stat_${index}_value`)}>
+              {content[`hero_stat_${index}_value`]}
+            </strong>
+            <span {...builderEdit(`hero_stat_${index}_label`)}>
+              {content[`hero_stat_${index}_label`]}
+            </span>
+          </div>
+        ))}
+        <p class="va-rail-note" {...builderEdit("wheel_note")}>
+          {content.wheel_note}
+        </p>
+      </aside>
+
+      <div class="va-home-hero__main">
+        <p class="va-home-kicker" {...builderEdit("hero_kicker")}>
+          ✦ {content.hero_kicker} ✦
+        </p>
+        <h1 id="home-title" {...builderEdit("hero_title")}>{content.hero_title}</h1>
+        <p class="va-home-hero__body" {...builderEdit("hero_body")}>{content.hero_body}</p>
+        <div class="va-home-actions">
+          <a class="vera-button vera-button--aubergine vera-button--shadow" href="/booking" {...builderEdit("hero_primary_cta")}>
+            {content.hero_primary_cta}
+          </a>
+          <a class="vera-button vera-button--paper" href="/about" {...builderEdit("hero_secondary_cta")}>
+            {content.hero_secondary_cta}
+          </a>
+        </div>
+      </div>
+
+      <aside class="va-home-rail va-home-sky" aria-label="Notes on the current sky">
+        <p class="va-rail-title">Today's sky</p>
+        {[1, 2, 3, 4].map((index) => (
+          <p {...builderEdit(`ticker_${index}`)}>{content[`ticker_${index}`]}</p>
+        ))}
+        <a class="va-sky-cta" href="/booking" {...builderEdit("hero_primary_cta")}>
+          <span {...chromeEdit("books_status")}>{content.books_status}</span>
+          <strong>{content.hero_primary_cta} →</strong>
+        </a>
+      </aside>
+    </section>
+
+    <section class="va-desk-plate" aria-label={content.portrait_alt} data-va-depth>
+      <VeraImage src={deskSrc} alt="Vera's working desk with an ephemeris and drawing tools" eager />
+      <span class="va-desk-plate__caption">Plate I — the working desk, Via delle Stelle 12</span>
+      <span class="va-desk-stamp" aria-hidden="true">Drawn<br /><b>by hand</b><br />Trieste</span>
+    </section>
+
+    <section class="va-section va-readings" id="readings">
+      <header class="va-section-heading">
+        <div>
+          <p class="vera-eyebrow" {...builderEdit("readings_eyebrow")}>{content.readings_eyebrow}</p>
+          <h2 {...builderEdit("readings_title")}>{content.readings_title}</h2>
+        </div>
+        <p {...builderEdit("readings_intro")}>{content.readings_intro}</p>
+      </header>
+
+      <div class="va-reading-grid" data-count={readings.length}>
+        {readings.map((index) => {
+          const featured = readings.length === 1 || index === 2;
+          return (
+            <article class:list={["va-reading", featured && "va-reading--featured"]}>
+              <div class="va-reading__meta">
+                <span {...builderEdit(`reading_${index}_meta`)}>{content[`reading_${index}_meta`]}</span>
+                {featured ? (
+                  <span class="va-reading__badge" {...(index === 2 ? builderEdit("reading_2_badge") : chromeEdit("books_status"))}>
+                    {index === 2 ? content.reading_2_badge : content.books_status}
+                  </span>
+                ) : null}
+              </div>
+              <h3 {...builderEdit(`reading_${index}_title`)}>{content[`reading_${index}_title`]}</h3>
+              <p {...builderEdit(`reading_${index}_body`)}>{content[`reading_${index}_body`]}</p>
+              <ul>
+                {[1, 2, 3].map((item) => (
+                  <li {...builderEdit(`reading_${index}_include_${item}`)}>
+                    <span>{content[`reading_${index}_include_${item}`]}</span><b aria-hidden="true">✓</b>
+                  </li>
+                ))}
+              </ul>
+              <footer>
+                <strong {...builderEdit(`reading_${index}_price`)}>{content[`reading_${index}_price`]}</strong>
+                <a class="vera-button vera-button--small" href={`/readings/${readingSlugs[index]}`} {...builderEdit(`reading_${index}_cta`)}>
+                  {content[`reading_${index}_cta`]}
+                </a>
+              </footer>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+
+    <section class="va-section va-about" id="about">
+      <div class="va-about__copy">
+        <p class="vera-eyebrow" {...builderEdit("about_eyebrow")}>✦ {content.about_eyebrow} ✦</p>
+        <h2 {...builderEdit("about_title")}>{content.about_title}</h2>
+        <div class="va-about__prose">
+          <p {...builderEdit("about_body_1")}>{content.about_body_1}</p>
+          <p {...builderEdit("about_body_2")}>{content.about_body_2}</p>
+        </div>
+        <div class="va-practice">
+          {[1, 2, 3].map((index) => (
+            <div>
+              <span>{practiceLabels[index - 1]}</span>
+              <p {...builderEdit(`about_method_${index}`)}>{content[`about_method_${index}`]}</p>
+            </div>
+          ))}
+        </div>
+        <div class="va-signature" {...builderEdit("about_signature")}>{content.about_signature}</div>
+      </div>
+      <VeraImage
+        class="va-about__portrait"
+        src={portraitSrc}
+        alt={content.portrait_alt}
+        altField="portrait_alt"
+        edit={builderEdit}
+        eager
+      />
+    </section>
+
+    <section class="va-section va-correspondence">
+      <header class="va-section-heading">
+        <div>
+          <p class="vera-eyebrow" {...builderEdit("ledger_eyebrow")}>{content.ledger_eyebrow}</p>
+          <h2 {...builderEdit("ledger_title")}>{content.ledger_title}</h2>
+        </div>
+        <p class="va-heading-note" {...builderEdit("ledger_note")}>{content.ledger_note}</p>
+      </header>
+      <div class="va-correspondence__grid">
+        {testimonials.map((index) => (
+          <figure>
+            <span>Letter {String(index).padStart(2, "0")}</span>
+            <blockquote {...builderEdit(`testimonial_${index}`)}>“{content[`testimonial_${index}`]}”</blockquote>
+            <figcaption {...builderEdit(`testimonial_${index}_byline`)}>{content[`testimonial_${index}_byline`]}</figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+
+    {journal.length > 0 ? (
+      <section class="va-section va-journal" id="journal">
+        <header class="va-section-heading">
+          <div>
+            <p class="vera-eyebrow" {...builderEdit("journal_eyebrow")}>{content.journal_eyebrow}</p>
+            <h2 {...builderEdit("journal_title")}>{content.journal_title}</h2>
+          </div>
+          <a class="vera-button vera-button--paper vera-button--small" href="/writing" {...builderEdit("journal_cta")}>
+            {content.journal_cta}
+          </a>
+        </header>
+        <div class="va-journal__grid">
+          {journal.map((item, index) => (
+            <a href={item.href} class="va-journal-entry">
+              <span class="va-journal-entry__number">Plate {String(index + 2).padStart(2, "0")}</span>
+              <VeraImage src={item.src} alt={item.imageAlt} />
+              <div>
+                <span>{item.meta}</span>
+                <h3>{item.title}</h3>
+                <p>{item.excerpt}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    ) : null}
+  </div>
+</VeraFrame>
+
+<script>
+  const plate = document.querySelector<HTMLElement>("[data-va-depth]");
+  const updatePlateDepth = () => {
+    if (!plate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const rect = plate.getBoundingClientRect();
+    const progress = Math.max(-1, Math.min(1, (window.innerHeight - rect.top) / window.innerHeight));
+    plate.style.setProperty("--va-depth", `${progress * 14}px`);
+  };
+  updatePlateDepth();
+  window.addEventListener("scroll", updatePlateDepth, { passive: true });
+</script>

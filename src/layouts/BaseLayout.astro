@@ -1,0 +1,197 @@
+---
+import generatedSettings from "../generated/site-settings.json";
+import {
+  activeLocaleCodes,
+  defaultLocale,
+  getLocaleFromUrl,
+  isActiveLocale,
+  type SupportedLocale,
+} from "../data/localization-contract.ts";
+import {
+  buildOrganizationJsonLd,
+  buildPublicSeo,
+  buildWebSiteJsonLd,
+} from "../server/generated-site/seo.ts";
+import { getRuntimeEnv } from "../server/generated-site/request.ts";
+import { getPublicPosthogConfig } from "../server/aggregator/integrations/posthog.ts";
+import BuilderToolbar from "../builder/BuilderToolbar.astro";
+import { chromeDefaults } from "../data/vera/content.ts";
+import faviconAssetUrl from "../../astropages/assets/favicon.svg?url";
+import "../styles/base.css";
+
+type SeoContent = {
+  seo_title?: string;
+  seo_description?: string;
+  seo_canonical_path?: string;
+  seo_robots?: string;
+  og_title?: string;
+  og_description?: string;
+  og_image?: string;
+  og_image_alt?: string;
+  twitter_card?: string;
+  twitter_title?: string;
+  twitter_description?: string;
+  twitter_image?: string;
+};
+
+type BuilderToolbarProps = {
+  launcherEnabled: boolean;
+  studioModeEnabled: boolean;
+  collection: string;
+  entry: string;
+  locale: string;
+  csrfToken: string;
+  canPublish: boolean;
+  seo?: Record<string, string | undefined>;
+  hasSavedDraft?: boolean;
+  reviewTargets?: Array<{ collection: string; entry: string; locale: string }>;
+};
+
+type AnalyticsConsentCopy = {
+  title: string;
+  message: string;
+  declineLabel: string;
+  acceptLabel: string;
+};
+
+type AnalyticsConsentEdit = (field: string) => Record<string, unknown>;
+
+const analyticsConsentDefaults: AnalyticsConsentCopy = {
+  title: chromeDefaults.analytics_consent_title,
+  message: chromeDefaults.analytics_consent_message,
+  declineLabel: chromeDefaults.analytics_consent_decline,
+  acceptLabel: chromeDefaults.analytics_consent_accept,
+};
+
+const {
+  title,
+  description,
+  bodyClass = "",
+  seo: seoContent = {},
+  jsonLd = [],
+  builderToolbar,
+  analyticsConsent = analyticsConsentDefaults,
+  analyticsConsentEdit = () => ({}),
+} = Astro.props as {
+  title?: string;
+  description?: string;
+  bodyClass?: string;
+  seo?: SeoContent;
+  jsonLd?: Array<Record<string, unknown>>;
+  builderToolbar?: BuilderToolbarProps;
+  analyticsConsent?: AnalyticsConsentCopy;
+  analyticsConsentEdit?: AnalyticsConsentEdit;
+};
+const siteSettings = generatedSettings.siteSettings;
+const fallbackLocale = isActiveLocale(siteSettings.defaultLocale) ? siteSettings.defaultLocale : "en";
+const locale = getLocaleFromUrl(Astro.request.url, fallbackLocale as SupportedLocale);
+const env = await getRuntimeEnv(Astro);
+const posthogConfig = await getPublicPosthogConfig(env);
+const posthogConfigJson = JSON.stringify(posthogConfig).replace(/</g, "\\u003c");
+const activeLocaleCodesJson = JSON.stringify(activeLocaleCodes);
+const faviconUrl = import.meta.env.DEV
+  ? faviconAssetUrl
+  : "/_assets/aliases/favicon/favicon.svg";
+const seo = buildPublicSeo({
+  requestUrl: Astro.request.url,
+  siteSettings,
+  locale,
+  title: title ?? seoContent.seo_title,
+  description: description ?? seoContent.seo_description,
+  canonicalPath: seoContent.seo_canonical_path,
+  robots: seoContent.seo_robots,
+  ogTitle: seoContent.og_title,
+  ogDescription: seoContent.og_description,
+  ogImage: seoContent.og_image,
+  ogImageAlt: seoContent.og_image_alt,
+  twitterCard: seoContent.twitter_card,
+  twitterTitle: seoContent.twitter_title,
+  twitterDescription: seoContent.twitter_description,
+  twitterImage: seoContent.twitter_image,
+  jsonLd: [
+    buildOrganizationJsonLd({ siteSettings, requestUrl: Astro.request.url }),
+    buildWebSiteJsonLd({ siteSettings, requestUrl: Astro.request.url }),
+    ...jsonLd,
+  ].filter(Boolean) as Array<Record<string, unknown>>,
+});
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <script is:inline define:vars={{ locale, defaultLocale, activeLocaleCodesJson }}>
+      (() => {
+        try {
+          const localeStorageKey = "vera-solaro:selected-locale";
+          const activeLocaleSet = new Set(JSON.parse(activeLocaleCodesJson));
+          const currentUrl = new URL(window.location.href);
+          const requestedLocale = currentUrl.searchParams.get("locale");
+          const storedLocale = window.localStorage.getItem(localeStorageKey);
+          if (storedLocale && activeLocaleSet.has(storedLocale) && !requestedLocale && storedLocale !== defaultLocale) {
+            currentUrl.searchParams.set("locale", storedLocale);
+            window.location.replace(currentUrl.toString());
+            return;
+          }
+          window.localStorage.setItem(localeStorageKey, locale);
+        } catch {
+          // Render the requested URL when storage is unavailable.
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href={faviconUrl} />
+    <title>{seo.title}</title>
+    <meta name="description" content={seo.description} />
+    <meta name="robots" content={seo.robots} />
+    <meta name="theme-color" content={siteSettings.primaryColor} />
+    <link rel="canonical" href={seo.canonicalUrl} />
+    {seo.alternates.map((alternate) => (
+      <link rel="alternate" hreflang={alternate.locale} href={alternate.href} />
+    ))}
+    <meta name="twitter:card" content={seo.twitter.card} />
+    <meta name="twitter:title" content={seo.twitter.title} />
+    <meta name="twitter:description" content={seo.twitter.description} />
+    {seo.twitter.image ? <meta name="twitter:image" content={seo.twitter.image} /> : null}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={seo.og.title} />
+    <meta property="og:description" content={seo.og.description} />
+    {seo.og.image ? <meta property="og:image" content={seo.og.image} /> : null}
+    {seo.og.imageAlt ? <meta property="og:image:alt" content={seo.og.imageAlt} /> : null}
+    <meta property="og:url" content={seo.canonicalUrl} />
+    <meta property="og:site_name" content={siteSettings.brandName} />
+    {seo.jsonLd.map((entry) => (
+      <script is:inline type="application/ld+json" set:html={JSON.stringify(entry).replace(/</g, "\\u003c")}></script>
+    ))}
+  </head>
+  <body data-runtime-substrate="cloudflare" data-site-source="vera-solaro" data-locale={locale} class={bodyClass}>
+    <slot />
+    {builderToolbar ? <BuilderToolbar {...builderToolbar} /> : null}
+    {posthogConfig.enabled ? (
+      <>
+        <script is:inline type="application/json" data-posthog-config set:html={posthogConfigJson}></script>
+        <aside
+          data-analytics-consent-banner
+          data-ph-no-capture
+          role="dialog"
+          aria-label={analyticsConsent.title}
+          hidden
+        >
+          <strong {...analyticsConsentEdit("analytics_consent_title")}>{analyticsConsent.title}</strong>
+          <p {...analyticsConsentEdit("analytics_consent_message")}>{analyticsConsent.message}</p>
+          <div data-analytics-consent-actions>
+            <button type="button" data-analytics-consent-decline {...analyticsConsentEdit("analytics_consent_decline")}>
+              {analyticsConsent.declineLabel}
+            </button>
+            <button type="button" data-analytics-consent-accept {...analyticsConsentEdit("analytics_consent_accept")}>
+              {analyticsConsent.acceptLabel}
+            </button>
+          </div>
+        </aside>
+      </>
+    ) : null}
+    <script>
+      import "../scripts/posthog-analytics.ts";
+    </script>
+  </body>
+</html>

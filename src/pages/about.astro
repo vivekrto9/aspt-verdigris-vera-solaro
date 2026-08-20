@@ -1,0 +1,105 @@
+---
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import VeraFrame from "../components/vera/VeraFrame.astro";
+import VeraImage from "../components/vera/VeraImage.astro";
+import portraitAssetUrl from "../../astropages/assets/about-vera-portrait.jpg?url";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "about");
+const { content, builderEdit } = page;
+const portraitSrc = import.meta.env.DEV
+  ? portraitAssetUrl
+  : "/_assets/aliases/about-vera-portrait/about-vera-portrait.jpg";
+---
+
+<VeraFrame {...page} currentPath="/about">
+  <section class="vera-page-hero vera-page-hero--split">
+    <div>
+      <p class="vera-eyebrow" {...builderEdit("about_eyebrow")}>{content.about_eyebrow}</p>
+      <h1 class="vera-display" style="color: var(--vera-burnt); text-shadow: 3px 3px 0 var(--vera-mustard)" {...builderEdit("about_title")}>
+        {content.about_title}
+      </h1>
+      <p class="vera-lede" {...builderEdit("about_intro")}>{content.about_intro}</p>
+    </div>
+    <div class="vera-portrait-shell">
+      <VeraImage
+        src={portraitSrc}
+        alt={content.portrait_alt}
+        altField="portrait_alt"
+        edit={builderEdit}
+        eager
+      />
+    </div>
+  </section>
+
+  <section class="vera-section vera-section--sand">
+    <div class="vera-page-grid">
+      <div class="vera-prose">
+        <h2 {...builderEdit("story_1_title")}>{content.story_1_title}</h2>
+        <p {...builderEdit("story_1_paragraph_1")}>{content.story_1_paragraph_1}</p>
+        <p {...builderEdit("story_1_paragraph_2")}>{content.story_1_paragraph_2}</p>
+      </div>
+      <div class="vera-prose">
+        <h2 {...builderEdit("story_2_title")}>{content.story_2_title}</h2>
+        <p {...builderEdit("story_2_paragraph_1")}>{content.story_2_paragraph_1}</p>
+        <p {...builderEdit("story_2_paragraph_2")}>{content.story_2_paragraph_2}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="vera-section vera-section--paper">
+    <h2 class="vera-heading" {...builderEdit("method_title")}>{content.method_title}</h2>
+    <div class="vera-method-grid" style="margin-top: 34px">
+      {[1, 2, 3, 4].map((index) => (
+        <article class="vera-info-card">
+          <span class="vera-info-card__tag" {...builderEdit(`method_${index}_tag`)}>
+            {content[`method_${index}_tag`]}
+          </span>
+          <h3 {...builderEdit(`method_${index}_title`)}>{content[`method_${index}_title`]}</h3>
+          <p {...builderEdit(`method_${index}_body`)}>{content[`method_${index}_body`]}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="vera-section vera-section--sand">
+    <div class="vera-page-grid">
+      <div>
+        <h2 class="vera-heading" {...builderEdit("timeline_title")}>{content.timeline_title}</h2>
+        <div class="vera-timeline">
+          {[1, 2, 3, 4, 5, 6].map((index) => (
+            <div class="vera-timeline__item">
+              <strong {...builderEdit(`timeline_${index}_year`)}>{content[`timeline_${index}_year`]}</strong>
+              <span {...builderEdit(`timeline_${index}_text`)}>{content[`timeline_${index}_text`]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <figure style="margin: 0">
+        <VeraImage
+          alt={content.desk_alt}
+          altField="desk_alt"
+          edit={builderEdit}
+          class="vera-about-desk-image"
+        />
+        <figcaption class="vera-card-meta" style="margin-top: 10px" {...builderEdit("desk_caption")}>
+          {content.desk_caption}
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="vera-section vera-section--aubergine">
+    <div class="vera-letter-band__grid">
+      <div>
+        <p class="vera-eyebrow" {...builderEdit("cta_eyebrow")}>{content.cta_eyebrow}</p>
+        <h2 class="vera-heading" {...builderEdit("cta_title")}>{content.cta_title}</h2>
+        <p class="vera-lede" {...builderEdit("cta_body")}>{content.cta_body}</p>
+      </div>
+      <a class="vera-button vera-button--mustard vera-button--shadow" href="/readings" {...builderEdit("cta_label")}>
+        {content.cta_label}
+      </a>
+    </div>
+  </section>
+</VeraFrame>

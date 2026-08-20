@@ -1,0 +1,1093 @@
+<script is:inline>
+  (() => {
+    const toolbar = document.querySelector("[data-builder-toolbar]");
+    if (!toolbar) return;
+
+    const studioModeCookieName = "astropages-content-studio";
+    const pendingTabKey = "astropages-content-studio-tab";
+    const launcherPositionKey = "astropages-content-studio-launcher-position";
+    const launcher = toolbar.querySelector("[data-builder-launcher]");
+    const launcherLabel = toolbar.querySelector("[data-builder-launcher-label]");
+    const launcherSummary = toolbar.querySelector("[data-builder-launcher-summary]");
+    const launcherDraftCount = toolbar.querySelector("[data-builder-draft-count]");
+    const menu = toolbar.querySelector("[data-builder-menu]");
+    const menuClose = toolbar.querySelector("[data-builder-menu-close]");
+    const editToggle = toolbar.querySelector("[data-builder-edit-toggle]");
+    const statusNodes = Array.from(toolbar.querySelectorAll("[data-builder-edit-status]"));
+    const saveButtons = Array.from(toolbar.querySelectorAll("[data-builder-save]"));
+    const publishButtons = Array.from(toolbar.querySelectorAll("[data-builder-publish]"));
+    const seoToggle = toolbar.querySelector("[data-builder-seo-toggle]");
+    const previewToggle = toolbar.querySelector("[data-builder-preview-toggle]");
+    const reviewButtons = Array.from(toolbar.querySelectorAll("[data-builder-review-toggle]"));
+    const errorPopover = toolbar.querySelector("[data-builder-error-popover]");
+    const editingDock = toolbar.querySelector("[data-builder-editing-dock]");
+    const dockError = toolbar.querySelector("[data-builder-dock-error]");
+    const dirtyCount = toolbar.querySelector("[data-builder-dirty-count]");
+    const dockField = toolbar.querySelector("[data-builder-dock-field]");
+    const contentDetails = toolbar.querySelector("[data-builder-content-details]");
+    const doneEditing = toolbar.querySelector("[data-builder-done-editing]");
+    const inspector = document.querySelector("[data-builder-inspector]");
+    const inspectorClose = inspector?.querySelector("[data-builder-inspector-close]");
+    const inspectorTitle = inspector?.querySelector("[data-builder-inspector-title]");
+    const inspectorSubtitle = inspector?.querySelector("[data-builder-inspector-subtitle]");
+    const selectedFieldLabel = inspector?.querySelector("[data-builder-selected-field]");
+    const selectedFieldHelp = inspector?.querySelector("[data-builder-selected-help]");
+    const tabButtons = Array.from(inspector?.querySelectorAll("[data-builder-tab]") ?? []);
+    const panels = Array.from(inspector?.querySelectorAll("[data-builder-panel]") ?? []);
+    const changesSummary = inspector?.querySelector("[data-builder-changes-summary]");
+    const changesHelp = inspector?.querySelector("[data-builder-changes-help]");
+    const localChangesSection = inspector?.querySelector("[data-builder-local-changes]");
+    const localChangeList = inspector?.querySelector("[data-builder-local-change-list]");
+    const contentChangesSection = inspector?.querySelector("[data-builder-content-changes]");
+    const contentChangeList = inspector?.querySelector("[data-builder-content-change-list]");
+    const seoChangesSection = inspector?.querySelector("[data-builder-seo-changes]");
+    const seoChangeList = inspector?.querySelector("[data-builder-seo-change-list]");
+    const emptyChanges = inspector?.querySelector("[data-builder-no-changes]");
+    const changes = {};
+    const savedDraftTargets = new Map();
+    let activeElement = null;
+    let activeOriginalValue = "";
+    let selectedElement = null;
+    let editMode = false;
+    let hasSavedDraft = toolbar.dataset.builderHasSavedDraft === "true";
+    let draftLoadVersion = 0;
+    let dragState = null;
+    let suppressLauncherClick = false;
+    const canPublish = toolbar.dataset.builderCanPublish === "true";
+    const isStudioMode = () => toolbar.dataset.builderStudioMode === "true";
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const panelHideTimers = new WeakMap();
+
+    const setPanelVisible = (element, visible, onHidden) => {
+      if (!element) return;
+      if (!visible && element.hasAttribute("data-builder-closing")) return;
+      const pendingTimer = panelHideTimers.get(element);
+      if (pendingTimer) {
+        window.clearTimeout(pendingTimer);
+        panelHideTimers.delete(element);
+      }
+
+      if (visible) {
+        if (!element.hidden && !element.hasAttribute("data-builder-closing")) return;
+        element.removeAttribute("data-builder-closing");
+        element.hidden = false;
+        if (reducedMotion.matches) return;
+        element.setAttribute("data-builder-opening", "");
+        void element.offsetWidth;
+        window.requestAnimationFrame(() => element.removeAttribute("data-builder-opening"));
+        return;
+      }
+
+      if (element.hidden) return;
+      if (reducedMotion.matches) {
+        element.hidden = true;
+        onHidden?.();
+        return;
+      }
+      element.setAttribute("data-builder-closing", "");
+      const timer = window.setTimeout(() => {
+        if (!element.hasAttribute("data-builder-closing")) return;
+        element.hidden = true;
+        element.removeAttribute("data-builder-closing");
+        panelHideTimers.delete(element);
+        onHidden?.();
+      }, 240);
+      panelHideTimers.set(element, timer);
+    };
+
+    if (isStudioMode()) {
+      document.cookie = "emdash-edit-mode=true; Path=/; SameSite=Lax";
+    }
+
+    const localeLabel = (toolbar.dataset.builderLocale || "en").toUpperCase();
+    const fieldName = (field) => (field || "Field").replaceAll("_", " ");
+    const dirtyTotal = () => Object.keys(changes).length;
+    const defaultTarget = () => ({
+      collection: toolbar.dataset.builderCollection || "",
+      entry: toolbar.dataset.builderEntry || "",
+      locale: toolbar.dataset.builderLocale || "en",
+    });
+    const targetKey = (target) => `${target.collection || ""}/${target.entry || ""}/${target.locale || "en"}`;
+    const changeKey = (target, field) => `${targetKey(target)}::${field || ""}`;
+    const elementTarget = (element) => ({
+      collection: element?.dataset.builderCollection || toolbar.dataset.builderCollection || "",
+      entry: element?.dataset.builderEntry || toolbar.dataset.builderEntry || "",
+      locale: element?.dataset.builderLocale || toolbar.dataset.builderLocale || "en",
+    });
+    const editableElement = (element) =>
+      Boolean(element?.dataset.builderEdit && element?.dataset.builderCollection && element?.dataset.builderEntry && element?.dataset.builderField);
+    const placeholderEditableElement = (element) =>
+      editableElement(element) && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement);
+    const reviewTargets = () => {
+      const targets = new Map();
+      const pageTarget = defaultTarget();
+      targets.set(targetKey(pageTarget), pageTarget);
+      try {
+        const configuredTargets = JSON.parse(toolbar.dataset.builderReviewTargets || "[]");
+        if (Array.isArray(configuredTargets)) {
+          configuredTargets.forEach((target) => {
+            if (target?.collection && target?.entry) {
+              targets.set(targetKey(target), {
+                collection: target.collection,
+                entry: target.entry,
+                locale: target.locale || pageTarget.locale,
+              });
+            }
+          });
+        }
+      } catch {
+        // Keep the default page target when the optional target list is absent.
+      }
+      savedDraftTargets.forEach((target) => targets.set(targetKey(target), target));
+      return Array.from(targets.values());
+    };
+
+    const fetchDraftChanges = async (target) => {
+      if (!toolbar.dataset.builderDiffEndpoint) return [];
+      const url = new URL(toolbar.dataset.builderDiffEndpoint, window.location.origin);
+      url.searchParams.set("collection", target.collection || "");
+      url.searchParams.set("entry", target.entry || "");
+      url.searchParams.set("locale", target.locale || "en");
+      const response = await fetch(url, {
+        credentials: "same-origin",
+        headers: {
+          accept: "application/json",
+        },
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.message || "Could not load draft changes");
+      const targetChanges = Array.isArray(body?.data?.changes) ? body.data.changes : [];
+      return targetChanges.map((change) => ({
+        ...change,
+        collection: target.collection,
+        entry: target.entry,
+        locale: target.locale,
+      }));
+    };
+
+    const setPublishEnabled = (enabled) => {
+      publishButtons.forEach((button) => {
+        button.disabled = !enabled || !canPublish || !isStudioMode();
+      });
+    };
+
+    const setReviewEnabled = (enabled) => {
+      reviewButtons.forEach((button) => {
+        button.disabled = !enabled;
+      });
+    };
+
+    const updateLauncherDraftState = (count) => {
+      const draftCount = Number.isFinite(count) ? Math.max(0, Math.trunc(count)) : 0;
+      hasSavedDraft = draftCount > 0;
+      toolbar.dataset.builderHasSavedDraft = hasSavedDraft ? "true" : "false";
+      if (launcherSummary) {
+        launcherSummary.textContent = hasSavedDraft
+          ? `${draftCount} unpublished ${draftCount === 1 ? "change" : "changes"}`
+          : "Edit this page";
+      }
+      if (launcherDraftCount) {
+        launcherDraftCount.textContent = hasSavedDraft ? String(draftCount) : "";
+        launcherDraftCount.hidden = !hasSavedDraft;
+        launcherDraftCount.toggleAttribute("data-builder-multi-digit", draftCount > 9);
+      }
+      if (dirtyTotal() === 0) {
+        const currentState = statusNodes[0]?.dataset.state;
+        const transientState = currentState === "saving" || currentState === "publishing" || currentState === "error";
+        if (!transientState) {
+          setPublishEnabled(hasSavedDraft);
+          setReviewEnabled(hasSavedDraft);
+          const stateAlreadyMatches = hasSavedDraft
+            ? currentState === "draft"
+            : currentState === "idle" || currentState === "published";
+          if (!stateAlreadyMatches) setStatus(hasSavedDraft ? "draft" : "idle");
+        }
+      }
+    };
+
+    const clamp = (value, minimum, maximum) => Math.min(Math.max(value, minimum), maximum);
+    const viewportMargin = 12;
+    const floatingPanelGap = 12;
+    const stackedModalGap = 20;
+
+    const positionFloatingPanel = (element) => {
+      if (!element || element.hidden || !launcher) return;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const availableWidth = Math.max(1, viewportWidth - viewportMargin * 2);
+      const availableHeight = Math.max(1, viewportHeight - viewportMargin * 2);
+      const launcherRect = toolbar.getBoundingClientRect();
+      element.style.position = "fixed";
+      element.style.right = "auto";
+      element.style.bottom = "auto";
+      element.style.maxWidth = `${availableWidth}px`;
+      element.style.maxHeight = `${availableHeight}px`;
+      element.style.overflowY = "auto";
+
+      const panelWidth = Math.min(element.offsetWidth, availableWidth);
+      const panelHeight = Math.min(element.offsetHeight, availableHeight);
+      const maximumLeft = Math.max(viewportMargin, viewportWidth - panelWidth - viewportMargin);
+      let left = clamp(launcherRect.right - panelWidth, viewportMargin, maximumLeft);
+      const roomAbove = launcherRect.top - floatingPanelGap - viewportMargin;
+      const roomBelow = viewportHeight - launcherRect.bottom - floatingPanelGap - viewportMargin;
+      const preferredTop = roomAbove >= panelHeight || roomAbove >= roomBelow
+        ? launcherRect.top - floatingPanelGap - panelHeight
+        : launcherRect.bottom + floatingPanelGap;
+      const maximumTop = Math.max(viewportMargin, viewportHeight - panelHeight - viewportMargin);
+      let top = clamp(preferredTop, viewportMargin, maximumTop);
+
+      if (element === editingDock && inspector && !inspector.hidden && window.innerWidth >= 980) {
+        const inspectorRect = inspector.getBoundingClientRect();
+        const availableDockHeight = Math.max(1, viewportHeight - inspectorRect.bottom - stackedModalGap - viewportMargin);
+        element.style.maxHeight = `${availableDockHeight}px`;
+        const dockHeight = Math.min(element.offsetHeight, availableDockHeight);
+        const dockMaximumTop = Math.max(viewportMargin, viewportHeight - dockHeight - viewportMargin);
+        left = clamp(viewportWidth - panelWidth - 24, viewportMargin, maximumLeft);
+        top = clamp(inspectorRect.bottom + stackedModalGap, viewportMargin, dockMaximumTop);
+      }
+
+      element.style.left = `${Math.round(left)}px`;
+      element.style.top = `${Math.round(top)}px`;
+    };
+
+    const positionOpenPanels = () => {
+      positionFloatingPanel(menu);
+      positionFloatingPanel(editingDock);
+    };
+
+    const setLauncherPosition = (left, top, persist = false) => {
+      if (!launcher) return;
+      const launcherWidth = launcher.offsetWidth || 60;
+      const launcherHeight = launcher.offsetHeight || 60;
+      const maximumLeft = Math.max(viewportMargin, window.innerWidth - launcherWidth - viewportMargin);
+      const maximumTop = Math.max(viewportMargin, window.innerHeight - launcherHeight - viewportMargin);
+      const nextLeft = clamp(left, viewportMargin, maximumLeft);
+      const nextTop = clamp(top, viewportMargin, maximumTop);
+      toolbar.style.left = `${Math.round(nextLeft)}px`;
+      toolbar.style.top = `${Math.round(nextTop)}px`;
+      toolbar.style.right = "auto";
+      toolbar.style.bottom = "auto";
+      const roomOnLeft = nextLeft - viewportMargin;
+      const roomOnRight = window.innerWidth - nextLeft - launcherWidth - viewportMargin;
+      toolbar.toggleAttribute("data-builder-label-right", roomOnRight > roomOnLeft);
+      positionOpenPanels();
+      if (!persist) return;
+      try {
+        window.localStorage.setItem(launcherPositionKey, JSON.stringify({ left: nextLeft, top: nextTop }));
+      } catch {
+        // Keep dragging functional when browser storage is unavailable.
+      }
+    };
+
+    const restoreLauncherPosition = () => {
+      try {
+        const storedPosition = JSON.parse(window.localStorage.getItem(launcherPositionKey) || "null");
+        if (Number.isFinite(storedPosition?.left) && Number.isFinite(storedPosition?.top)) {
+          setLauncherPosition(storedPosition.left, storedPosition.top);
+        }
+      } catch {
+        // Use the CSS bottom-right default when stored state is invalid or unavailable.
+      }
+    };
+
+    const setDockVisible = (visible) => {
+      if (!editingDock) return;
+      const shouldShow = visible && isStudioMode();
+      setPanelVisible(editingDock, shouldShow);
+      if (shouldShow) positionFloatingPanel(editingDock);
+    };
+
+    const updateDirtyCount = () => {
+      const count = dirtyTotal();
+      if (dirtyCount) {
+        dirtyCount.textContent = count === 1 ? "1 unsaved edit" : `${count} unsaved edits`;
+        dirtyCount.toggleAttribute("data-builder-has-dirty", count > 0);
+      }
+      if (dockField && selectedElement) {
+        dockField.textContent = fieldName(selectedElement.dataset.builderField || "field");
+      }
+      if (dockField && !selectedElement && count === 0) {
+        dockField.textContent = editMode ? "Select content" : "Ready";
+      }
+      setDockVisible(editMode || count > 0);
+    };
+
+    const setMenuOpen = (open) => {
+      if (!menu || !launcher) return;
+      setPanelVisible(menu, open, () => launcherLabel?.removeAttribute("hidden"));
+      if (open) positionFloatingPanel(menu);
+      launcher.setAttribute("aria-expanded", open ? "true" : "false");
+      launcher.toggleAttribute("data-builder-active", open);
+      if (open) launcherLabel?.setAttribute("hidden", "");
+    };
+
+    const removeLegacyPreviewParam = () => {
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.delete("preview");
+      return nextUrl.toString();
+    };
+
+    const enterStudioMode = (tab = "field") => {
+      document.cookie = `${studioModeCookieName}=1; Path=/; SameSite=Lax`;
+      document.cookie = "emdash-edit-mode=true; Path=/; SameSite=Lax";
+      window.sessionStorage.setItem(pendingTabKey, tab);
+      window.location.assign(removeLegacyPreviewParam());
+    };
+
+    const exitStudioMode = () => {
+      document.cookie = `${studioModeCookieName}=; Path=/; Max-Age=0; SameSite=Lax`;
+      document.cookie = "emdash-edit-mode=; Path=/; Max-Age=0; SameSite=Lax";
+      window.sessionStorage.removeItem(pendingTabKey);
+      window.location.assign(removeLegacyPreviewParam());
+    };
+
+    const setStatus = (state, message) => {
+      const label =
+        state === "idle"
+          ? "Published"
+          : state === "unsaved"
+            ? "Unsaved changes"
+            : state === "saving"
+              ? "Saving..."
+              : state === "publishing"
+                ? "Publishing..."
+                : state === "published"
+                  ? "Published"
+                  : state === "error"
+                    ? "Error"
+                    : "Unpublished draft";
+      statusNodes.forEach((status) => {
+        status.dataset.state = state;
+        status.textContent = label;
+        status.title = message || label;
+      });
+      if (errorPopover) {
+        errorPopover.hidden = state !== "error";
+        errorPopover.textContent = state === "error" ? message || "The Content Studio action failed." : "";
+      }
+      if (dockError) {
+        dockError.hidden = !message;
+        dockError.dataset.builderTone = state === "error" ? "error" : "notice";
+        dockError.textContent = message || "";
+      }
+      saveButtons.forEach((button) => {
+        button.disabled = state !== "unsaved" && state !== "error";
+      });
+      if (state === "draft") {
+        setPublishEnabled(hasSavedDraft);
+        setReviewEnabled(hasSavedDraft);
+      }
+      if (state === "published" || state === "idle") {
+        setPublishEnabled(false);
+        setReviewEnabled(false);
+      }
+      if (state === "unsaved" || state === "saving" || state === "publishing" || state === "error") {
+        setPublishEnabled(false);
+        setReviewEnabled(state === "error" ? hasSavedDraft : false);
+      }
+      updateDirtyCount();
+    };
+
+    const openInspector = (tab = "seo") => {
+      if (!isStudioMode()) {
+        enterStudioMode(tab);
+        return;
+      }
+      if (!inspector) return;
+      setMenuOpen(false);
+      setPanelVisible(inspector, true);
+      toolbar.setAttribute("data-builder-inspector-open", "");
+      positionFloatingPanel(editingDock);
+      if (seoToggle) seoToggle.toggleAttribute("data-builder-active", tab === "seo");
+      tabButtons.forEach((button) => {
+        const active = button.dataset.builderTab === tab;
+        button.toggleAttribute("data-builder-active", active);
+        button.setAttribute("aria-selected", active ? "true" : "false");
+      });
+      panels.forEach((panel) => {
+        panel.hidden = panel.dataset.builderPanel !== tab;
+      });
+      if (inspectorTitle) {
+        inspectorTitle.textContent = tab === "field" ? "Content" : tab === "changes" ? "Changes" : "Page SEO";
+      }
+      if (inspectorSubtitle) {
+        inspectorSubtitle.textContent =
+          tab === "field"
+            ? `${localeLabel} content`
+            : tab === "changes"
+              ? `${localeLabel} unpublished review`
+              : `${localeLabel} metadata`;
+      }
+      if (tab === "changes") loadDraftChanges();
+    };
+
+    const closeInspector = () => {
+      setPanelVisible(inspector, false, () => {
+        toolbar.removeAttribute("data-builder-inspector-open");
+        positionFloatingPanel(editingDock);
+      });
+      seoToggle?.removeAttribute("data-builder-active");
+    };
+
+    const selectField = (element) => {
+      selectedElement?.removeAttribute("data-builder-hovered");
+      selectedElement = element;
+      if (!element) {
+        if (selectedFieldLabel) selectedFieldLabel.textContent = "Nothing selected";
+        if (selectedFieldHelp) selectedFieldHelp.textContent = "Select editable text on the page.";
+        return;
+      }
+      element.setAttribute("data-builder-hovered", "");
+      const field = element.dataset.builderField || "field";
+      const target = elementTarget(element);
+      if (selectedFieldLabel) selectedFieldLabel.textContent = fieldName(field);
+      if (selectedFieldHelp) selectedFieldHelp.textContent = `Locale ${target.locale.toUpperCase()}. Entry ${target.collection}/${target.entry}. Save a draft before publishing this content.`;
+      if (dockField) dockField.textContent = fieldName(field);
+      setDockVisible(true);
+      updateDirtyCount();
+    };
+
+    const setPendingChange = (field, value, target = defaultTarget()) => {
+      if (!field) return;
+      changes[changeKey(target, field)] = {
+        collection: target.collection,
+        entry: target.entry,
+        locale: target.locale,
+        field,
+        value,
+      };
+      setStatus("unsaved");
+      updateDirtyCount();
+      renderLocalChanges();
+    };
+
+    const clearPendingChange = (field, target = defaultTarget()) => {
+      const key = changeKey(target, field);
+      if (!(key in changes)) return;
+      delete changes[key];
+      setStatus(dirtyTotal() > 0 ? "unsaved" : hasSavedDraft ? "draft" : "idle");
+      renderLocalChanges();
+    };
+
+    const clearList = (list) => {
+      if (!list) return;
+      while (list.firstChild) list.removeChild(list.firstChild);
+    };
+
+    const createChangeCard = (change, options = {}) => {
+      const card = document.createElement("article");
+      card.className = "builder-change-card";
+
+      const header = document.createElement("header");
+      const title = document.createElement("strong");
+      title.textContent = change.label || fieldName(change.field);
+      const badge = document.createElement("span");
+      badge.textContent = options.badge || change.state || "changed";
+      header.append(title, badge);
+
+      const meta = document.createElement("small");
+      meta.textContent = `${(change.locale || toolbar.dataset.builderLocale || "en").toUpperCase()} · ${change.entry || toolbar.dataset.builderEntry || ""} · ${change.field}`;
+
+      const published = document.createElement("p");
+      published.dataset.builderChangeValue = "published";
+      published.textContent = options.pending ? "Published value will be compared after saving." : change.publishedValue || "Empty";
+
+      const draft = document.createElement("p");
+      draft.dataset.builderChangeValue = "draft";
+      draft.textContent = change.draftValue || "Empty";
+
+      card.append(header, meta, published, draft);
+      return card;
+    };
+
+    const renderLocalChanges = () => {
+      clearList(localChangeList);
+      const pending = Object.values(changes);
+      if (localChangesSection) localChangesSection.hidden = pending.length === 0;
+      for (const change of pending) {
+        localChangeList?.appendChild(createChangeCard({
+          field: change.field,
+          entry: change.entry,
+          locale: change.locale,
+          label: fieldName(change.field),
+          state: "unsaved",
+          publishedValue: "",
+          draftValue: change.value,
+        }, { pending: true, badge: "unsaved" }));
+      }
+    };
+
+    const renderDraftChanges = (draftChanges) => {
+      updateLauncherDraftState(draftChanges.length);
+      clearList(contentChangeList);
+      clearList(seoChangeList);
+      const contentChanges = draftChanges.filter((change) => change.group === "content");
+      const seoChanges = draftChanges.filter((change) => change.group === "seo");
+      if (contentChangesSection) contentChangesSection.hidden = contentChanges.length === 0;
+      if (seoChangesSection) seoChangesSection.hidden = seoChanges.length === 0;
+      for (const change of contentChanges) contentChangeList?.appendChild(createChangeCard(change));
+      for (const change of seoChanges) seoChangeList?.appendChild(createChangeCard(change));
+      if (emptyChanges) {
+        emptyChanges.hidden = draftChanges.length > 0 || Object.keys(changes).length > 0;
+      }
+      if (changesSummary) {
+        changesSummary.textContent =
+          draftChanges.length > 0
+            ? `${draftChanges.length} unpublished ${draftChanges.length === 1 ? "change" : "changes"}`
+            : Object.keys(changes).length > 0
+              ? "Unsaved edits pending"
+              : "No unpublished changes";
+      }
+      if (changesHelp) {
+        changesHelp.textContent =
+          Object.keys(changes).length > 0
+            ? "Save the draft before reviewing or publishing these edits."
+            : draftChanges.length > 0
+              ? "Review saved draft edits before publishing them to the live site."
+              : "This locale matches the published site.";
+      }
+      renderLocalChanges();
+    };
+
+    const loadDraftChanges = async () => {
+      if (!toolbar.dataset.builderDiffEndpoint) return;
+      const loadVersion = ++draftLoadVersion;
+      if (changesSummary) changesSummary.textContent = "Loading unpublished changes";
+      try {
+        const draftChanges = [];
+        for (const target of reviewTargets()) {
+          draftChanges.push(...await fetchDraftChanges(target));
+        }
+        if (loadVersion !== draftLoadVersion) return;
+        renderDraftChanges(draftChanges);
+      } catch (error) {
+        if (loadVersion !== draftLoadVersion) return;
+        const message = error instanceof Error ? error.message : "Could not load draft changes";
+        if (changesSummary) changesSummary.textContent = "Could not load changes";
+        if (changesHelp) changesHelp.textContent = message;
+        renderLocalChanges();
+      }
+    };
+
+    const finishTextEdit = (element, originalValue, commit) => {
+      element.contentEditable = "false";
+      element.removeAttribute("data-builder-editing");
+      activeElement = null;
+      activeOriginalValue = "";
+
+      if (!commit) {
+        element.textContent = originalValue;
+        return;
+      }
+
+      const newValue = (element.textContent || "").trim();
+      if (newValue !== originalValue.trim()) {
+        setPendingChange(element.dataset.builderField, newValue, elementTarget(element));
+      }
+    };
+
+    const startTextEdit = (element) => {
+      if (activeElement === element) return;
+      if (activeElement) activeElement.blur();
+
+      const originalValue = element.textContent || "";
+      const target = elementTarget(element);
+      activeElement = element;
+      activeOriginalValue = originalValue;
+      selectField(element);
+      element.setAttribute("data-builder-editing", "");
+      element.contentEditable = "plaintext-only";
+      element.focus();
+      window.setTimeout(() => {
+        element.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+      }, 0);
+
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      const cleanup = () => {
+        element.removeEventListener("input", handleInput);
+        element.removeEventListener("blur", handleBlur);
+        element.removeEventListener("keydown", handleKeydown);
+      };
+      const handleInput = () => {
+        const nextValue = (element.textContent || "").trim();
+        if (nextValue === originalValue.trim()) clearPendingChange(element.dataset.builderField, target);
+        else setPendingChange(element.dataset.builderField, nextValue, target);
+      };
+      const handleBlur = () => {
+        cleanup();
+        finishTextEdit(element, originalValue, true);
+      };
+      const handleKeydown = (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          element.blur();
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          cleanup();
+          clearPendingChange(element.dataset.builderField, target);
+          finishTextEdit(element, originalValue, false);
+        }
+      };
+
+      element.addEventListener("input", handleInput);
+      element.addEventListener("blur", handleBlur);
+      element.addEventListener("keydown", handleKeydown);
+    };
+
+    const startPlaceholderEdit = (element) => {
+      if (activeElement === element) return;
+      if (activeElement) activeElement.blur();
+
+      const originalPlaceholder = element.placeholder || "";
+      const target = elementTarget(element);
+      const originalValue = element.value;
+      const originalType = element instanceof HTMLInputElement ? element.type : "";
+      activeElement = element;
+      activeOriginalValue = originalPlaceholder;
+      selectField(element);
+      element.setAttribute("data-builder-editing", "");
+      // Password inputs must be temporarily unmasked so their placeholder copy is legible in the editor.
+      if (element instanceof HTMLInputElement && originalType === "password") element.type = "text";
+      element.value = originalPlaceholder;
+      element.placeholder = "";
+      element.focus();
+      element.select();
+
+      const cleanup = () => {
+        element.removeEventListener("input", handleInput);
+        element.removeEventListener("blur", handleBlur);
+        element.removeEventListener("keydown", handleKeydown);
+      };
+      const handleInput = () => {
+        const nextPlaceholder = element.value.trim();
+        if (nextPlaceholder === originalPlaceholder.trim()) clearPendingChange(element.dataset.builderField, target);
+        else setPendingChange(element.dataset.builderField, nextPlaceholder, target);
+      };
+      const finish = (commit) => {
+        const nextPlaceholder = element.value.trim();
+        element.value = originalValue;
+        element.placeholder = originalPlaceholder;
+        if (element instanceof HTMLInputElement && originalType === "password") element.type = originalType;
+        element.removeAttribute("data-builder-editing");
+        activeElement = null;
+        activeOriginalValue = "";
+        if (commit && nextPlaceholder !== originalPlaceholder.trim()) {
+          element.placeholder = nextPlaceholder;
+          setPendingChange(element.dataset.builderField, nextPlaceholder, target);
+        } else if (!commit || nextPlaceholder === originalPlaceholder.trim()) {
+          clearPendingChange(element.dataset.builderField, target);
+        }
+      };
+      const handleBlur = () => {
+        cleanup();
+        finish(true);
+      };
+      const handleKeydown = (event) => {
+        if (event.key === "Enter" && !(element instanceof HTMLTextAreaElement && event.shiftKey)) {
+          event.preventDefault();
+          element.blur();
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          cleanup();
+          finish(false);
+        }
+      };
+
+      element.addEventListener("input", handleInput);
+      element.addEventListener("blur", handleBlur);
+      element.addEventListener("keydown", handleKeydown);
+    };
+
+    const updateSeoPreviews = () => {
+      const valueFor = (field) => inspector?.querySelector(`[data-builder-seo-field="${field}"]`)?.value || "";
+      const title = valueFor("seo_title") || "Vera Solaro";
+      const description = valueFor("seo_description");
+      const canonical = valueFor("seo_canonical_path") || "/";
+      const socialTitle = valueFor("og_title") || title;
+      const socialDescription = valueFor("og_description") || description;
+      const searchTitle = inspector?.querySelector("[data-builder-search-title]");
+      const searchDescription = inspector?.querySelector("[data-builder-search-description]");
+      const searchUrl = inspector?.querySelector("[data-builder-search-url]");
+      const socialTitleNode = inspector?.querySelector("[data-builder-social-title]");
+      const socialDescriptionNode = inspector?.querySelector("[data-builder-social-description]");
+      if (searchTitle) searchTitle.textContent = title;
+      if (searchDescription) searchDescription.textContent = description;
+      if (searchUrl) searchUrl.textContent = `example.com${canonical.startsWith("/") ? canonical : `/${canonical}`}`;
+      if (socialTitleNode) socialTitleNode.textContent = socialTitle;
+      if (socialDescriptionNode) socialDescriptionNode.textContent = socialDescription;
+      inspector?.querySelectorAll("[data-builder-counter-for]").forEach((counter) => {
+        const field = counter.dataset.builderCounterFor;
+        counter.textContent = String(valueFor(field).length);
+      });
+    };
+
+    editToggle?.addEventListener("change", () => {
+      if (!isStudioMode() && editToggle.checked) {
+        editToggle.checked = false;
+        enterStudioMode("field");
+        return;
+      }
+      editMode = editToggle.checked;
+      document.body.toggleAttribute("data-builder-edit-mode", editMode);
+      if (editMode) {
+        setMenuOpen(false);
+      }
+      if (!editMode) {
+        selectField(null);
+      }
+      updateDirtyCount();
+    });
+
+    previewToggle?.addEventListener("click", () => {
+      if (isStudioMode()) {
+        exitStudioMode();
+        return;
+      }
+      setMenuOpen(false);
+      selectField(null);
+      closeInspector();
+    });
+
+    const finishEditing = () => {
+      if (dirtyTotal() > 0) {
+        setStatus("unsaved", "Save this draft before closing edit mode.");
+        setDockVisible(true);
+        return false;
+      }
+      editMode = false;
+      if (editToggle) editToggle.checked = false;
+      document.body.removeAttribute("data-builder-edit-mode");
+      selectField(null);
+      closeInspector();
+      setDockVisible(false);
+      setStatus(hasSavedDraft ? "draft" : "idle");
+      return true;
+    };
+
+    launcher?.addEventListener("pointerdown", (event) => {
+      if (!event.isPrimary || event.button !== 0) return;
+      const launcherRect = toolbar.getBoundingClientRect();
+      dragState = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        originLeft: launcherRect.left,
+        originTop: launcherRect.top,
+        moved: false,
+      };
+      launcher.setPointerCapture(event.pointerId);
+    });
+
+    launcher?.addEventListener("pointermove", (event) => {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+      const deltaX = event.clientX - dragState.startX;
+      const deltaY = event.clientY - dragState.startY;
+      if (!dragState.moved && Math.hypot(deltaX, deltaY) < 5) return;
+      dragState.moved = true;
+      suppressLauncherClick = true;
+      toolbar.setAttribute("data-builder-dragging", "");
+      toolbar.setAttribute("data-builder-preview-suppressed", "");
+      setLauncherPosition(dragState.originLeft + deltaX, dragState.originTop + deltaY);
+      event.preventDefault();
+    });
+
+    const finishLauncherDrag = (event) => {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+      const moved = dragState.moved;
+      dragState = null;
+      toolbar.removeAttribute("data-builder-dragging");
+      if (launcher.hasPointerCapture(event.pointerId)) launcher.releasePointerCapture(event.pointerId);
+      if (moved) {
+        launcher.blur();
+        setLauncherPosition(Number.parseFloat(toolbar.style.left), Number.parseFloat(toolbar.style.top), true);
+        const launcherRect = launcher.getBoundingClientRect();
+        const pointerStillOverLauncher =
+          event.clientX >= launcherRect.left &&
+          event.clientX <= launcherRect.right &&
+          event.clientY >= launcherRect.top &&
+          event.clientY <= launcherRect.bottom;
+        if (!pointerStillOverLauncher) toolbar.removeAttribute("data-builder-preview-suppressed");
+        window.setTimeout(() => {
+          suppressLauncherClick = false;
+        }, 0);
+      }
+    };
+
+    const clearLauncherDragPreviewSuppression = () => {
+      if (!dragState) toolbar.removeAttribute("data-builder-preview-suppressed");
+    };
+
+    launcher?.addEventListener("pointerup", finishLauncherDrag);
+    launcher?.addEventListener("pointercancel", finishLauncherDrag);
+    launcher?.addEventListener("lostpointercapture", finishLauncherDrag);
+    launcher?.addEventListener("pointerleave", clearLauncherDragPreviewSuppression);
+
+    const panelIsOpen = (element) => Boolean(element && !element.hidden && !element.hasAttribute("data-builder-closing"));
+
+    const toggleMenu = () => {
+      if (editMode || panelIsOpen(editingDock)) {
+        finishEditing();
+        return;
+      }
+      setMenuOpen(!panelIsOpen(menu));
+    };
+
+    launcher?.addEventListener("click", (event) => {
+      if (suppressLauncherClick) {
+        suppressLauncherClick = false;
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      toggleMenu();
+    });
+    launcherLabel?.addEventListener("click", toggleMenu);
+
+    menuClose?.addEventListener("click", () => setMenuOpen(false));
+
+    document.addEventListener("click", (event) => {
+      if (!menu || menu.hidden) return;
+      if (toolbar.contains(event.target)) return;
+      setMenuOpen(false);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && menu && !menu.hidden) {
+        setMenuOpen(false);
+      }
+    });
+
+    document.addEventListener("mouseover", (event) => {
+      if (!editMode) return;
+      const element = event.target.closest("[data-builder-edit]");
+      if (!element || element === selectedElement) return;
+      if (!editableElement(element)) return;
+      element.setAttribute("data-builder-hovered", "");
+    });
+
+    document.addEventListener("mouseout", (event) => {
+      const element = event.target.closest("[data-builder-edit]");
+      if (!element || element === selectedElement || element === activeElement) return;
+      element.removeAttribute("data-builder-hovered");
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!editMode) return;
+      if (toolbar.contains(event.target) || inspector?.contains(event.target)) return;
+
+      const element = event.target.closest("[data-builder-edit]");
+      if (!element) return;
+      if (!editableElement(element)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      if (placeholderEditableElement(element)) startPlaceholderEdit(element);
+      else startTextEdit(element);
+    });
+
+    const postContentAction = async (target, action, groupedChanges = {}) => {
+      const response = await fetch(toolbar.dataset.builderEndpoint, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "content-type": "application/json",
+          "x-astropages-builder-csrf": toolbar.dataset.builderCsrf || "",
+        },
+        body: JSON.stringify({
+          collection: target.collection,
+          entry: target.entry,
+          locale: target.locale,
+          action,
+          changes: groupedChanges,
+        }),
+      });
+
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        const targetLabel = `${target.collection || "unknown"}/${target.entry || "unknown"}`;
+        const serverMessage = body?.message || body?.error?.message || body?.data?.message;
+        throw new Error(`${targetLabel}: ${serverMessage || `Save failed with HTTP ${response.status}`}`);
+      }
+      return body;
+    };
+
+    const groupedPendingChanges = () => {
+      const groups = new Map();
+      for (const change of Object.values(changes)) {
+        if (!change?.collection || !change?.entry || !change?.field) continue;
+        const target = {
+          collection: change.collection,
+          entry: change.entry,
+          locale: change.locale,
+        };
+        const key = targetKey(target);
+        if (!groups.has(key)) {
+          groups.set(key, {
+            target,
+            changes: {},
+          });
+        }
+        groups.get(key).changes[change.field] = change.value;
+      }
+      return groups;
+    };
+
+    const commitActiveTextEdit = () => {
+      if (!activeElement) return;
+      const element = activeElement;
+      const newValue = (element.textContent || "").trim();
+      if (newValue !== activeOriginalValue.trim()) {
+        setPendingChange(element.dataset.builderField, newValue, elementTarget(element));
+      }
+      element.blur();
+    };
+
+    const submitContent = async (action) => {
+      commitActiveTextEdit();
+      if (action === "saveDraft" && !Object.keys(changes).length) return;
+      if (action === "publish" && (!hasSavedDraft || !canPublish || Object.keys(changes).length)) return;
+      setStatus(action === "publish" ? "publishing" : "saving");
+
+      try {
+        if (action === "saveDraft") {
+          const groups = groupedPendingChanges();
+          for (const group of groups.values()) {
+            await postContentAction(group.target, action, group.changes);
+            savedDraftTargets.set(targetKey(group.target), group.target);
+          }
+          Object.keys(changes).forEach((field) => delete changes[field]);
+        } else {
+          const targets = new Map();
+          savedDraftTargets.forEach((target) => targets.set(targetKey(target), target));
+          for (const target of reviewTargets()) {
+            const draftChanges = await fetchDraftChanges(target);
+            if (draftChanges.length > 0) {
+              targets.set(targetKey(target), target);
+            }
+          }
+          if (targets.size === 0) {
+            throw new Error("No saved draft changes were found to publish.");
+          }
+          for (const target of targets.values()) {
+            await postContentAction(target, action, {});
+          }
+          savedDraftTargets.clear();
+        }
+
+        hasSavedDraft = action === "saveDraft";
+        toolbar.dataset.builderHasSavedDraft = hasSavedDraft ? "true" : "false";
+        setStatus(action === "publish" ? "published" : "draft");
+        if (action === "publish") {
+          draftLoadVersion += 1;
+          renderDraftChanges([]);
+          if (!editMode) {
+            window.setTimeout(() => setDockVisible(false), 900);
+          }
+        } else {
+          setDockVisible(true);
+          loadDraftChanges();
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Save failed";
+        setStatus("error", message);
+      }
+    };
+
+    saveButtons.forEach((button) => {
+      button.addEventListener("click", () => submitContent("saveDraft"));
+    });
+    publishButtons.forEach((button) => {
+      button.addEventListener("click", () => submitContent("publish"));
+    });
+    setPublishEnabled(hasSavedDraft);
+    setReviewEnabled(hasSavedDraft);
+    updateDirtyCount();
+    if (hasSavedDraft) loadDraftChanges();
+
+    seoToggle?.addEventListener("click", () => {
+      if (!isStudioMode()) {
+        enterStudioMode("seo");
+        return;
+      }
+      if (!inspector) return;
+      if (!inspector.hidden && seoToggle.hasAttribute("data-builder-active")) {
+        closeInspector();
+      } else {
+        openInspector("seo");
+        updateSeoPreviews();
+      }
+    });
+
+    reviewButtons.forEach((button) => button.addEventListener("click", () => {
+      if (!isStudioMode()) {
+        enterStudioMode("changes");
+        return;
+      }
+      openInspector("changes");
+    }));
+
+    contentDetails?.addEventListener("click", () => openInspector("field"));
+
+    doneEditing?.addEventListener("click", finishEditing);
+
+    inspectorClose?.addEventListener("click", closeInspector);
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        openInspector(button.dataset.builderTab || "seo");
+        updateSeoPreviews();
+      });
+    });
+
+    inspector?.querySelectorAll("[data-builder-seo-field]").forEach((field) => {
+      field.addEventListener("input", () => {
+        setPendingChange(field.dataset.builderSeoField, field.value || "");
+        updateSeoPreviews();
+      });
+      field.addEventListener("change", () => {
+        setPendingChange(field.dataset.builderSeoField, field.value || "");
+        updateSeoPreviews();
+      });
+    });
+
+    window.addEventListener("resize", () => {
+      if (toolbar.style.left && toolbar.style.top) {
+        setLauncherPosition(Number.parseFloat(toolbar.style.left), Number.parseFloat(toolbar.style.top));
+      } else {
+        positionOpenPanels();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      if (activeElement) return;
+      if (inspector && !inspector.hidden) {
+        closeInspector();
+      }
+    });
+
+    restoreLauncherPosition();
+    updateSeoPreviews();
+    const pendingTab = window.sessionStorage.getItem(pendingTabKey);
+    if (pendingTab && isStudioMode()) {
+      window.sessionStorage.removeItem(pendingTabKey);
+      if (pendingTab === "field" && editToggle) {
+        setMenuOpen(false);
+        editToggle.checked = true;
+        editMode = true;
+        document.body.setAttribute("data-builder-edit-mode", "");
+        setDockVisible(true);
+        updateDirtyCount();
+      } else {
+        setMenuOpen(true);
+        openInspector(pendingTab);
+      }
+    }
+  })();
+</script>

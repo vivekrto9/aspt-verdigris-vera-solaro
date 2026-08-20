@@ -1,0 +1,26 @@
+---
+import logoAssetUrl from "../../../astropages/assets/logo.svg?url";
+
+type Edit = (field: string) => Record<string, unknown>;
+
+const {
+  alt,
+  field,
+  edit,
+  class: className = "",
+} = Astro.props as {
+  alt: string;
+  field?: string;
+  edit?: Edit;
+  class?: string;
+};
+
+const editAttrs = field && edit ? edit(field) : {};
+const logoSrc = import.meta.env.DEV ? logoAssetUrl : "/_assets/aliases/logo/logo.svg";
+---
+
+<figure class:list={["vera-brand-mark", className]}>
+  <img data-vera-brand-logo src={logoSrc} alt={alt} width="260" height="64" />
+  <span class="vera-brand-fallback" data-vera-brand-fallback hidden aria-hidden="true">{alt}</span>
+  <figcaption class="vera-visually-hidden" {...editAttrs}>{alt}</figcaption>
+</figure>

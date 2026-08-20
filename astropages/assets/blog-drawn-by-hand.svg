@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720" role="img" aria-label="A brass compass drawing a chart wheel on ruled paper">
+  <defs>
+    <pattern id="dh-dots" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="1.7" fill="#0b3026" opacity=".16"/>
+    </pattern>
+    <pattern id="dh-rule" width="1200" height="44" patternUnits="userSpaceOnUse">
+      <path d="M0 43.5 H1200" stroke="#a9b9ac" stroke-width="2" opacity=".7"/>
+    </pattern>
+    <clipPath id="dh-frame"><rect width="1200" height="720"/></clipPath>
+  </defs>
+  <g clip-path="url(#dh-frame)">
+    <rect width="1200" height="720" fill="#e6ebdf"/>
+    <rect width="1200" height="720" fill="url(#dh-rule)"/>
+    <path d="M0 0 L1200 0 L1200 200 Q600 320 0 190 Z" fill="#d8ded2"/>
+    <path d="M0 190 Q600 320 1200 200" fill="none" stroke="#0b3026" stroke-width="6"/>
+    <g transform="translate(470 400)">
+      <circle r="252" fill="#f1f3ec" stroke="#0b3026" stroke-width="9"/>
+      <circle r="196" fill="none" stroke="#0b3026" stroke-width="5"/>
+      <circle r="96" fill="#7fcbb1" stroke="#0b3026" stroke-width="7"/>
+      <g stroke="#0b3026" stroke-width="4" opacity=".85">
+        <path d="M-252 0 H252 M0 -252 V252"/>
+        <g id="dh-spoke"><path d="M0 0 L218 126"/></g>
+        <use href="#dh-spoke" transform="rotate(60)"/>
+        <use href="#dh-spoke" transform="rotate(120)"/>
+        <use href="#dh-spoke" transform="rotate(180)"/>
+        <use href="#dh-spoke" transform="rotate(240)"/>
+        <use href="#dh-spoke" transform="rotate(300)"/>
+      </g>
+      <g fill="#9d2c60">
+        <circle cx="0" cy="-224" r="9"/><circle cx="194" cy="-112" r="9"/><circle cx="194" cy="112" r="9"/>
+        <circle cx="0" cy="224" r="9"/><circle cx="-194" cy="112" r="9"/><circle cx="-194" cy="-112" r="9"/>
+      </g>
+      <g fill="none" stroke="#9d2c60" stroke-width="6" stroke-linejoin="round">
+        <path d="M-70 -46 L64 34 L-24 78 Z"/>
+      </g>
+      <circle r="14" fill="#0b3026"/>
+      <path d="M-252 0 A252 252 0 0 1 178 -178" fill="none" stroke="#3e8c77" stroke-width="12" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(690 168) rotate(14)">
+      <path d="M0 0 L-128 452" stroke="#0b3026" stroke-width="26" stroke-linecap="round"/>
+      <path d="M0 0 L-128 452" stroke="#7fcbb1" stroke-width="14" stroke-linecap="round"/>
+      <path d="M0 0 L152 436" stroke="#0b3026" stroke-width="26" stroke-linecap="round"/>
+      <path d="M0 0 L152 436" stroke="#7fcbb1" stroke-width="14" stroke-linecap="round"/>
+      <path d="M152 436 L168 492" stroke="#0b3026" stroke-width="14" stroke-linecap="round"/>
+      <path d="M-128 452 L-140 500" stroke="#0b3026" stroke-width="16" stroke-linecap="round"/>
+      <circle cx="0" cy="0" r="30" fill="#9d2c60" stroke="#0b3026" stroke-width="9"/>
+      <path d="M0 -30 v-58" stroke="#0b3026" stroke-width="16" stroke-linecap="round"/>
+      <circle cx="0" cy="-96" r="16" fill="#082b22" stroke="#0b3026" stroke-width="7"/>
+    </g>
+    <path d="M1010 66 C1020 130 1046 156 1110 166 C1046 176 1020 202 1010 266 C1000 202 974 176 910 166 C974 156 1000 130 1010 66 Z"
+          fill="#9d2c60" stroke="#0b3026" stroke-width="5" stroke-linejoin="round"/>
+    <rect width="1200" height="720" fill="url(#dh-dots)"/>
+    <rect x="10" y="10" width="1180" height="700" fill="none" stroke="#0b3026" stroke-width="6" opacity=".25"/>
+  </g>
+</svg>

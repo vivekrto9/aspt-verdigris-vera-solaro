@@ -1,0 +1,151 @@
+{
+  "contractVersion": "transactional-email.v1",
+  "runtimeTable": "ap_email_templates",
+  "previewMode": "active-row",
+  "dispatchMode": "event-locale",
+  "eventsTable": "ap_email_events",
+  "variableMappingsTable": "ap_email_variable_mappings",
+  "mcpPath": "/_emdash/api/mcp",
+  "templates": [
+    {
+      "key": "customer_welcome_en",
+      "displayName": "Customer welcome",
+      "eventType": "customer.welcome",
+      "audience": "customer",
+      "locale": "en",
+      "variables": [
+        "customerName",
+        "accountUrl"
+      ]
+    },
+    {
+      "key": "customer_password_reset_en",
+      "displayName": "Customer password reset",
+      "eventType": "customer.password_reset",
+      "audience": "customer",
+      "locale": "en",
+      "variables": [
+        "customerName",
+        "resetUrl"
+      ]
+    },
+    {
+      "key": "vera_receipt_en",
+      "displayName": "Vera receipt",
+      "eventType": "vera.receipt.issued",
+      "audience": "customer",
+      "locale": "en",
+      "variables": [
+        "customerName",
+        "bookingNumber",
+        "serviceName",
+        "scheduledDateTime",
+        "priceAmount",
+        "paidAmount",
+        "balanceAmount",
+        "accountUrl"
+      ]
+    },
+    {
+      "key": "vera_booking_confirmed_en",
+      "displayName": "Vera booking confirmed",
+      "eventType": "vera.booking.confirmed",
+      "audience": "customer",
+      "locale": "en",
+      "variables": ["customerName", "bookingNumber", "serviceName", "scheduledDateTime", "confirmationUrl"]
+    },
+    {
+      "key": "vera_booking_action_required_en",
+      "displayName": "Vera scheduling action required",
+      "eventType": "vera.booking.scheduling_action_required",
+      "audience": "customer",
+      "locale": "en",
+      "variables": ["customerName", "bookingNumber", "serviceName", "selectedSlot", "confirmationUrl"]
+    },
+    {
+      "key": "vera_booking_rescheduled_en",
+      "displayName": "Vera booking rescheduled",
+      "eventType": "vera.booking.rescheduled",
+      "audience": "customer",
+      "locale": "en",
+      "variables": ["customerName", "bookingNumber", "serviceName", "scheduledDateTime", "accountUrl"]
+    },
+    {
+      "key": "vera_booking_cancelled_en",
+      "displayName": "Vera booking cancelled",
+      "eventType": "vera.booking.cancelled",
+      "audience": "customer",
+      "locale": "en",
+      "variables": ["customerName", "bookingNumber", "serviceName", "accountUrl"]
+    },
+    {
+      "key": "vera_gift_issued_en",
+      "displayName": "Vera gift certificate",
+      "eventType": "vera.gift.issued",
+      "audience": "customer",
+      "locale": "en",
+      "variables": ["customerName", "giftAmount", "giftCode", "siteUrl"]
+    },
+    {
+      "key": "vera_newsletter_confirm_en",
+      "displayName": "Vera newsletter confirmation",
+      "eventType": "vera.newsletter.confirm",
+      "audience": "subscriber",
+      "locale": "en",
+      "variables": ["customerName", "confirmationUrl"]
+    },
+    {
+      "key": "vera_newsletter_dispatch_en",
+      "displayName": "Vera newsletter dispatch",
+      "eventType": "vera.newsletter.dispatch",
+      "audience": "subscriber",
+      "locale": "en",
+      "variables": ["customerName", "campaignSubject", "campaignBody", "unsubscribeUrl"]
+    },
+    {
+      "key": "vera_balance_reminder_en",
+      "displayName": "Vera balance reminder",
+      "eventType": "vera.booking.balance_reminder",
+      "audience": "customer",
+      "locale": "en",
+      "variables": ["customerName", "bookingNumber", "balanceAmount", "accountUrl"]
+    },
+    {
+      "key": "vera_intake_reminder_en",
+      "displayName": "Vera intake reminder",
+      "eventType": "vera.booking.intake_reminder",
+      "audience": "customer",
+      "locale": "en",
+      "variables": ["customerName", "bookingNumber", "scheduledDateTime", "accountUrl"]
+    },
+    {
+      "key": "vera_session_reminder_en",
+      "displayName": "Vera session reminder",
+      "eventType": "vera.booking.session_reminder",
+      "audience": "customer",
+      "locale": "en",
+      "variables": ["customerName", "serviceName", "scheduledDateTime", "meetingDetails", "accountUrl"]
+    },
+    {
+      "key": "vera_post_session_en",
+      "displayName": "Vera post-session follow-up",
+      "eventType": "vera.booking.post_session",
+      "audience": "customer",
+      "locale": "en",
+      "variables": ["customerName", "serviceName", "accountUrl"]
+    },
+    {
+      "key": "vera_report_ready_en",
+      "displayName": "Vera private report ready",
+      "eventType": "vera.report.ready",
+      "audience": "customer",
+      "locale": "en",
+      "variables": ["customerName", "reportTitle", "accountUrl"]
+    }
+  ],
+  "safeVariableSources": [
+    "event.payload",
+    "business.notificationSettings",
+    "generatedSite.urls"
+  ]
+}

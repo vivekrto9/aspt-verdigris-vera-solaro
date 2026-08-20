@@ -1,0 +1,165 @@
+---
+import { loadPublicPageContent } from "../builder/public-page.ts";
+import VeraFrame from "../components/vera/VeraFrame.astro";
+import VeraImage from "../components/vera/VeraImage.astro";
+import { blogImageAt, getBlogLocale, listBlogCategories, listBlogPosts } from "../data/blog-posts.ts";
+
+export const prerender = false;
+
+const page = await loadPublicPageContent(Astro, "writing");
+const { content, builderEdit } = page;
+const locale = getBlogLocale(Astro.request.url);
+const { posts } = await listBlogPosts(locale);
+const categories = listBlogCategories(posts);
+const [featured, ...rest] = posts;
+const featuredImage = featured ? blogImageAt(featured, 0) : undefined;
+const fill = (template: string, count: number) => (template ?? "").replace("{{ count }}", String(count));
+---
+
+<VeraFrame {...page} currentPath="/writing">
+  <section class="vera-page-hero vera-writing-hero">
+    <div class="vera-writing-hero__intro">
+      <p class="vera-eyebrow" {...builderEdit("writing_eyebrow")}>{content.writing_eyebrow}</p>
+      <h1 class="vera-display" {...builderEdit("writing_title")}>{content.writing_title}</h1>
+      <p class="vera-lede" {...builderEdit("writing_intro")}>{content.writing_intro}</p>
+    </div>
+    <p class="vera-writing-hero__meta">
+      <span {...builderEdit("writing_meta_count")}>{fill(content.writing_meta_count, posts.length)}</span><br />
+      <span {...builderEdit("writing_meta_note")}>{content.writing_meta_note}</span>
+    </p>
+    {
+      posts.length > 0 ? (
+        <div class="vera-filter-pills" data-writing-filters>
+          <button class="vera-pill" type="button" aria-pressed="true" data-writing-filter="all" {...builderEdit("category_all")}>
+            {content.category_all}
+          </button>
+          {categories.map((category) => (
+            <button class="vera-pill" type="button" aria-pressed="false" data-writing-filter={category.slug}>
+              {category.label}
+            </button>
+          ))}
+          <span
+            class="vera-card-meta"
+            style="align-self: center"
+            data-writing-count
+            data-total={posts.length}
+            data-filtered-template={content.count_filtered_template}
+            {...builderEdit("count_label")}
+          >
+            {fill(content.count_label, posts.length)}
+          </span>
+        </div>
+      ) : null
+    }
+  </section>
+
+  {
+    featured ? (
+      <section
+        class="vera-section vera-section--sand"
+        data-writing-item
+        data-writing-featured
+        data-category={featured.categorySlug}
+      >
+        <a class="vera-page-hero--split" href={featured.href} style="color: inherit; text-decoration: none">
+          <VeraImage
+            src={featuredImage?.src}
+            alt={featuredImage?.alt || featured.title}
+            class="vera-writing-featured-image"
+            eager
+          />
+          <div>
+            <div class="vera-card-badge vera-writing-featured-badge" {...builderEdit("featured_badge")}>
+              {content.featured_badge}
+            </div>
+            <div class="vera-card-meta">{featured.meta}</div>
+            <h2 class="vera-heading" style="color: var(--vera-burnt); margin-top: 10px">{featured.title}</h2>
+            <p class="vera-lede">{featured.excerpt}</p>
+            <div class="vera-card-meta" style="color: var(--vera-burnt); margin-top: 22px" {...builderEdit("featured_cta")}>
+              {content.featured_cta}
+            </div>
+          </div>
+        </a>
+      </section>
+    ) : null
+  }
+
+  {
+    rest.length > 0 ? (
+      <section class="vera-section vera-section--paper" data-writing-list>
+        <ol class="vera-list">
+          {rest.map((post, index) => (
+            <li data-writing-item data-category={post.categorySlug}>
+              <a class="vera-list-item" href={post.href} style="color: inherit; text-decoration: none">
+                <span class="vera-list-item__number" data-writing-number>
+                  {String(index + 2).padStart(2, "0")}
+                </span>
+                <div>
+                  <h2>{post.title}</h2>
+                  <p>{post.excerpt}</p>
+                </div>
+                <div class="vera-list-item__category">{post.category}</div>
+                <div class="vera-list-item__meta">
+                  {[post.readTime, post.publishedLabel].filter(Boolean).join(" · ")}
+                </div>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+    ) : null
+  }
+
+  {
+    posts.length === 0 ? (
+      <section class="vera-section vera-section--paper">
+        <div class="vera-info-card" role="status">
+          <div>
+            <h2 {...builderEdit("writing_empty_title")}>{content.writing_empty_title}</h2>
+            <p {...builderEdit("writing_empty_body")}>{content.writing_empty_body}</p>
+          </div>
+        </div>
+      </section>
+    ) : null
+  }
+</VeraFrame>
+
+<script>
+  const filterButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-writing-filter]"));
+  const writingItems = Array.from(document.querySelectorAll<HTMLElement>("[data-writing-item]"));
+  const writingCount = document.querySelector<HTMLElement>("[data-writing-count]");
+  const writingList = document.querySelector<HTMLElement>("[data-writing-list]");
+  const updateWritingCount = (selected = "all") => {
+    const visible = writingItems.filter((item) => !item.hidden);
+    if (writingCount) {
+      writingCount.textContent = selected === "all"
+        ? writingCount.getAttribute("data-astropages-default") || writingCount.textContent
+        : (writingCount.dataset.filteredTemplate || "")
+            .replace("{{ shown }}", String(visible.length))
+            .replace("{{ count }}", writingCount.dataset.total || String(writingItems.length));
+    }
+    // A filter can leave every listed piece hidden (the only match being the featured one).
+    // The section keeps its full band of padding when that happens, so collapse it too.
+    if (writingList) {
+      writingList.hidden = !visible.some((item) => !item.hasAttribute("data-writing-featured"));
+    }
+    let number = visible.some((item) => item.hasAttribute("data-writing-featured")) ? 1 : 0;
+    visible.forEach((item) => {
+      if (item.hasAttribute("data-writing-featured")) return;
+      number += 1;
+      const numberNode = item.querySelector<HTMLElement>("[data-writing-number]");
+      if (numberNode) numberNode.textContent = String(number).padStart(2, "0");
+    });
+  };
+  if (writingCount) writingCount.setAttribute("data-astropages-default", writingCount.textContent || "");
+  filterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const selected = button.dataset.writingFilter;
+      filterButtons.forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+      writingItems.forEach((item) => {
+        item.hidden = selected !== "all" && item.dataset.category !== selected;
+      });
+      updateWritingCount(selected);
+    });
+  });
+</script>
