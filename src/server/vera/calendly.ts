@@ -73,16 +73,11 @@ export const validateCalendlyMapping = async ({
     return { ok: false as const, status: response.status, message: sanitizeProviderError(response.status, payload), missingSecretNames: [] };
   }
   const resource = parseObject(payload.resource || payload);
-  // A shared event type serves sittings of different lengths, so the exact
-  // duration is only demanded when the caller maps one event type per sitting.
-  const durationRequired = durationMinutes > 0;
-  if (resource.active !== true || (durationRequired && Number(resource.duration) !== durationMinutes)) {
+  if (resource.active !== true || Number(resource.duration) !== durationMinutes) {
     return {
       ok: false as const,
       status: 409,
-      message: durationRequired
-        ? `Calendly event type must be active and exactly ${durationMinutes} minutes.`
-        : "Calendly event type must be active.",
+      message: `Calendly event type must be active and exactly ${durationMinutes} minutes.`,
       missingSecretNames: [],
     };
   }

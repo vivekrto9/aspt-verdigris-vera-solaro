@@ -64,6 +64,7 @@ export const runtimeContract = {
     "POSTHOG_PROJECT_ID",
     "CALENDLY_API_TOKEN",
     "CALENDLY_WEBHOOK_SIGNING_KEY",
+    "CALENDLY_30_MIN_EVENT_TYPE_URI",
     "GOOGLE_PLACES_API_KEY",
   ],
   publicRuntimeVarNames: [],

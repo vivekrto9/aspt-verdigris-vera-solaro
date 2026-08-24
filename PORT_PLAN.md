@@ -9,7 +9,7 @@ Env/secret names come from `.dev.vars` (base-template naming) — no invented na
 | Concern | .dev.vars / base template | Vera today | Action |
 |---|---|---|---|
 | Google Places | ASTROPAGES_PLATFORM_GOOGLE_PLACES_GOOGLE_PLACES_API_KEY | ASTROPAGES_PLATFORM_GOOGLE_PLACES_API_KEY | DONE (alias) → make canonical |
-| Calendly event type | CALENDLY_30_MIN_EVENT_TYPE_URI | VERA_CALENDLY_<SERVICE>_<MODE>_URI ×6 | DONE (fallback) → make canonical, drop VERA_* |
+| Calendly event type | CALENDLY_30_MIN_EVENT_TYPE_URI | CALENDLY_30_MIN_EVENT_TYPE_URI | DONE (canonical) |
 | Payment provider | PAYMENT_PROVIDER | absent (Stripe hardcoded) | ADD |
 | Razorpay | RAZORPAY_KEY_ID / _KEY_SECRET / _WEBHOOK_SECRET | absent | ADD |
 | Stripe | STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET | same | OK |

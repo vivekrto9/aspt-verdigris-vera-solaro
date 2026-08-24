@@ -78,18 +78,13 @@ After migrations, the control plane must configure these non-secret values in
 the existing D1 runtime configuration/operations surface:
 
 - `STRIPE_PUBLISHABLE_KEY`
-- `VERA_CALENDLY_NATAL_HOUR_CALL_URI`
-- `VERA_CALENDLY_NATAL_HOUR_IN_PERSON_URI`
-- `VERA_CALENDLY_YEAR_AHEAD_CALL_URI`
-- `VERA_CALENDLY_YEAR_AHEAD_IN_PERSON_URI`
-- `VERA_CALENDLY_TWO_CHARTS_CALL_URI`
-- `VERA_CALENDLY_TWO_CHARTS_IN_PERSON_URI`
+- `CALENDLY_30_MIN_EVENT_TYPE_URI`
 - `SES_SENDER_EMAIL`, `SES_SENDER_NAME`, and `AWS_REGION`
 - `POSTHOG_PROJECT_API_KEY`, `POSTHOG_HOST`, and `POSTHOG_PROJECT_ID` when
   consented analytics is enabled
 
-Calendly mapping updates validate all six event types and their service
-durations before activation. `PUBLIC_STRIPE_PUBLISHABLE_KEY` is only the
+Calendly configuration validates that the shared provider event is active and
+exactly 30 minutes before activation. `PUBLIC_STRIPE_PUBLISHABLE_KEY` is only the
 local/template fallback; generated sites use the D1 `STRIPE_PUBLISHABLE_KEY`.
 
 Launch readiness also verifies active provider-side webhook registrations for

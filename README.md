@@ -18,8 +18,8 @@ Included runtime:
 - Runtime config sync and D1 cache.
 - Customer signup, login, password recovery, protected account data, reports,
   files, invoices, and message threads.
-- The three source-defined Vera readings, with separate call and in-person
-  Calendly mappings for every service.
+- The three source-defined Vera readings, all call-only and backed by one
+  canonical 30-minute Calendly event.
 - Server-authoritative availability, twelve-minute D1 slot holds, encrypted
   intake data, Stripe PaymentIntents, signed webhooks, refunds, invoices, and
   Calendly invitee reconciliation.
@@ -110,8 +110,8 @@ See [`LEADS.md`](LEADS.md) for the canonical lead-linking, privacy, and local-ve
 Configure values through the existing runtime and secrets contracts; do not add
 parallel sidecar manifests.
 
-- Add six active Calendly event-type URIs: three readings multiplied by call and
-  in-person modes. Each provider duration must match its Vera service.
+- Configure `CALENDLY_30_MIN_EVENT_TYPE_URI` with one active 30-minute Calendly
+  event type shared by all three readings.
 - Sync the public Stripe publishable key through runtime config and store the
   Stripe secret/webhook values through the existing secrets manifest.
 - Configure SES sender settings plus AWS credentials, and provision both the

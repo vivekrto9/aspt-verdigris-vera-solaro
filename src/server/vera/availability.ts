@@ -69,7 +69,7 @@ export const listVeraAvailability = async ({
       ok: false as const,
       status: 503,
       message: "Calendly is not mapped for this sitting.",
-      missingSecretNames: ["VERA_CALENDLY_EVENT_TYPE_URI"],
+      missingSecretNames: ["CALENDLY_30_MIN_EVENT_TYPE_URI"],
     };
   }
   const cacheKey = `vera:availability:${await sha256Hex([

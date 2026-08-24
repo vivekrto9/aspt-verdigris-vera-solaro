@@ -71,6 +71,7 @@ test("deployment docs enumerate only Vera's wired provider configuration", () =>
     "STRIPE_PUBLISHABLE_KEY",
     "CALENDLY_API_TOKEN",
     "CALENDLY_WEBHOOK_SIGNING_KEY",
+    "CALENDLY_30_MIN_EVENT_TYPE_URI",
     "SES_SENDER_EMAIL",
     "SES_SENDER_NAME",
     "AWS_REGION",

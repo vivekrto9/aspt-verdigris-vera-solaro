@@ -5,14 +5,7 @@ import {
   resolveSecretBinding,
 } from "../aggregator/runtime-bindings.ts";
 import {
-  calendlyRuntimeKey,
-  normalizeVeraServiceSlug,
-  VERA_MODES,
   SHARED_CALENDLY_RUNTIME_KEY,
-  resolveCalendlyUri,
-  VERA_SERVICE_SLUGS,
-  type VeraMode,
-  type VeraServiceSlug,
 } from "./catalog.ts";
 import {
   listCalendlyStaffReconciliations as listCalendlyStaffReconciliationsInternal,
@@ -57,8 +50,8 @@ const calendlyWebhookEvents = ["invitee.created", "invitee.canceled"] as const;
 
 const expectedServices = new Map<string, { name: string; durationMinutes: number; priceCents: number }>([
   ["natal-hour", { name: "The Natal Hour", durationMinutes: 30, priceCents: 24_000 }],
-  ["year-ahead", { name: "The Year Ahead", durationMinutes: 120, priceCents: 38_500 }],
-  ["two-charts", { name: "Two Charts", durationMinutes: 120, priceCents: 42_000 }],
+  ["year-ahead", { name: "The Year Ahead", durationMinutes: 30, priceCents: 38_500 }],
+  ["two-charts", { name: "Two Charts", durationMinutes: 30, priceCents: 42_000 }],
 ]);
 
 const callable = (value: unknown, method: string) =>
@@ -363,20 +356,14 @@ const webhookSetupFingerprint = async ({
   calendlyEvents: calendlyWebhookEvents,
 }));
 
-const validateLiveCalendlyMappings = async ({
+const validateLiveCalendlyMapping = async ({
   env,
-  mappings,
-  durationByService,
+  eventTypeUri,
 }: {
   env: VeraEnv;
-  mappings: Array<{ serviceSlug: string; eventTypeUri: string; sharedEventType?: boolean }>;
-  durationByService: Map<string, number>;
+  eventTypeUri: string;
 }) => {
-  const fingerprint = await sha256Hex(JSON.stringify(mappings.map((mapping) => [
-    mapping.serviceSlug,
-    mapping.eventTypeUri,
-    mapping.sharedEventType ? 0 : durationByService.get(mapping.serviceSlug) || 0,
-  ])));
+  const fingerprint = await sha256Hex(eventTypeUri);
   const cacheKey = `vera:readiness:calendly:${fingerprint}`;
   const cache = env.SESSION as {
     get?: (key: string) => Promise<string | null> | string | null;
@@ -389,23 +376,14 @@ const validateLiveCalendlyMappings = async ({
         ready: cached === "ready",
         checked: true,
         source: "cache",
-        checkedMappings: mappings.length,
+        checkedMappings: 1,
       };
     }
   } catch {
     // A KV read failure must not make stale validation evidence authoritative.
   }
-  const validations = await Promise.all(mappings.map((mapping) =>
-    validateCalendlyMapping({
-      env,
-      eventTypeUri: mapping.eventTypeUri,
-      durationMinutes: mapping.sharedEventType
-        ? 0
-        : durationByService.get(mapping.serviceSlug) || 0,
-    })
-  ));
-  const ready = validations.length === VERA_SERVICE_SLUGS.length &&
-    validations.every((result) => result.ok);
+  const validation = await validateCalendlyMapping({ env, eventTypeUri, durationMinutes: 30 });
+  const ready = validation.ok;
   try {
     await cache?.put?.(cacheKey, ready ? "ready" : "blocked", {
       expirationTtl: ready ? 300 : 60,
@@ -413,22 +391,19 @@ const validateLiveCalendlyMappings = async ({
   } catch {
     // Validation still remains authoritative for this response when cache storage fails.
   }
-  return { ready, checked: true, source: "provider", checkedMappings: validations.length };
+  return { ready, checked: true, source: "provider", checkedMappings: 1 };
 };
 
 export const listVeraOperationsReadiness = async (env: VeraEnv) => {
   const generated = Boolean(safeString(env.ASTROPAGES_PROJECT_ID));
   const environment = safeString(env.ASTROPAGES_SITE_ENVIRONMENT) || (generated ? "generated" : "local");
   let services: Record<string, unknown>[] = [];
-  let mappings: Record<string, unknown>[] = [];
   let runtime: Record<string, unknown>[] = [];
   let schemaReady = false;
   try {
-    [services, mappings, runtime] = await Promise.all([
+    [services, runtime] = await Promise.all([
       all(env, `SELECT slug, name, duration_minutes, price_cents, currency, active, sort_order
         FROM ${tables.services} ORDER BY sort_order`),
-      all(env, `SELECT service_slug, mode, event_type_uri, active, updated_at
-        FROM ${tables.calendlyMappings} ORDER BY service_slug, mode`),
       all(env, `SELECT key, value, status, updated_at FROM ap_runtime_config
         WHERE status = 'active' ORDER BY key`),
     ]);
@@ -439,36 +414,13 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
   const runtimeMap = new Map(runtime.map((row) => [safeString(row.key), safeString(row.value)]));
   const runtimeValue = (key: string) => runtimeMap.get(key) || (!generated ? safeString(env[key]) : "");
   const sharedCalendlyUri = runtimeValue(SHARED_CALENDLY_RUNTIME_KEY);
-  const resolved = mappings.filter((row) => safeString(row.mode) === "call").map((row) => {
-    const perService = runtimeMap.get(calendlyRuntimeKey(
-      safeString(row.service_slug) as VeraServiceSlug,
-      safeString(row.mode) as VeraMode,
-    ));
-    return {
-      serviceSlug: safeString(row.service_slug),
-      mode: safeString(row.mode),
-      eventTypeUri: resolveCalendlyUri({
-        perService,
-        shared: sharedCalendlyUri,
-        rowValue: safeString(row.event_type_uri),
-      }),
-      // Only a sitting with its own event type is held to that sitting's length.
-      sharedEventType: !safeString(perService) && Boolean(sharedCalendlyUri),
-      active: Number(row.active) === 1,
-      updatedAt: safeString(row.updated_at),
-    };
-  });
-  // Sittings are booked one way now, so only the call mapping has to be live.
-  const expectedMappingKeys = new Set(
-    VERA_SERVICE_SLUGS.map((serviceSlug) => `${serviceSlug}:call`),
-  );
-  const actualMappingKeys = new Set(resolved.map((row) => `${row.serviceSlug}:${row.mode}`));
-  const calendlyRuntimeKeys = VERA_SERVICE_SLUGS.map((serviceSlug) =>
-    calendlyRuntimeKey(serviceSlug, "call")
-  );
-  const calendlyReady = schemaReady && resolved.length === expectedMappingKeys.size &&
-    [...expectedMappingKeys].every((key) => actualMappingKeys.has(key)) &&
-    resolved.every((row) => row.active && calendlyUriPattern.test(row.eventTypeUri));
+  const resolved = sharedCalendlyUri ? [{
+    serviceSlug: "all",
+    mode: "call",
+    eventTypeUri: sharedCalendlyUri,
+    active: true,
+  }] : [];
+  const calendlyReady = schemaReady && calendlyUriPattern.test(sharedCalendlyUri);
   const servicesReady = schemaReady && services.length === expectedServices.size && services.every((row) => {
     const expected = expectedServices.get(safeString(row.slug));
     return Boolean(
@@ -534,7 +486,7 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
 
   const runtimeRequirements = [
     "STRIPE_PUBLISHABLE_KEY",
-    ...calendlyRuntimeKeys,
+    SHARED_CALENDLY_RUNTIME_KEY,
     "SES_SENDER_EMAIL",
     "SES_SENDER_NAME",
     "AWS_REGION",
@@ -558,11 +510,7 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
   const origin = siteOrigin(env, generated);
   const stripeConfigured = Boolean(runtimeValue("STRIPE_PUBLISHABLE_KEY") && stripeSecretKey && stripeWebhookSecret);
   const calendlyLiveValidation = calendlyReady && calendlyApiToken
-    ? await validateLiveCalendlyMappings({
-      env,
-      mappings: resolved,
-      durationByService: new Map(services.map((row) => [safeString(row.slug), Number(row.duration_minutes)])),
-    })
+    ? await validateLiveCalendlyMapping({ env, eventTypeUri: sharedCalendlyUri })
     : { ready: false, checked: false, source: "not-run", checkedMappings: 0 };
   const [stripeWebhookRegistration, calendlyWebhookRegistration] = await Promise.all([
     stripeConfigured && origin
@@ -753,55 +701,25 @@ export const replaceVeraCalendlyMappings = async (
   env: VeraEnv,
   input: Record<string, unknown>,
 ) => {
-  const values = Array.isArray(input.mappings) ? input.mappings : [];
-  if (values.length !== 6) {
-    return { ok: false as const, status: 400, message: "All six service and format Calendly mappings are required." };
+  const eventTypeUri = safeString(input.eventTypeUri);
+  if (!calendlyUriPattern.test(eventTypeUri)) {
+    return { ok: false as const, status: 400, message: "The shared 30-minute Calendly event type URI is invalid." };
   }
-  const normalized = values.map((entry) => {
-    const row = entry && typeof entry === "object" && !Array.isArray(entry)
-      ? entry as Record<string, unknown>
-      : {};
-    return {
-      serviceSlug: normalizeVeraServiceSlug(row.serviceSlug),
-      mode: safeString(row.mode) as VeraMode,
-      eventTypeUri: safeString(row.eventTypeUri),
-    };
-  });
-  const expected = new Set(
-    VERA_SERVICE_SLUGS.flatMap((slug) => VERA_MODES.map((mode) => `${slug}:${mode}`)),
-  );
-  const actual = new Set(normalized.map((row) => `${row.serviceSlug}:${row.mode}`));
-  if (
-    actual.size !== 6 || [...expected].some((key) => !actual.has(key)) ||
-    normalized.some((row) => !calendlyUriPattern.test(row.eventTypeUri))
-  ) {
-    return { ok: false as const, status: 400, message: "Calendly mapping matrix is invalid." };
-  }
-  const services = await all(env, `SELECT slug, duration_minutes FROM ${tables.services}`);
-  const durationBySlug = new Map(services.map((row) => [safeString(row.slug), Number(row.duration_minutes)]));
-  const validations = await Promise.all(normalized.map((mapping) =>
-    validateCalendlyMapping({
-      env,
-      eventTypeUri: mapping.eventTypeUri,
-      durationMinutes: durationBySlug.get(mapping.serviceSlug) || 0,
-    })
-  ));
-  const invalid = validations.find((result) => !result.ok);
-  if (invalid && !invalid.ok) return invalid;
+  const validation = await validateCalendlyMapping({ env, eventTypeUri, durationMinutes: 30 });
+  if (!validation.ok) return validation;
   const now = nowIso();
-  await runStatements(env, normalized.flatMap((mapping) => [
+  await runStatements(env, [
     env.DB!.prepare(`UPDATE ${tables.calendlyMappings}
-      SET event_type_uri = ?, active = 1, updated_at = ?
-      WHERE service_slug = ? AND mode = ?`)
-      .bind(mapping.eventTypeUri, now, mapping.serviceSlug, mapping.mode),
+      SET event_type_uri = NULL, active = 0, updated_at = ?`).bind(now),
+    env.DB!.prepare(`DELETE FROM ap_runtime_config WHERE key LIKE 'VERA_CALENDLY_%'`),
     env.DB!.prepare(`INSERT INTO ap_runtime_config
       (key, value, provider_key, scope, status, updated_at)
       VALUES (?, ?, 'calendly', 'site', 'active', ?)
       ON CONFLICT(key) DO UPDATE SET value = excluded.value,
         provider_key = 'calendly', status = 'active', updated_at = excluded.updated_at`)
-      .bind(calendlyRuntimeKey(mapping.serviceSlug as VeraServiceSlug, mapping.mode), mapping.eventTypeUri, now),
-  ]));
-  return { ok: true as const, status: 200, message: "All six Calendly mappings are ready.", data: await listVeraOperationsReadiness(env) };
+      .bind(SHARED_CALENDLY_RUNTIME_KEY, eventTypeUri, now),
+  ]);
+  return { ok: true as const, status: 200, message: "The shared 30-minute Calendly event is ready.", data: await listVeraOperationsReadiness(env) };
 };
 
 export const issueVeraGiftCertificate = async (
