@@ -13,7 +13,7 @@ At the start of every task:
 1. Read the complete request and work package. Identify the environment, locale, requested publication state, acceptance criteria, target branch, protected paths, prohibited operations, and exact test command.
 2. Inspect the current branch and `git status --short`. Preserve unrelated work; never reset, restore, overwrite, reformat, or include changes outside the request.
 3. Trace every visible value from its route to its loader and canonical owner before editing. Matching source text is not proof of ownership.
-4. Read the nearest tests and relevant contracts such as `README.md`, `LEADS.md`, `docs/cloudflare-runtime.md`, and `docs/openhands-playbook.md` when the task touches them.
+4. Read the nearest tests and relevant contracts such as `README.md`, `docs/cloudflare-runtime.md`, and `docs/openhands-playbook.md` when the task touches them.
 5. Make the smallest complete change, validate the canonical store or focused behavior, then run the exact work-package test.
 
 Explicitly selected skills are mandatory. In automatic mode, invoke only genuinely relevant pinned skills and follow their instructions. Project-local `.agents/skills` must never replace or imitate the pinned catalog.
@@ -25,7 +25,7 @@ Explicitly selected skills are mandatory. In automatic mode, invoke only genuine
 | Existing visitor copy, chrome, 404 copy, or SEO | One of the 22 EmDash Builder entries for `en` | Resolve the route through `src/data/vera/content.ts` and `src/builder/registry.ts`, then use the content workflow below; do not hardcode visible copy in a route or component |
 | Customer media | Project Assets | Use the asset workflow and returned `sitePath` |
 | Layout, component, styling, route, schema, or new editable field | Project code and focused tests | Extend the closest current production pattern |
-| Consultation, waitlist, newsletter, contact, or another visitor form | D1 source record plus `leads.v1` linkage | Read `LEADS.md`; keep contact consent, allowlists, dedupe, and conversion evidence |
+| Consultation, waitlist, newsletter, contact, or another visitor form | D1 source record plus `leads.v1` linkage | Keep contact consent, allowlists, dedupe, and conversion evidence |
 | Customer account, session, or password reset | Server-owned D1 auth flow | Preserve hashing, expiry, authorization, cookies, and safe errors |
 | Runtime configuration or a secret | Existing runtime binding or Secret Store contract | Never place values in code, content, logs, or D1 public copy |
 | Transactional email | Generated-site email tools for preview; control plane for production | Follow the email workflow below |

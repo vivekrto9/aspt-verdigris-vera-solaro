@@ -103,8 +103,6 @@ pnpm run build
 
 Run `pnpm run cloudflare:resources:print` to inspect local preview/production resource names.
 
-See [`LEADS.md`](LEADS.md) for the canonical lead-linking, privacy, and local-verification contract.
-
 ## Vera Configuration
 
 Configure values through the existing runtime and secrets contracts; do not add

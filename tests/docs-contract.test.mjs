@@ -11,7 +11,6 @@ const docs = {
   agents: read("AGENTS.md"),
   cloudflare: read("docs/cloudflare-runtime.md"),
   openhands: read("docs/openhands-playbook.md"),
-  leads: read("LEADS.md"),
 };
 
 test("repository docs describe Vera Solaro without stale single-page or legacy catalog guidance", () => {
@@ -28,22 +27,6 @@ test("repository docs describe Vera Solaro without stale single-page or legacy c
   assert.doesNotMatch(publicDocs, /templates\/astropages-base-template\/0\.1\.0\//);
   assert.doesNotMatch(publicDocs, /\b(?:PREVIEW_ASTRAGURU|PROD_ASTRAGURU|ASTROCONNECT)\b/);
   assert.match(docs.readme, /AstroPages Admin owns the semantic version, release notes, and changelog/i);
-});
-
-test("lead documentation is an agent-ready integration reference", () => {
-  assert.match(docs.agents, /LEADS\.md/);
-  assert.match(docs.leads, /leads\.v1/);
-  assert.match(docs.leads, /linkBusinessLead/);
-  assert.match(docs.leads, /linkNewsletterLead/);
-  assert.match(docs.leads, /markLeadConvertedBySourceReference/);
-  for (const source of ["consultation_booking", "waitlist", "newsletter", "contact"]) {
-    assert.match(docs.leads, new RegExp("\\| `" + source + "` \\|"));
-  }
-  assert.match(docs.leads, /sourceReferenceType: "vera_booking"/);
-  assert.match(docs.leads, /pagePath: "\/booking"/);
-  assert.doesNotMatch(docs.leads, /`(?:product_order|puja_order|report_order|support)`/);
-  assert.match(docs.leads, /wrangler d1 execute aspt-verdigris-vera-solaro-site --local/);
-  assert.doesNotMatch(Object.values(docs).join("\n"), /product-interest|Northstar|lead-generation-demo/i);
 });
 
 test("docs keep template and generated-site deploys on callback-token secrets", () => {
