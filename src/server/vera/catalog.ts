@@ -59,7 +59,7 @@ export const listVeraCatalog = async (env: VeraEnv) => {
   };
 };
 
-export const SHARED_CALENDLY_RUNTIME_KEY = "CALENDLY_30_MIN_EVENT_TYPE_URI";
+export const SHARED_CALENDLY_RUNTIME_KEY = "CALENDLY_EVENT_TYPE_URI";
 
 export const getVeraSelection = async (
   env: VeraEnv,

@@ -78,7 +78,7 @@ After migrations, the control plane must configure these non-secret values in
 the existing D1 runtime configuration/operations surface:
 
 - `STRIPE_PUBLISHABLE_KEY`
-- `CALENDLY_30_MIN_EVENT_TYPE_URI`
+- `CALENDLY_EVENT_TYPE_URI`
 - `SES_SENDER_EMAIL`, `SES_SENDER_NAME`, and `AWS_REGION`
 - `POSTHOG_PROJECT_API_KEY`, `POSTHOG_HOST`, and `POSTHOG_PROJECT_ID` when
   consented analytics is enabled

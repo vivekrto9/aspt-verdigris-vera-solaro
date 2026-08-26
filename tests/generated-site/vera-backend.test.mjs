@@ -206,7 +206,7 @@ test("Vera migration establishes the complete authoritative vertical", () => {
   assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM ap_vera_calendly_mappings").get().count, 6);
   assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM ap_vera_calendly_mappings WHERE active = 1").get().count, 0);
   assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM ap_runtime_config WHERE key LIKE 'VERA_CALENDLY_%'").get().count, 0);
-  assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM ap_runtime_config WHERE key = 'CALENDLY_30_MIN_EVENT_TYPE_URI'").get().count, 1);
+  assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM ap_runtime_config WHERE key = 'CALENDLY_EVENT_TYPE_URI'").get().count, 1);
   for (const path of [
     "src/server/vera/catalog.ts",
     "src/server/aggregator/runtime-config.ts",
@@ -216,7 +216,7 @@ test("Vera migration establishes the complete authoritative vertical", () => {
     "docs/cloudflare-runtime.md",
   ]) {
     assert.doesNotMatch(read(path), /VERA_CALENDLY_/);
-    assert.match(read(path), /CALENDLY_30_MIN_EVENT_TYPE_URI/);
+    assert.match(read(path), /CALENDLY_EVENT_TYPE_URI/);
   }
   assert.equal(sqlite.prepare("SELECT value FROM ap_runtime_config WHERE key = 'site.identity'").get().value, "Vera Solaro");
   assert.equal(JSON.parse(sqlite.prepare("SELECT value_json FROM ap_business_settings WHERE key = 'site'").get().value_json).brandName, "Vera Solaro");
@@ -275,7 +275,7 @@ test("Vera price, hold, alias, and reschedule rules are server authoritative", a
 
   const { sqlite, DB } = createDatabase();
   sqlite.prepare("UPDATE ap_runtime_config SET value = ? WHERE key = ?")
-    .run("https://api.calendly.com/event_types/NATALCALL", "CALENDLY_30_MIN_EVENT_TYPE_URI");
+    .run("https://api.calendly.com/event_types/NATALCALL", "CALENDLY_EVENT_TYPE_URI");
   const selection = await getVeraSelection({ DB }, "natal", "call");
   assert.equal(selection.slug, "natal-hour");
   assert.equal(selection.eventTypeUri, "https://api.calendly.com/event_types/NATALCALL");
@@ -319,7 +319,7 @@ test("booking creation rechecks live Calendly and atomically holds every overlap
   const { sqlite, DB } = createDatabase();
   const eventTypeUri = "https://api.calendly.com/event_types/NATALCALL";
   sqlite.prepare("UPDATE ap_runtime_config SET value = ? WHERE key = ?")
-    .run(eventTypeUri, "CALENDLY_30_MIN_EVENT_TYPE_URI");
+    .run(eventTypeUri, "CALENDLY_EVENT_TYPE_URI");
   const startAt = "2030-09-03T10:00:00.000Z";
   const place = await placeSelection({ DB });
   const env = {
@@ -510,7 +510,7 @@ test("unknown birth time accepts only the six source approximations and keeps th
   const { sqlite, DB } = createDatabase();
   const eventTypeUri = "https://api.calendly.com/event_types/NATALCALL";
   sqlite.prepare("UPDATE ap_runtime_config SET value = ? WHERE key = ?")
-    .run(eventTypeUri, "CALENDLY_30_MIN_EVENT_TYPE_URI");
+    .run(eventTypeUri, "CALENDLY_EVENT_TYPE_URI");
   const unknownPlace = await placeSelection({ DB, birthTime: "", birthTimeUnknown: true });
   const knownPlace = await placeSelection({ DB });
   const startAt = "2030-09-03T10:00:00.000Z";
@@ -618,7 +618,7 @@ test("pending quote, custom reschedule, follow-ups, and eligible cancellation st
   const { sqlite, DB } = createDatabase();
   const eventTypeUri = "https://api.calendly.com/event_types/NATALCALL";
   sqlite.prepare("UPDATE ap_runtime_config SET value = ? WHERE key = ?")
-    .run(eventTypeUri, "CALENDLY_30_MIN_EVENT_TYPE_URI");
+    .run(eventTypeUri, "CALENDLY_EVENT_TYPE_URI");
   const oldStartAt = "2030-09-03T10:00:00.000Z";
   const newStartAt = "2030-09-04T10:00:00.000Z";
   const newEndAt = "2030-09-04T10:30:00.000Z";
@@ -1316,7 +1316,7 @@ test("confirmation state machine separates payment verification from scheduling"
 test("public availability rate limiting bounds Calendly calls before provider work", async () => {
   const { sqlite, DB } = createDatabase();
   sqlite.prepare("UPDATE ap_runtime_config SET value = ? WHERE key = ?")
-    .run("https://api.calendly.com/event_types/NATALCALL", "CALENDLY_30_MIN_EVENT_TYPE_URI");
+    .run("https://api.calendly.com/event_types/NATALCALL", "CALENDLY_EVENT_TYPE_URI");
   let providerCalls = 0;
   const availabilityCache = new Map();
   const env = {
@@ -1374,7 +1374,7 @@ test("Vera operations readiness blocks incomplete runtime and reports ready with
 
   const runtimeConfig = new Map([
     ["STRIPE_PUBLISHABLE_KEY", "pk_live_readiness_contract"],
-    ["CALENDLY_30_MIN_EVENT_TYPE_URI", "https://api.calendly.com/event_types/NATALCALL"],
+    ["CALENDLY_EVENT_TYPE_URI", "https://api.calendly.com/event_types/NATALCALL"],
     ["SES_SENDER_EMAIL", "vera@example.test"],
     ["SES_SENDER_NAME", "Vera Solaro"],
     ["AWS_REGION", "eu-west-1"],

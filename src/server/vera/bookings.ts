@@ -205,7 +205,7 @@ export const createVeraBooking = async ({
     return { ok: false as const, status: 400, message: "Select a valid sitting and format." };
   }
   if (!selection.eventTypeUri) {
-    return { ok: false as const, status: 503, message: "Calendly is not configured for 30-minute sittings.", missingSecretNames: ["CALENDLY_30_MIN_EVENT_TYPE_URI"] };
+    return { ok: false as const, status: 503, message: "Calendly is not configured for 30-minute sittings.", missingSecretNames: ["CALENDLY_EVENT_TYPE_URI"] };
   }
   const name = safeString(input.name).slice(0, 120);
   const email = normalizeEmail(input.email);

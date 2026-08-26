@@ -108,7 +108,7 @@ Run `pnpm run cloudflare:resources:print` to inspect local preview/production re
 Configure values through the existing runtime and secrets contracts; do not add
 parallel sidecar manifests.
 
-- Configure `CALENDLY_30_MIN_EVENT_TYPE_URI` with one active 30-minute Calendly
+- Configure `CALENDLY_EVENT_TYPE_URI` with one active 30-minute Calendly
   event type shared by all three readings.
 - Sync the public Stripe publishable key through runtime config and store the
   Stripe secret/webhook values through the existing secrets manifest.
