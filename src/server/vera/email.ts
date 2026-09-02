@@ -1,6 +1,6 @@
 import { linkNewsletterLead } from "../aggregator/lead-records.ts";
 import { getManagedEmailTemplate } from "../aggregator/notifications/email-template-store.ts";
-import { readSenderSettings, sendSesTransactionalEmail } from "../aggregator/notifications/ses.ts";
+import { readSenderSettings, sendTransactionalEmail } from "../aggregator/notifications/transactional.ts";
 import { renderEmailTemplate } from "../aggregator/notifications/templates.ts";
 import {
   all,
@@ -212,7 +212,7 @@ export const processEmailOutbox = async ({
       retried += 1;
       continue;
     }
-    const result = await sendSesTransactionalEmail({
+    const result = await sendTransactionalEmail({
       env,
       message: {
         to: [{ email: normalizedEmail, name: safeString(row.recipient_name) || undefined }],

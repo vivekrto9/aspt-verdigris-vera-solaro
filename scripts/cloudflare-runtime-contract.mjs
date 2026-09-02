@@ -40,6 +40,7 @@ export const runtimeContract = {
   requiredSecretNames: ["EMDASH_ENCRYPTION_KEY", "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN"],
   generatedSiteRequiredSecretNames: ["EMDASH_ENCRYPTION_KEY", "ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN"],
   sensitiveProviderSecretBindings: [
+    { binding: "GA4_API_SECRET", provider: "GA4" },
     { binding: "STRIPE_SECRET_KEY", provider: "STRIPE" },
     { binding: "STRIPE_WEBHOOK_SECRET", provider: "STRIPE" },
     { binding: "AWS_ACCESS_KEY_ID", provider: "AWS_SES" },

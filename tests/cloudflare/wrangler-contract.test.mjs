@@ -122,6 +122,7 @@ test("runtime provider binding contract is scoped to Vera integrations", () => {
   assert.deepEqual(
     runtimeContract.sensitiveProviderSecretBindings.map(({ binding }) => binding),
     [
+      "GA4_API_SECRET",
       "STRIPE_SECRET_KEY",
       "STRIPE_WEBHOOK_SECRET",
       "AWS_ACCESS_KEY_ID",

@@ -143,7 +143,13 @@
       "CALENDLY_EVENT_TYPE_URI",
       "POSTHOG_PROJECT_API_KEY",
       "POSTHOG_HOST",
-      "POSTHOG_PROJECT_ID"
+      "POSTHOG_PROJECT_ID",
+      "TRANSACTIONAL_EMAIL_PROVIDER",
+      "ACTIVE_ANALYTICS_PROVIDER",
+      "ACTIVE_SCHEDULING_PROVIDER",
+      "GMAIL_SENDER_EMAIL",
+      "GMAIL_SENDER_NAME",
+      "GA4_MEASUREMENT_ID"
     ],
     "providerCredentials": [
       "STRIPE_SECRET_KEY",
@@ -156,7 +162,12 @@
       "POSTHOG_PROJECT_API_KEY",
       "POSTHOG_HOST",
       "POSTHOG_PROJECT_ID",
-      "POSTHOG_PERSONAL_API_KEY"
+      "POSTHOG_PERSONAL_API_KEY",
+      "GA4_API_SECRET",
+      "GMAIL_OAUTH_CLIENT_ID",
+      "GMAIL_OAUTH_CLIENT_SECRET",
+      "GMAIL_OAUTH_REFRESH_TOKEN",
+      "GMAIL_STATUS_CALLBACK_TOKEN"
     ]
   },
   "localization": {
@@ -877,7 +888,10 @@
       "ap_vera_reports",
       "ap_vera_message_threads",
       "ap_vera_messages",
-      "ap_vera_follow_ups"
+      "ap_vera_follow_ups",
+      "ap_analytics_deliveries",
+      "ap_email_deliveries",
+      "ap_booking_preview_policy"
     ]
   }
 }
