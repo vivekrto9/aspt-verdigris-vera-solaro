@@ -47,6 +47,11 @@ this template:
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - optional `POSTHOG_PERSONAL_API_KEY`
+- `GOOGLE_CALENDAR_CLIENT_ID`, `GOOGLE_CALENDAR_CLIENT_SECRET`, and
+  `GOOGLE_CALENDAR_REFRESH_TOKEN` when Google Calendar is selected
+- `GMAIL_OAUTH_CLIENT_ID`, `GMAIL_OAUTH_CLIENT_SECRET`, and
+  `GMAIL_OAUTH_REFRESH_TOKEN` when Gmail is selected
+- `GA4_API_SECRET` when GA4 purchase analytics is selected
 
 Google Places is supplied through the separate platform binding. Do not place
 any of these values in `wrangler.jsonc`, a manifest, a workflow command, or a
@@ -78,10 +83,34 @@ After migrations, the control plane must configure these non-secret values in
 the existing D1 runtime configuration/operations surface:
 
 - `STRIPE_PUBLISHABLE_KEY`
-- `CALENDLY_EVENT_TYPE_URI`
-- `SES_SENDER_EMAIL`, `SES_SENDER_NAME`, and `AWS_REGION`
-- `POSTHOG_PROJECT_API_KEY`, `POSTHOG_HOST`, and `POSTHOG_PROJECT_ID` when
-  consented analytics is enabled
+- `ACTIVE_SCHEDULING_PROVIDER`: `calendly` (default) or `google_calendar`.
+  Calendly uses `CALENDLY_EVENT_TYPE_URI`. Google Calendar uses its synced OAuth
+  credentials and the shared booking setup described below.
+- `TRANSACTIONAL_EMAIL_PROVIDER`: `ses` (default) or `gmail`. SES uses
+  `SES_SENDER_EMAIL`, `SES_SENDER_NAME`, and `AWS_REGION`; Gmail uses
+  `GMAIL_SENDER_EMAIL`, optional `GMAIL_SENDER_NAME`, and synced Gmail OAuth credentials.
+- `ACTIVE_ANALYTICS_PROVIDER`: `posthog` (default), `ga4`, or `ga4_measurement_protocol`.
+  PostHog uses `POSTHOG_PROJECT_API_KEY`, `POSTHOG_HOST`, and `POSTHOG_PROJECT_ID`.
+  GA4 uses `GA4_MEASUREMENT_ID` and secret `GA4_API_SECRET` for verified purchases.
+  Browser analytics remains consent-gated. Each verified deposit/balance payment
+  has its own deduplicated transaction, without intake, email, or access tokens.
+
+Apply migration `0018_vera_google_integrations.sql` before running the updated
+Worker. The authenticated control plane uses
+`/api/astropages/generated-site/booking-management`: GET lists writable calendars,
+PUT saves `calendarId`, `timezone`, `rules`, and `previewPolicy.recipients`, and
+POST previews slots. This uses the same `shared-v1` contract as Jyoti Connect and
+Astra Guru, but Vera is one practitioner: all ordinary busy events block times.
+Preview requires an explicitly allowlisted test calendar and recipients.
+
+Bookings retain their selected provider, calendar, timezone, and working rules.
+Changing providers only affects new bookings. Google events are created after
+verified payment, with deterministic IDs for lost-response recovery. Interval
+reservations protect arbitrary spacing and buffers alongside legacy Calendly
+holds. Rescheduling preserves both reservations until reconciliation completes.
+Do not automatically replay uncertain Gmail deliveries: they are marked `dead`
+with `gmail_delivery_unknown` for staff review, including stale processing locks.
+Existing SES delivery and Calendly reconciliation flows remain available.
 
 Calendly configuration validates that the shared provider event is active and
 exactly 30 minutes before activation. `PUBLIC_STRIPE_PUBLISHABLE_KEY` is only the
@@ -92,8 +121,10 @@ the exact `ASTROPAGES_SITE_URL` callbacks and the event sets handled by this
 Worker. Stripe and Calendly intentionally do not return an existing endpoint's
 signing secret. After creating or rotating those endpoints, the authenticated
 control plane must call `POST /api/astropages/generated-site/vera/operations`
-with action `validate_provider_webhooks` and SHA-256 fingerprints of the two
-creation-time signing secrets. The Worker compares those fingerprints with its
+with action `validate_provider_webhooks` and SHA-256 fingerprints of the applicable
+creation-time signing secrets: `stripeSigningSecretSha256` always, and
+`calendlySigningKeySha256` only when Calendly is selected. Google Calendar does
+not require a Calendly webhook. The Worker compares those fingerprints with its
 resolved individual Worker secret values and persists one aggregate, origin-
 and provider-bound proof; no token, signing secret, individual secret fingerprint, endpoint
 identifier, or provider payload is stored or returned. Secret, origin, or

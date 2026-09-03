@@ -47,6 +47,7 @@ export const sendTransactionalEmail = async (input: {
   env: RuntimeEnv; message: EmailMessage; provider?: EmailProvider; fetch?: typeof fetch;
 }) => {
   const { env, message } = input;
+  let gmailSendAttempted = false;
   try {
     const provider = input.provider ?? await selectedEmailProvider(env);
     if (String(env.ASTROPAGES_SITE_ENVIRONMENT) !== "production") {
@@ -72,15 +73,17 @@ export const sendTransactionalEmail = async (input: {
       `--${boundary}--`, "",
     ].join("\r\n");
     // Never retry a send automatically: a lost response can still mean delivered.
+    gmailSendAttempted = true;
     const response = await (input.fetch ?? providerFetch(env))("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
       method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
       body: JSON.stringify({ raw: base64(mime).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "") }),
       signal: AbortSignal.timeout(15_000),
     });
-    if (!response.ok) return { ok: false as const, message: `Gmail send failed (HTTP ${response.status}). Check permissions and sending limits.` };
+    if (!response.ok) return { ok: false as const, outcomeUnknown: response.status >= 500, message: `Gmail send failed (HTTP ${response.status}). Check permissions and sending limits.` };
     const result = await response.json() as { id?: string };
-    return { ok: true as const, providerMessageId: result.id ?? null };
+    if (!result.id) throw new Error("Gmail response is missing a message ID.");
+    return { ok: true as const, providerMessageId: result.id };
   } catch {
-    return { ok: false as const, message: "Email delivery could not be confirmed. Check the provider before retrying." };
+    return { ok: false as const, outcomeUnknown: gmailSendAttempted, message: "Email delivery could not be confirmed. Check the provider before retrying." };
   }
 };

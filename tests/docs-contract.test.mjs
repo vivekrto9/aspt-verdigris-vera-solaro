@@ -64,12 +64,21 @@ test("deployment docs enumerate only Vera's wired provider configuration", () =>
     "POSTHOG_PROJECT_API_KEY",
     "POSTHOG_HOST",
     "POSTHOG_PROJECT_ID",
+    "GA4_MEASUREMENT_ID",
+    "GA4_API_SECRET",
+    "GMAIL_SENDER_EMAIL",
+    "GMAIL_OAUTH_CLIENT_ID",
+    "GMAIL_OAUTH_CLIENT_SECRET",
+    "GMAIL_OAUTH_REFRESH_TOKEN",
+    "GOOGLE_CALENDAR_CLIENT_ID",
+    "GOOGLE_CALENDAR_CLIENT_SECRET",
+    "GOOGLE_CALENDAR_REFRESH_TOKEN",
   ]) {
     assert.match(docs.cloudflare, new RegExp(`\\b${name}\\b`));
   }
   assert.doesNotMatch(
     docs.cloudflare,
-    /RAZORPAY|GA4_|ZAPIER|GOOGLE_CALENDAR|WATI|MAILCHIMP|X_ASTROLOGYAPI|PAYMENT_PROVIDER/,
+    /RAZORPAY|ZAPIER|WATI|MAILCHIMP|X_ASTROLOGYAPI|PAYMENT_PROVIDER/,
   );
 });
 

@@ -1,3 +1,4 @@
+import { recordVeraPaymentAnalytics } from "./analytics.ts";
 import { markLeadConvertedBySourceReference } from "../aggregator/lead-records.ts";
 import { resolveSecretBinding } from "../aggregator/runtime-bindings.ts";
 import { quoteBookingPayment, type VeraPaymentKind } from "./catalog.ts";
@@ -501,6 +502,12 @@ const processPaymentSucceeded = async ({
   const bookingId = safeString(attempt.booking_id);
   const booking = await first(env, `SELECT * FROM ${tables.bookings} WHERE id = ?`, [bookingId]);
   if (!booking) return { ok: true as const, status: 200, message: "Unknown booking payment ignored." };
+  // A late payment cannot reacquire an expired slot held by another visitor.
+  // Record it through the existing terminal-payment refund recovery below.
+  if (booking.payment_state === "unpaid" && booking.hold_expires_at && Date.parse(safeString(booking.hold_expires_at)) <= Date.now()) {
+    const expired = await run(env, `UPDATE ${tables.bookings} SET status = 'expired' WHERE id = ? AND status IN ('pending_payment', 'payment_action_required') AND payment_state = 'unpaid'`, [bookingId]);
+    if (changeCount(expired) === 1) booking.status = "expired";
+  }
   const now = nowIso();
   const invoiceNumber = `VSI-${randomToken(6).toUpperCase()}`;
   const paymentIntentId = safeString(intent.id);
@@ -592,6 +599,7 @@ const processPaymentSucceeded = async ({
         : "Late terminal payment recorded for staff refund action.",
     };
   }
+  if (paymentApplied) await recordVeraPaymentAnalytics(env, booking, attempt);
   const canSchedule = Boolean(
     paymentApplied && !wasTerminal && ["pending_payment", "payment_action_required"].includes(terminalStatus) &&
     !safeString(afterPayment?.cancelled_at) &&

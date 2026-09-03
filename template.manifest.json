@@ -759,12 +759,17 @@
     "required": [
       {
         "key": "scheduling",
-        "label": "Calendly scheduling",
-        "description": "Six live Calendly event types are required for Vera's three readings in call and in-person modes.",
-        "evaluation": "all_of",
+        "label": "Consultation scheduling",
+        "description": "Choose Calendly or Google Calendar. Google Calendar requires writable-calendar selection and working hours.",
+        "evaluation": "any_of",
         "providers": [
           {
             "providerKey": "calendly",
+            "environment": "both",
+            "credentialMode": "live"
+          },
+          {
+            "providerKey": "google_calendar",
             "environment": "both",
             "credentialMode": "live"
           }
@@ -786,11 +791,16 @@
       {
         "key": "transactional-email",
         "label": "Transactional email",
-        "description": "Amazon SES is required for opt-in, booking, reminder, account, and delivery email.",
-        "evaluation": "all_of",
+        "description": "Choose Gmail or Amazon SES for booking, reminder, account, and delivery email.",
+        "evaluation": "any_of",
         "providers": [
           {
             "providerKey": "aws_ses",
+            "environment": "both",
+            "credentialMode": "live"
+          },
+          {
+            "providerKey": "gmail",
             "environment": "both",
             "credentialMode": "live"
           }
@@ -801,11 +811,16 @@
       {
         "key": "analytics",
         "label": "Private analytics",
-        "description": "PostHog enables the consented, PII-free page and booking funnel declared by this template.",
-        "evaluation": "all_of",
+        "description": "Choose GA4 or PostHog for consented, PII-free analytics and verified-payment purchase events.",
+        "evaluation": "any_of",
         "providers": [
           {
             "providerKey": "posthog",
+            "environment": "both",
+            "credentialMode": "live"
+          },
+          {
+            "providerKey": "ga4_measurement_protocol",
             "environment": "both",
             "credentialMode": "live"
           }
@@ -891,7 +906,9 @@
       "ap_vera_follow_ups",
       "ap_analytics_deliveries",
       "ap_email_deliveries",
-      "ap_booking_preview_policy"
+      "ap_booking_preview_policy",
+      "ap_shared_calendar_settings",
+      "ap_vera_scheduling_reservations"
     ]
   }
 }

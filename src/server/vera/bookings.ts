@@ -1,3 +1,5 @@
+import { veraAnalyticsContext } from "./analytics.ts";
+import { selectedVeraSchedulingProvider, checkVeraGoogleSlot, reserveVeraGoogleReschedule, releaseVeraGoogleReschedule } from "./google-calendar.ts";
 import { getCustomerSession } from "../aggregator/customer-auth.ts";
 import {
   linkBusinessLead,
@@ -21,11 +23,13 @@ import {
 } from "./calendly.ts";
 import {
   all,
+  changeCount,
   first,
   isValidEmail,
   normalizeEmail,
   nowIso,
   randomToken,
+  run,
   runStatements,
   safeString,
   secureId,
@@ -126,6 +130,7 @@ const publicBooking = (row: VeraRow) => ({
   currency: safeString(row.currency),
   freeRescheduleUsed: Number(row.free_reschedule_used) === 1,
   rescheduleCount: Number(row.reschedule_count),
+  schedulingProvider: safeString(row.scheduling_provider) || "calendly",
   calendlyMeetingUrl: safeString(row.calendly_meeting_url),
   calendlyRescheduleUrl: safeString(row.calendly_reschedule_url),
   createdAt: safeString(row.created_at),
@@ -204,7 +209,8 @@ export const createVeraBooking = async ({
   if (!selection || !isVeraMode(input.mode)) {
     return { ok: false as const, status: 400, message: "Select a valid sitting and format." };
   }
-  if (!selection.eventTypeUri) {
+  const schedulingProvider = await selectedVeraSchedulingProvider(env);
+  if (schedulingProvider === "calendly" && !selection.eventTypeUri) {
     return { ok: false as const, status: 503, message: "Calendly is not configured for 30-minute sittings.", missingSecretNames: ["CALENDLY_EVENT_TYPE_URI"] };
   }
   const name = safeString(input.name).slice(0, 120);
@@ -234,14 +240,12 @@ export const createVeraBooking = async ({
   }
   const startAt = selectedDate.toISOString();
   const endAt = new Date(selectedDate.getTime() + selection.durationMinutes * 60_000).toISOString();
-  const providerSlot = await calendlySlotIsAvailable({
-    env,
-    eventTypeUri: selection.eventTypeUri,
-    startAt,
-  });
+  const providerSlot = schedulingProvider === "google_calendar"
+    ? await checkVeraGoogleSlot(env, selection.durationMinutes, startAt, undefined, email)
+    : await calendlySlotIsAvailable({ env, eventTypeUri: selection.eventTypeUri, startAt });
   if (!providerSlot.ok) return providerSlot;
   if (!providerSlot.available) {
-    return { ok: false as const, status: 409, message: "That Calendly time is no longer available." };
+    return { ok: false as const, status: 409, message: "That time is no longer available." };
   }
   const now = new Date();
   const nowValue = now.toISOString();
@@ -321,6 +325,9 @@ export const createVeraBooking = async ({
   const holdExpiresAt = fullyGifted
     ? null
     : new Date(now.getTime() + VERA_HOLD_MINUTES * 60_000).toISOString();
+  const analytics = await veraAnalyticsContext(env, request);
+  const calendar = "settings" in providerSlot ? providerSlot.settings : null;
+  const calendarRules = "rules" in providerSlot ? providerSlot.rules : null;
   const number = bookingNumber();
   const statements = [
     env.DB.prepare(`INSERT INTO ${tables.bookings}
@@ -329,8 +336,10 @@ export const createVeraBooking = async ({
        phone, customer_timezone, selected_start_at, selected_end_at, price_cents,
        gift_applied_cents, total_due_cents, paid_cents, balance_cents, currency,
        gift_certificate_id, manage_token_hash, manage_token_expires_at, encrypted_intake,
-       calendly_event_type_uri, hold_expires_at, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+       calendly_event_type_uri, hold_expires_at, created_at, updated_at,
+       scheduling_provider, scheduling_calendar_id, scheduling_timezone, scheduling_rules_json,
+       scheduling_buffer_before, scheduling_buffer_after, analytics_client_id, analytics_provider, analytics_session_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(
         bookingId, number, idempotencyKey, accountId, selection.slug, input.mode,
         fullyGifted ? "payment_action_required" : "pending_payment",
@@ -340,6 +349,8 @@ export const createVeraBooking = async ({
         selection.currency, gift ? safeString(gift.id) : null,
         await sha256Hex(manageToken), manageTokenExpiresAt, encryptedIntake,
         selection.eventTypeUri, holdExpiresAt, nowValue, nowValue,
+        schedulingProvider, calendar?.calendar_id ?? null, calendar?.timezone ?? null, calendar?.rules_json ?? null,
+        calendarRules?.bufferBefore ?? 0, calendarRules?.bufferAfter ?? 0, analytics.clientId, analytics.provider, analytics.sessionId,
       ),
     ...bookingSlotStarts(startAt, selection.durationMinutes).map((slot) =>
       env.DB!.prepare(`INSERT INTO ${tables.bookingHolds}
@@ -375,7 +386,7 @@ export const createVeraBooking = async ({
       status: 409,
       message: message.includes("vera_gift_unavailable")
         ? "Gift certificate is no longer available."
-        : "That time was just reserved. Choose another Calendly time.",
+        : "That time was just reserved. Choose another time.",
     };
   }
   await linkBusinessLead({
@@ -773,7 +784,7 @@ export const completeVeraReschedule = async ({
   }
   const selected = new Date(safeString(newStartAt));
   if (!Number.isFinite(selected.getTime()) || selected.getTime() <= Date.now()) {
-    return { ok: false as const, status: 400, message: "Choose a valid future Calendly time." };
+    return { ok: false as const, status: 400, message: "Choose a valid future time." };
   }
   const startAt = selected.toISOString();
   if (startAt === safeString(booking.selected_start_at)) {
@@ -786,10 +797,13 @@ export const completeVeraReschedule = async ({
     return { ok: false as const, status: 409, message: "The sitting duration is not configured." };
   }
   const eventTypeUri = safeString(booking.calendly_event_type_uri);
-  const providerSlot = await calendlySlotIsAvailable({ env, eventTypeUri, startAt });
+  const googleCalendar = booking.scheduling_provider === "google_calendar";
+  const providerSlot = googleCalendar
+    ? await checkVeraGoogleSlot(env, durationMinutes, startAt, booking, safeString(booking.email))
+    : await calendlySlotIsAvailable({ env, eventTypeUri, startAt });
   if (!providerSlot.ok) return providerSlot;
   if (!providerSlot.available) {
-    return { ok: false as const, status: 409, message: "That Calendly time is no longer available." };
+    return { ok: false as const, status: 409, message: "That time is no longer available." };
   }
   const now = new Date();
   const nowValue = now.toISOString();
@@ -831,11 +845,15 @@ export const completeVeraReschedule = async ({
       return { ok: false as const, status: 409, message: "This reschedule could not be authorized. Refresh and try again." };
     }
   }
+  if (googleCalendar) {
+    try { await reserveVeraGoogleReschedule(env, booking, startAt, durationMinutes); }
+    catch { return { ok: false as const, status: 409, message: "That time is reserved, or an earlier reschedule needs reconciliation." }; }
+  }
   const created = await createCalendlyInviteeForBooking({ env, booking, startAt });
   if (!created.ok) {
     if ("outcomeUnknown" in created && created.outcomeUnknown) {
       const failureAt = nowIso();
-      const failureMessage = "Calendly replacement scheduling outcome is unknown and requires staff reconciliation.";
+      const failureMessage = "Calendar replacement scheduling outcome is unknown and requires staff reconciliation.";
       await runStatements(env, [
         env.DB.prepare(`UPDATE ${tables.bookings}
           SET status = 'payment_action_required', scheduling_error = ?, updated_at = ?
@@ -853,6 +871,7 @@ export const completeVeraReschedule = async ({
       ]);
       return { ...created, message: "The reschedule needs staff reconciliation. Do not submit it again." };
     }
+    if (googleCalendar) await releaseVeraGoogleReschedule(env, bookingId);
     return created;
   }
   const replacement = created.result;
@@ -863,6 +882,7 @@ export const completeVeraReschedule = async ({
     await cancelCalendlyEvent(env, replacement.eventUri, "Replacement time did not match the requested sitting").catch(() => undefined);
     return { ok: false as const, status: 502, message: "Calendly returned a different time than requested. Choose the slot again." };
   }
+  const oldReservation = googleCalendar ? [env.DB.prepare("UPDATE ap_vera_scheduling_reservations SET start_ms = ?, end_ms = ? WHERE id = ?").bind(Date.parse(safeString(booking.selected_start_at)) - Number(booking.scheduling_buffer_before || 0) * 60000, Date.parse(safeString(booking.selected_end_at)) + Number(booking.scheduling_buffer_after || 0) * 60000, bookingId + ":reschedule")] : [];
   const followUps = rescheduleFollowUps({ booking, startAt, endAt: expectedEndAt, now });
   const metadata = JSON.stringify({
     previousStartAt: safeString(booking.selected_start_at),
@@ -871,6 +891,7 @@ export const completeVeraReschedule = async ({
   });
   try {
     await runStatements(env, [
+      ...oldReservation,
       env.DB.prepare(`UPDATE ${tables.emailOutbox}
         SET status = 'cancelled', locked_at = NULL, last_error_code = 'booking_rescheduled', updated_at = ?
         WHERE id IN (
@@ -923,10 +944,11 @@ export const completeVeraReschedule = async ({
       replacement.eventUri,
       "Replacement could not be committed",
     ).catch(() => ({ ok: false as const }));
+    if (googleCalendar && compensated.ok) await releaseVeraGoogleReschedule(env, bookingId);
     const failureAt = nowIso();
     const failureMessage = compensated.ok
       ? "Replacement was released because the selected time was taken."
-      : "Replacement and original Calendly events require staff reconciliation.";
+      : "Replacement and original calendar events require staff reconciliation.";
     await runStatements(env, [
       env.DB.prepare(`UPDATE ${tables.bookings}
         SET status = ?, scheduling_error = ?, updated_at = ? WHERE id = ?`)
@@ -946,11 +968,12 @@ export const completeVeraReschedule = async ({
       ok: false as const,
       status: compensated.ok ? 409 : 502,
       message: compensated.ok
-        ? "That time was reserved by someone else. Choose another Calendly time."
+        ? "That time was reserved by someone else. Choose another time."
         : "The reschedule needs staff attention. Do not submit it again.",
     };
   }
   const cancellation = await cancelCalendlyEvent(env, oldEventUri, "Replaced through Vera's account portal");
+  if (googleCalendar && cancellation.ok) await releaseVeraGoogleReschedule(env, bookingId);
   let actionRequired = false;
   if (!cancellation.ok) {
     actionRequired = true;
@@ -958,7 +981,7 @@ export const completeVeraReschedule = async ({
     await runStatements(env, [
       env.DB.prepare(`UPDATE ${tables.bookings}
         SET status = 'payment_action_required', scheduling_error = ?, updated_at = ? WHERE id = ?`)
-        .bind("Replacement is confirmed; the original Calendly event still needs staff cancellation.", failureAt, bookingId),
+        .bind("Replacement is confirmed; the original calendar event still needs staff cancellation.", failureAt, bookingId),
       env.DB.prepare(`INSERT INTO ${tables.bookingEvents}
         (id, booking_id, event_type, actor_type, metadata_json, created_at)
         VALUES (?, ?, 'reschedule.old_event_cancel_failed', 'system', ?, ?)`)
@@ -988,7 +1011,7 @@ export const completeVeraReschedule = async ({
     ok: true as const,
     status: actionRequired ? 202 : 200,
     message: actionRequired
-      ? "Your new sitting is confirmed. Vera's staff will remove the original Calendly event."
+      ? "Your new sitting is confirmed. Vera's staff will remove the original calendar event."
       : "Your sitting has been rescheduled.",
     booking: publicBooking(persisted || booking),
     actionRequired,
@@ -1026,6 +1049,14 @@ export const cancelVeraBooking = async ({
   }
   if (["cancelled", "expired", "completed", "refunded"].includes(safeString(booking.status))) {
     return { ok: false as const, status: 409, message: "This booking can no longer be cancelled." };
+  }
+  if (booking.scheduling_provider === "google_calendar") {
+    const replacement = await first(env, "SELECT id FROM ap_vera_scheduling_reservations WHERE id = ?", [bookingId + ":reschedule"]);
+    if (replacement || (Number(booking.scheduling_attempted) && !booking.calendly_event_uri)) return { ok: false as const, status: 409, message: "Calendar scheduling must be reconciled before cancellation." };
+  }
+  if (booking.scheduling_provider === "google_calendar") {
+    const claim = await run(env, "UPDATE ap_vera_bookings SET scheduling_operation = 'cancel' WHERE id = ? AND (scheduling_operation IS NULL OR scheduling_operation = 'cancel') AND status NOT IN ('cancelled', 'expired', 'completed', 'refunded')", [bookingId]);
+    if (changeCount(claim) !== 1) return { ok: false as const, status: 409, message: "Another calendar operation is in progress or needs reconciliation." };
   }
   const paid = ["deposit_paid", "paid", "partially_refunded"].includes(safeString(booking.payment_state)) &&
     Number(booking.paid_cents) > 0;

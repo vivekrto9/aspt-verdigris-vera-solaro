@@ -1,6 +1,6 @@
 import { linkNewsletterLead } from "../aggregator/lead-records.ts";
 import { getManagedEmailTemplate } from "../aggregator/notifications/email-template-store.ts";
-import { readSenderSettings, sendTransactionalEmail } from "../aggregator/notifications/transactional.ts";
+import { readSenderSettings, sendTransactionalEmail, selectedEmailProvider } from "../aggregator/notifications/transactional.ts";
 import { renderEmailTemplate } from "../aggregator/notifications/templates.ts";
 import {
   all,
@@ -118,9 +118,10 @@ const markOutboxFailure = async (
   row: VeraRow,
   code: string,
   now: Date,
+  stopRetry = false,
 ) => {
   const attempt = Number(row.attempt_count) + 1;
-  const dead = attempt >= Number(row.max_attempts || 5);
+  const dead = stopRetry || attempt >= Number(row.max_attempts || 5);
   await run(env, `UPDATE ${tables.emailOutbox}
     SET status = ?, attempt_count = ?, available_at = ?, locked_at = NULL,
       last_error_code = ?, updated_at = ? WHERE id = ?`, [
@@ -160,13 +161,19 @@ export const processEmailOutbox = async ({
   let suppressed = 0;
   const missing = new Set<string>();
   for (const row of rows) {
+    const provider = row.delivery_provider === "gmail" || row.delivery_provider === "ses" ? row.delivery_provider : await selectedEmailProvider(env);
     const claimed = await run(env, `UPDATE ${tables.emailOutbox}
-      SET status = 'processing', locked_at = ?, updated_at = ?
+      SET status = 'processing', locked_at = ?, updated_at = ?, delivery_provider = ?
       WHERE id = ? AND (
         (status IN ('pending', 'retry') AND available_at <= ?)
         OR (status = 'processing' AND locked_at < ?)
-      )`, [now.toISOString(), now.toISOString(), safeString(row.id), now.toISOString(), staleLock]);
+      )`, [now.toISOString(), now.toISOString(), provider, safeString(row.id), now.toISOString(), staleLock]);
     if (changeCount(claimed) !== 1) continue;
+    if (provider === "gmail" && row.status === "processing") {
+      await markOutboxFailure(env, row, "gmail_delivery_unknown", now, true);
+      retried += 1;
+      continue;
+    }
     const normalizedEmail = normalizeEmail(row.recipient_email);
     const suppression = await first(env, `SELECT reason FROM ${tables.emailSuppressions}
       WHERE normalized_email = ?`, [normalizedEmail]);
@@ -205,15 +212,15 @@ export const processEmailOutbox = async ({
       retried += 1;
       continue;
     }
-    const sender = await readSenderSettings(env);
+    const sender = await readSenderSettings(env, provider);
     if (!sender.senderEmail) {
-      missing.add("SES_SENDER_EMAIL");
+      missing.add(provider === "gmail" ? "GMAIL_SENDER_EMAIL" : "SES_SENDER_EMAIL");
       await markOutboxFailure(env, row, "provider_not_configured", now);
       retried += 1;
       continue;
     }
     const result = await sendTransactionalEmail({
-      env,
+      env, provider,
       message: {
         to: [{ email: normalizedEmail, name: safeString(row.recipient_name) || undefined }],
         sender: { email: sender.senderEmail, name: sender.senderName },
@@ -227,7 +234,8 @@ export const processEmailOutbox = async ({
       for (const name of ["AWS_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]) {
         if (result.message.includes(name)) missing.add(name);
       }
-      await markOutboxFailure(env, row, result.message.includes("setup is incomplete") ? "provider_not_configured" : "provider_send_failed", now);
+      const unknown = "outcomeUnknown" in result && result.outcomeUnknown === true;
+      await markOutboxFailure(env, row, unknown ? "gmail_delivery_unknown" : result.message.includes("setup is incomplete") ? "provider_not_configured" : "provider_send_failed", now, unknown);
       retried += 1;
       continue;
     }

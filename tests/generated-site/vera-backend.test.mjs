@@ -2,6 +2,164 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
+import { invalidateRuntimeConfigCache } from "../../src/server/aggregator/runtime-config.ts";
+import { readBookingSettings, saveBookingSettings } from "../../src/server/aggregator/integrations/booking-settings.ts";
+import { listVeraAvailability } from "../../src/server/vera/availability.ts";
+import { listVeraOperationsReadiness, validateVeraProviderWebhookSetup } from "../../src/server/vera/operations.ts";
+import { veraAnalyticsContext, recordVeraPaymentAnalytics } from "../../src/server/vera/analytics.ts";
+
+const googleFixture = async () => {
+  const { sqlite, DB } = createDatabase();
+  const set = (key, value) => { invalidateRuntimeConfigCache(); return sqlite.prepare("INSERT INTO ap_runtime_config (key,value,provider_key,scope,status,updated_at) VALUES (?,?,'contract','site','active',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,status='active'").run(key, value, new Date().toISOString()); };
+  for (const [key, value] of Object.entries({ ACTIVE_SCHEDULING_PROVIDER: 'google_calendar', TRANSACTIONAL_EMAIL_PROVIDER: 'gmail', ACTIVE_ANALYTICS_PROVIDER: 'ga4', GA4_MEASUREMENT_ID: 'G-CONTRACT', GMAIL_SENDER_EMAIL: 'sender@example.test' })) set(key, value);
+  const events = new Map(), purchases = [], calls = [];
+  const control = { loseCreateResponse: false, loseMailResponse: false, busy: [], failCalendar: false };
+  const env = { DB, ASTROPAGES_SITE_URL: 'https://vera.test', ASTROPAGES_SITE_ENVIRONMENT: 'preview', EMDASH_ENCRYPTION_KEY: 'contract-encryption-key',
+    GOOGLE_CALENDAR_CLIENT_ID: 'contract-id', GOOGLE_CALENDAR_CLIENT_SECRET: 'contract-secret', GOOGLE_CALENDAR_REFRESH_TOKEN: 'contract-refresh',
+    GMAIL_OAUTH_CLIENT_ID: 'contract-id', GMAIL_OAUTH_CLIENT_SECRET: 'contract-secret', GMAIL_OAUTH_REFRESH_TOKEN: 'contract-refresh', GA4_API_SECRET: 'contract-ga4', STRIPE_WEBHOOK_SECRET: 'contract-stripe',
+    fetch: async (input, init = {}) => {
+      const url = new URL(String(input)); calls.push({ host: url.host, path: url.pathname, method: init.method || 'GET' });
+      if (url.host === 'oauth2.googleapis.com') return Response.json({ access_token: 'contract-access' });
+      if (url.pathname.endsWith('/calendarList')) return Response.json({ items: [{ id: 'test@example.test', summary: 'Test calendar', timeZone: 'UTC', accessRole: 'owner' }, { id: 'readonly@example.test', accessRole: 'reader' }] });
+      if (url.host === 'www.google-analytics.com') { purchases.push(JSON.parse(init.body)); return new Response(null, { status: 204 }); }
+      if (url.host === 'gmail.googleapis.com') {
+        if (control.loseMailResponse) throw new Error('lost response');
+        return Response.json({ id: 'gmail-message' });
+      }
+      if (url.host === 'www.googleapis.com' && url.pathname.includes('/events')) {
+        if (control.failCalendar) return Response.json({}, { status: 403 });
+        const id = url.pathname.split('/').at(-1);
+        if (init.method === 'POST') {
+          if (control.beforeCreate) await control.beforeCreate();
+          const event = { ...JSON.parse(init.body), etag: '"v1"', status: 'confirmed' }; events.set(event.id, event);
+          if (control.loseCreateResponse) { control.loseCreateResponse = false; throw new Error('lost response'); }
+          return Response.json(event);
+        }
+        if (init.method === 'DELETE') { assert.equal(init.headers['If-Match'], '"v1"'); events.delete(id); return new Response(null, { status: 204 }); }
+        if (id !== 'events') return events.has(id) ? Response.json(events.get(id)) : Response.json({}, { status: 404 });
+        return Response.json({ items: [...events.values(), ...control.busy].filter((event) => Date.parse(event.start.dateTime) < Date.parse(url.searchParams.get('timeMax')) && Date.parse(event.end.dateTime) > Date.parse(url.searchParams.get('timeMin'))) });
+      }
+      throw new Error('Unexpected provider call: ' + url.host + url.pathname);
+    },
+  };
+  const rules = { weekly: Object.fromEntries(Array.from({ length: 7 }, (_, i) => [String(i), [{ start: 0, end: 1440 }]])), blackoutDates: [], bufferBefore: 5, bufferAfter: 10, slotStepMinutes: 15, minimumNoticeMinutes: 5, bookingHorizonDays: 90 };
+  await saveBookingSettings(env, { calendarId: 'test@example.test', timezone: 'UTC', rules, previewPolicy: { recipients: ['booking@example.test'] } });
+  const date = new Date(Date.now() + 5 * 86400000); date.setUTCHours(10, 0, 0, 0); const startAt = date.toISOString();
+  const place = await placeSelection({ DB });
+  const request = new Request('https://vera.test/api', { method: 'POST', headers: { cookie: 'ap_analytics_consent=granted; ap_analytics_client_id=123.456; ap_analytics_provider=ga4; ap_analytics_session_id=123456' } });
+  const create = (overrides = {}) => createVeraBooking({ env, request, input: { ...bookingInput({ startAt, placeSelectionToken: place.result.selectionToken }), ...overrides } });
+  const pay = async (bookingId, kind = 'deposit', amount = 8000) => {
+    const id = 'attempt_' + kind, intent = 'pi_' + kind, now = new Date().toISOString();
+    sqlite.prepare("INSERT INTO ap_vera_payment_attempts (id,booking_id,kind,provider_payment_intent_id,idempotency_key,amount_cents,currency,status,created_at,updated_at) VALUES (?,?,?,?,?,?,'USD','processing',?,?)").run(id, bookingId, kind, intent, id, amount, now, now);
+    const body = JSON.stringify({ id: 'evt_' + kind, type: 'payment_intent.succeeded', data: { object: { id: intent, amount_received: amount, currency: 'usd', status: 'succeeded' } } });
+    const t = Math.floor(Date.now() / 1000), signatureHeader = `t=${t},v1=${await hmacSha256Hex(env.STRIPE_WEBHOOK_SECRET, `${t}.${body}`)}`;
+    return { result: await processStripeWebhook({ env, body, signatureHeader }), body, signatureHeader };
+  };
+  return { sqlite, DB, env, set, events, purchases, calls, control, rules, startAt, create, pay, request };
+};
+
+test('Google readiness validates Stripe-only webhook proof without requiring Calendly or SES', async () => {
+  const f = await googleFixture();
+  f.set('STRIPE_PUBLISHABLE_KEY', 'pk_test_contract');
+  Object.assign(f.env, { STRIPE_SECRET_KEY: 'sk_test_contract', GOOGLE_PLACES_API_KEY: 'contract-places', MEDIA: { get() {}, put() {}, delete() {} }, SESSION: { get() {}, put() {} }, IMAGES: { input() {}, info() {} }, EMAIL_QUEUE: { send() {} } });
+  const googleFetch = f.env.fetch;
+  f.env.fetch = async (input, init) => new URL(String(input)).host === 'api.stripe.com'
+    ? Response.json({ data: [{ id: 'we_test', url: 'https://vera.test/api/astropages/generated-site/vera/webhooks/stripe', status: 'enabled', livemode: false, enabled_events: ['payment_intent.succeeded', 'payment_intent.payment_failed', 'payment_intent.processing', 'payment_intent.canceled', 'refund.created', 'refund.updated', 'refund.failed'] }], has_more: false })
+    : googleFetch(input, init);
+  const proof = await validateVeraProviderWebhookSetup(f.env, { stripeSigningSecretSha256: await sha256Hex(f.env.STRIPE_WEBHOOK_SECRET) });
+  assert.equal(proof.ok, true, proof.message);
+  const ready = await listVeraOperationsReadiness(f.env);
+  assert.equal(ready.ready, true, JSON.stringify(ready));
+  assert.equal(ready.checks.stripe.setupProofReady, true);
+  assert.equal(f.calls.some((call) => call.host.includes('calendly')), false);
+});
+
+test('Google setup lists writable calendars; preview policy and ordinary busy events block bookings', async () => {
+  const f = await googleFixture();
+  const setup = await readBookingSettings(f.env);
+  assert.equal(setup.scope, 'shared-v1'); assert.equal(setup.ready, true); assert.deepEqual(setup.durations, [30]); assert.equal(setup.calendars.length, 1);
+  await assert.rejects(saveBookingSettings(f.env, { calendarId: 'readonly@example.test', timezone: 'UTC', rules: f.rules, previewPolicy: { recipients: ['booking@example.test'] } }), /write access/);
+  assert.equal((await f.create({ email: 'not-allowed@example.test' })).ok, false);
+  f.control.busy = [{ start: { dateTime: f.startAt }, end: { dateTime: new Date(Date.parse(f.startAt) + 3600000).toISOString() } }];
+  assert.equal((await f.create()).ok, false);
+  f.control.busy = [];
+  const booking = await f.create(); assert.equal(booking.ok, true, booking.message);
+  const overlap = await f.create({ idempotencyKey: 'overlap-booking-contract', startAt: new Date(Date.parse(f.startAt) + 15 * 60000).toISOString() });
+  assert.equal(overlap.ok, false);
+  assert.equal(f.events.size, 0, 'unpaid bookings cannot create calendar events');
+  assert.equal(f.calls.some((call) => call.host.includes('calendly')), false);
+});
+
+test('verified Stripe payments schedule Google once, recover a lost response and track deposit plus balance without PII', async () => {
+  const f = await googleFixture(), created = await f.create(); assert.equal(created.ok, true, created.message);
+  f.control.loseCreateResponse = true;
+  f.control.beforeCreate = async () => {
+    const concurrent = await schedulePaidVeraBooking(f.env, created.booking.id);
+    assert.equal(concurrent.status, 409, 'another create cannot enter during a provider write');
+  };
+  const paid = await f.pay(created.booking.id); assert.equal(paid.result.ok, true, paid.result.message);
+  assert.equal(f.events.size, 1); assert.equal(f.sqlite.prepare('SELECT status FROM ap_vera_bookings WHERE id=?').get(created.booking.id).status, 'confirmed');
+  assert.equal((await processStripeWebhook({ env: f.env, body: paid.body, signatureHeader: paid.signatureHeader })).ok, true);
+  assert.equal((await schedulePaidVeraBooking(f.env, created.booking.id)).ok, true);
+  assert.equal(f.events.size, 1); assert.equal(f.purchases.length, 1);
+  assert.equal(f.purchases[0].events[0].params.value, 80);
+  assert.equal((await f.pay(created.booking.id, 'balance', 16000)).result.ok, true);
+  assert.equal(f.purchases.length, 2); assert.equal(f.purchases[1].events[0].params.value, 160);
+  assert.notEqual(f.purchases[0].events[0].params.transaction_id, f.purchases[1].events[0].params.transaction_id);
+  assert.doesNotMatch(JSON.stringify(f.purchases), /booking@example|birth|intake|manageToken/);
+});
+
+test('Google bookings retain their provider across changes and support authenticated rescheduling and cancellation', async () => {
+  const f = await googleFixture(), created = await f.create(); assert.equal(created.ok, true, created.message);
+  // Fully paid by a gift in this fixture avoids sending any real refund request.
+  f.sqlite.prepare("UPDATE ap_vera_bookings SET payment_state='paid',total_due_cents=0,balance_cents=0,status='payment_action_required' WHERE id=?").run(created.booking.id);
+  assert.equal((await schedulePaidVeraBooking(f.env, created.booking.id)).ok, true);
+  f.set('ACTIVE_SCHEDULING_PROVIDER', 'calendly');
+  f.control.beforeCreate = async () => {
+    const blocked = await cancelVeraBooking({ env: f.env, request: f.request, bookingId: created.booking.id, manageToken: created.manageToken, reason: 'concurrent cancel' });
+    assert.equal(blocked.status, 409, 'reschedule and cancellation cannot overlap');
+  };
+  const newStartAt = new Date(Date.parse(f.startAt) + 86400000).toISOString();
+  const booking = f.sqlite.prepare('SELECT * FROM ap_vera_bookings WHERE id=?').get(created.booking.id);
+  const available = await listVeraAvailability({ env: f.env, serviceSlug: 'natal-hour', mode: 'call', startTime: newStartAt, endTime: new Date(Date.parse(newStartAt) + 3600000).toISOString(), booking });
+  assert.equal(available.ok, true, available.message); assert.ok(available.times.some((time) => time.startAt === newStartAt));
+  const moved = await completeVeraReschedule({ env: f.env, request: f.request, bookingId: created.booking.id, manageToken: created.manageToken, newStartAt });
+  assert.equal(moved.ok, true, moved.message); assert.equal(f.events.size, 1); assert.equal(moved.booking.selectedStartAt, newStartAt);
+  assert.equal(f.sqlite.prepare('SELECT COUNT(*) AS count FROM ap_vera_scheduling_reservations').get().count, 1);
+  const cancelled = await cancelVeraBooking({ env: f.env, request: f.request, bookingId: created.booking.id, manageToken: created.manageToken, reason: 'test cancellation' });
+  assert.equal(cancelled.ok, true, cancelled.message); assert.equal(f.events.size, 0);
+});
+
+test('Gmail outbox sends without SES and stops automatic retries for an ambiguous delivery', async () => {
+  const f = await googleFixture();
+  const enqueue = (key) => enqueueVeraEmail({ env: f.env, eventType: 'vera.booking.confirmed', templateKey: 'vera_booking_confirmed_en', recipientEmail: 'booking@example.test', payload: { customerName: 'Reader', bookingNumber: 'VS-TEST', serviceName: 'Natal', scheduledDateTime: f.startAt, confirmationUrl: 'https://vera.test/booking' }, idempotencyKey: key });
+  await enqueue('gmail-success');
+  const sent = await processEmailOutbox({ env: f.env }); assert.equal(sent.sent, 1);
+  f.control.loseMailResponse = true; await enqueue('gmail-unknown');
+  await processEmailOutbox({ env: f.env });
+  const unknown = f.sqlite.prepare("SELECT status,last_error_code,delivery_provider FROM ap_vera_email_outbox WHERE idempotency_key='gmail-unknown'").get();
+  assert.deepEqual({ ...unknown }, { status: 'dead', last_error_code: 'gmail_delivery_unknown', delivery_provider: 'gmail' });
+  const before = f.calls.filter((call) => call.host === 'gmail.googleapis.com').length;
+  await processEmailOutbox({ env: f.env, now: new Date(Date.now() + 86400000) });
+  assert.equal(f.calls.filter((call) => call.host === 'gmail.googleapis.com').length, before);
+});
+
+test('GA4 aliases respect consent and provider selection, and readiness requires only the selected providers', async () => {
+  const f = await googleFixture();
+  assert.equal((await veraAnalyticsContext(f.env, new Request('https://vera.test'))).clientId, null);
+  f.set('ACTIVE_ANALYTICS_PROVIDER', 'ga4_measurement_protocol');
+  await recordVeraPaymentAnalytics(f.env, { analytics_client_id: '123.456', analytics_provider: 'ga4_measurement_protocol' }, { id: 'alias', amount_cents: 8000, currency: 'USD' });
+  assert.equal(f.purchases.length, 1);
+  await recordVeraPaymentAnalytics(f.env, { analytics_client_id: '123.456', analytics_provider: 'ga4' }, { id: 'wrong-provider', amount_cents: 8000, currency: 'USD' });
+  assert.equal(f.purchases.length, 1);
+  const readiness = await listVeraOperationsReadiness(f.env);
+  assert.equal(readiness.checks.email.ready, true); assert.equal(readiness.checks.googleCalendar.ready, true); assert.equal(readiness.checks.analytics.ready, true);
+  assert.equal(readiness.missingSecretNames.some((key) => /AWS|CALENDLY/.test(key)), false);
+  assert.equal(readiness.missingRuntimeConfigKeys.some((key) => /SES|AWS|CALENDLY|POSTHOG/.test(key)), false);
+  f.control.failCalendar = true;
+  const failed = await f.create(); assert.equal(failed.ok, false);
+  assert.equal(f.calls.some((call) => call.host.includes('calendly')), false);
+});
 
 import {
   bookingSlotStarts,

@@ -26,7 +26,7 @@ export const recordAnalyticsPurchase = async (env: RuntimeEnv, input: {
   if (claim.meta?.changes !== 1) return;
   try {
     let response: Response;
-    if (config.provider === "ga4_measurement_protocol") {
+    if (config.provider === "ga4" || config.provider === "ga4_measurement_protocol") {
       const secret = await resolveSecretBinding(env, "GA4_API_SECRET");
       if (!secret) throw new Error("GA4 secret missing");
       const url = new URL("https://www.google-analytics.com/mp/collect");
