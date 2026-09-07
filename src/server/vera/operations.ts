@@ -1,3 +1,6 @@
+import { readBookingSettings } from "../aggregator/integrations/booking-settings.ts";
+import { getPublicAnalyticsConfig } from "../aggregator/integrations/analytics.ts";
+import { selectedVeraSchedulingProvider } from "./google-calendar.ts";
 import { getManagedEmailTemplate } from "../aggregator/notifications/email-template-store.ts";
 import {
   platformGooglePlacesSecretBinding,
@@ -413,6 +416,12 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
   }
   const runtimeMap = new Map(runtime.map((row) => [safeString(row.key), safeString(row.value)]));
   const runtimeValue = (key: string) => runtimeMap.get(key) || (!generated ? safeString(env[key]) : "");
+  const schedulingProvider = runtimeValue("ACTIVE_SCHEDULING_PROVIDER") || "calendly";
+  const emailProvider = runtimeValue("TRANSACTIONAL_EMAIL_PROVIDER") || "ses";
+  const analyticsProvider = runtimeValue("ACTIVE_ANALYTICS_PROVIDER") || "posthog";
+  const usesCalendly = schedulingProvider === "calendly";
+  const usesGmail = emailProvider === "gmail";
+  const usesGa4 = analyticsProvider === "ga4" || analyticsProvider === "ga4_measurement_protocol";
   const sharedCalendlyUri = runtimeValue(SHARED_CALENDLY_RUNTIME_KEY);
   const resolved = sharedCalendlyUri ? [{
     serviceSlug: "all",
@@ -480,16 +489,23 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
     ["AWS_SECRET_ACCESS_KEY", awsSecretAccessKey],
     ["GOOGLE_PLACES_API_KEY", googlePlacesKey],
   ]);
+  if (!usesCalendly) { requiredSecrets.delete("CALENDLY_API_TOKEN"); requiredSecrets.delete("CALENDLY_WEBHOOK_SIGNING_KEY"); }
+  if (usesGmail) { requiredSecrets.delete("AWS_ACCESS_KEY_ID"); requiredSecrets.delete("AWS_SECRET_ACCESS_KEY"); }
+  const selectedSecretKeys = [
+    ...(schedulingProvider === "google_calendar" ? ["GOOGLE_CALENDAR_CLIENT_ID", "GOOGLE_CALENDAR_CLIENT_SECRET", "GOOGLE_CALENDAR_REFRESH_TOKEN"] : []),
+    ...(usesGmail ? ["GMAIL_OAUTH_CLIENT_ID", "GMAIL_OAUTH_CLIENT_SECRET", "GMAIL_OAUTH_REFRESH_TOKEN"] : []),
+    ...(usesGa4 ? ["GA4_API_SECRET"] : []),
+  ];
+  for (const key of selectedSecretKeys) requiredSecrets.set(key, await resolveSecretBinding(env, key));
   const missingSecretNames = [...requiredSecrets]
     .filter(([, value]) => !value)
     .map(([name]) => name);
 
   const runtimeRequirements = [
     "STRIPE_PUBLISHABLE_KEY",
-    SHARED_CALENDLY_RUNTIME_KEY,
-    "SES_SENDER_EMAIL",
-    "SES_SENDER_NAME",
-    "AWS_REGION",
+    ...(usesCalendly ? [SHARED_CALENDLY_RUNTIME_KEY] : []),
+    ...(usesGmail ? ["GMAIL_SENDER_EMAIL"] : ["SES_SENDER_EMAIL", "SES_SENDER_NAME", "AWS_REGION"]),
+    ...(usesGa4 ? ["GA4_MEASUREMENT_ID"] : []),
   ];
   const missingRuntimeConfigKeys = runtimeRequirements.filter((key) => !runtimeValue(key));
   if (!configuredOrigin(env, generated)) missingRuntimeConfigKeys.push("ASTROPAGES_SITE_URL");
@@ -498,7 +514,7 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
     host: runtimeValue("POSTHOG_HOST"),
     projectId: runtimeValue("POSTHOG_PROJECT_ID"),
   };
-  const posthogEnabled = Object.values(posthogValues).some(Boolean);
+  const posthogEnabled = analyticsProvider === "posthog" && Object.values(posthogValues).some(Boolean);
   const posthogReady = !posthogEnabled || Object.values(posthogValues).every(Boolean);
   if (posthogEnabled && !posthogReady) {
     if (!posthogValues.projectApiKey) missingRuntimeConfigKeys.push("POSTHOG_PROJECT_API_KEY");
@@ -509,7 +525,7 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
   const securityReady = Boolean(encryptionKey) && secretStoreConfigured;
   const origin = siteOrigin(env, generated);
   const stripeConfigured = Boolean(runtimeValue("STRIPE_PUBLISHABLE_KEY") && stripeSecretKey && stripeWebhookSecret);
-  const calendlyLiveValidation = calendlyReady && calendlyApiToken
+  const calendlyLiveValidation = usesCalendly && calendlyReady && calendlyApiToken
     ? await validateLiveCalendlyMapping({ env, eventTypeUri: sharedCalendlyUri })
     : { ready: false, checked: false, source: "not-run", checkedMappings: 0 };
   const [stripeWebhookRegistration, calendlyWebhookRegistration] = await Promise.all([
@@ -521,17 +537,17 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
         origin,
       })
       : notRunWebhookCheck(),
-    calendlyApiToken && origin
+    usesCalendly && calendlyApiToken && origin
       ? validateCalendlyWebhookRegistration({ env, token: calendlyApiToken, origin })
       : notRunWebhookCheck(),
   ]);
-  const expectedProof = origin && stripeSecretKey && calendlyApiToken && stripeWebhookSecret && calendlyWebhookSigningKey
+  const expectedProof = origin && stripeSecretKey && stripeWebhookSecret && (!usesCalendly || (calendlyApiToken && calendlyWebhookSigningKey))
     ? await webhookSetupFingerprint({
       origin,
       stripeSecret: stripeSecretKey,
-      calendlyToken: calendlyApiToken,
+      calendlyToken: usesCalendly ? calendlyApiToken : "",
       stripeSigningSecret: stripeWebhookSecret,
-      calendlySigningKey: calendlyWebhookSigningKey,
+      calendlySigningKey: usesCalendly ? calendlyWebhookSigningKey : "",
     })
     : "";
   const proof = parseObject(runtimeMap.get(webhookSetupProofKey));
@@ -545,14 +561,21 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
     calendlyWebhookRegistration.ready && webhookSetupProofReady
   );
   const googlePlacesReady = Boolean(googlePlacesKey);
-  const emailReady = Boolean(
+  const emailReady = usesGmail ? Boolean(runtimeValue("GMAIL_SENDER_EMAIL") && ["GMAIL_OAUTH_CLIENT_ID", "GMAIL_OAUTH_CLIENT_SECRET", "GMAIL_OAUTH_REFRESH_TOKEN"].every((key) => requiredSecrets.get(key))) : emailProvider === "ses" && Boolean(
     runtimeValue("SES_SENDER_EMAIL") && runtimeValue("SES_SENDER_NAME") && runtimeValue("AWS_REGION") &&
     awsAccessKeyId && awsSecretAccessKey
   );
+  let googleCalendarReady = false;
+  if (schedulingProvider === "google_calendar") {
+    try { googleCalendarReady = (await readBookingSettings(env)).ready; } catch { /* Missing schema, permission, or setup: fail closed. */ }
+  }
+  const schedulingReady = usesCalendly ? calendlyProviderReady : schedulingProvider === "google_calendar" && googleCalendarReady;
+  const publicAnalytics = await getPublicAnalyticsConfig(env);
+  const analyticsReady = usesGa4 ? publicAnalytics.enabled && Boolean(requiredSecrets.get("GA4_API_SECRET")) : analyticsProvider === "posthog" && posthogReady;
   const originReady = Boolean(origin);
   const ready = Boolean(
-    cloudflareReady && securityReady && servicesReady && stripeReady && calendlyProviderReady &&
-    googlePlacesReady && emailReady && posthogReady && originReady &&
+    cloudflareReady && securityReady && servicesReady && stripeReady && schedulingReady &&
+    googlePlacesReady && emailReady && analyticsReady && originReady &&
     missingRuntimeConfigKeys.length === 0 && missingSecretNames.length === 0
   );
   return {
@@ -579,12 +602,15 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
         webhookRegistration: calendlyWebhookRegistration,
         setupProofReady: webhookSetupProofReady,
       },
+      scheduling: { provider: schedulingProvider, ready: schedulingReady },
+      googleCalendar: { ready: googleCalendarReady, selected: schedulingProvider === "google_calendar" },
+      analytics: { provider: analyticsProvider, ready: analyticsReady },
       googlePlaces: { ready: googlePlacesReady, apiKeyConfigured: Boolean(googlePlacesKey) },
       email: {
-        ready: emailReady,
-        senderConfigured: Boolean(runtimeValue("SES_SENDER_EMAIL") && runtimeValue("SES_SENDER_NAME")),
-        regionConfigured: Boolean(runtimeValue("AWS_REGION")),
-        credentialsConfigured: Boolean(awsAccessKeyId && awsSecretAccessKey),
+        ready: emailReady, provider: emailProvider,
+        senderConfigured: Boolean(usesGmail ? runtimeValue("GMAIL_SENDER_EMAIL") : runtimeValue("SES_SENDER_EMAIL") && runtimeValue("SES_SENDER_NAME")),
+        regionConfigured: usesGmail || Boolean(runtimeValue("AWS_REGION")),
+        credentialsConfigured: usesGmail ? ["GMAIL_OAUTH_CLIENT_ID", "GMAIL_OAUTH_CLIENT_SECRET", "GMAIL_OAUTH_REFRESH_TOKEN"].every((key) => Boolean(requiredSecrets.get(key))) : Boolean(awsAccessKeyId && awsSecretAccessKey),
       },
       posthog: { ready: posthogReady, enabled: posthogEnabled, publicConfigComplete: posthogReady },
       siteOrigin: { ready: originReady },
@@ -604,9 +630,10 @@ export const validateVeraProviderWebhookSetup = async (
 ) => {
   const generated = Boolean(safeString(env.ASTROPAGES_PROJECT_ID));
   const origin = siteOrigin(env, generated);
+  const usesCalendly = await selectedVeraSchedulingProvider(env) === "calendly";
   const submittedStripeHash = safeString(input.stripeSigningSecretSha256).toLowerCase();
   const submittedCalendlyHash = safeString(input.calendlySigningKeySha256).toLowerCase();
-  if (!origin || !/^[a-f0-9]{64}$/.test(submittedStripeHash) || !/^[a-f0-9]{64}$/.test(submittedCalendlyHash)) {
+  if (!origin || !/^[a-f0-9]{64}$/.test(submittedStripeHash) || (usesCalendly && !/^[a-f0-9]{64}$/.test(submittedCalendlyHash))) {
     return { ok: false as const, status: 400, message: "Provider webhook setup proof is invalid." };
   }
   const [stripeSecret, stripeSigningSecret, calendlyToken, calendlySigningKey] = await Promise.all([
@@ -618,8 +645,8 @@ export const validateVeraProviderWebhookSetup = async (
   const missingSecretNames = [
     stripeSecret ? "" : "STRIPE_SECRET_KEY",
     stripeSigningSecret ? "" : "STRIPE_WEBHOOK_SECRET",
-    calendlyToken ? "" : "CALENDLY_API_TOKEN",
-    calendlySigningKey ? "" : "CALENDLY_WEBHOOK_SIGNING_KEY",
+    !usesCalendly || calendlyToken ? "" : "CALENDLY_API_TOKEN",
+    !usesCalendly || calendlySigningKey ? "" : "CALENDLY_WEBHOOK_SIGNING_KEY",
   ].filter(Boolean);
   if (missingSecretNames.length) {
     return { ok: false as const, status: 503, message: "Provider webhook setup is incomplete.", missingSecretNames };
@@ -630,7 +657,7 @@ export const validateVeraProviderWebhookSetup = async (
   ]);
   if (
     !timingSafeHexEqual(actualStripeHash, submittedStripeHash) ||
-    !timingSafeHexEqual(actualCalendlyHash, submittedCalendlyHash)
+    (usesCalendly && !timingSafeHexEqual(actualCalendlyHash, submittedCalendlyHash))
   ) {
     return { ok: false as const, status: 409, message: "Provider webhook signing proof does not match configured secrets." };
   }
@@ -644,9 +671,9 @@ export const validateVeraProviderWebhookSetup = async (
       origin,
       force: true,
     }),
-    validateCalendlyWebhookRegistration({ env, token: calendlyToken, origin, force: true }),
+    usesCalendly ? validateCalendlyWebhookRegistration({ env, token: calendlyToken, origin, force: true }) : notRunWebhookCheck(),
   ]);
-  if (!stripeRegistration.ready || !calendlyRegistration.ready) {
+  if (!stripeRegistration.ready || (usesCalendly && !calendlyRegistration.ready)) {
     return {
       ok: false as const,
       status: 409,
@@ -657,9 +684,9 @@ export const validateVeraProviderWebhookSetup = async (
   const fingerprint = await webhookSetupFingerprint({
     origin,
     stripeSecret,
-    calendlyToken,
+    calendlyToken: usesCalendly ? calendlyToken : "",
     stripeSigningSecret,
-    calendlySigningKey,
+    calendlySigningKey: usesCalendly ? calendlySigningKey : "",
   });
   const validatedAt = nowIso();
   await run(env, `INSERT INTO ap_runtime_config

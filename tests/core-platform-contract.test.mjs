@@ -42,6 +42,12 @@ const baseTables = new Set([
   "ap_email_variable_mappings",
 ]);
 
+const integrationTables = [
+  "ap_analytics_deliveries",
+  "ap_email_deliveries",
+  "ap_booking_preview_policy"
+];
+
 test("template manifest declares core platform metadata without generated-site admin", () => {
   const manifest = readJson("template.manifest.json");
   const serialized = JSON.stringify(manifest);

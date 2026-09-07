@@ -7,7 +7,7 @@ type EmailAddress = {
   name?: string;
 };
 
-type EmailMessage = {
+export type EmailMessage = {
   to: EmailAddress[];
   sender: EmailAddress;
   subject: string;

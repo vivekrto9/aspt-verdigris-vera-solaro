@@ -13,7 +13,7 @@ import {
   buildWebSiteJsonLd,
 } from "../server/generated-site/seo.ts";
 import { getRuntimeEnv } from "../server/generated-site/request.ts";
-import { getPublicPosthogConfig } from "../server/aggregator/integrations/posthog.ts";
+import { getPublicAnalyticsConfig } from "../server/aggregator/integrations/analytics.ts";
 import BuilderToolbar from "../builder/BuilderToolbar.astro";
 import { chromeDefaults } from "../data/vera/content.ts";
 import faviconAssetUrl from "../../astropages/assets/favicon.svg?url";
@@ -86,8 +86,8 @@ const siteSettings = generatedSettings.siteSettings;
 const fallbackLocale = isActiveLocale(siteSettings.defaultLocale) ? siteSettings.defaultLocale : "en";
 const locale = getLocaleFromUrl(Astro.request.url, fallbackLocale as SupportedLocale);
 const env = await getRuntimeEnv(Astro);
-const posthogConfig = await getPublicPosthogConfig(env);
-const posthogConfigJson = JSON.stringify(posthogConfig).replace(/</g, "\\u003c");
+const analyticsConfig = await getPublicAnalyticsConfig(env);
+const analyticsConfigJson = JSON.stringify(analyticsConfig).replace(/</g, "\\u003c");
 const activeLocaleCodesJson = JSON.stringify(activeLocaleCodes);
 const faviconUrl = import.meta.env.DEV
   ? faviconAssetUrl
@@ -163,35 +163,30 @@ const seo = buildPublicSeo({
     {seo.jsonLd.map((entry) => (
       <script is:inline type="application/ld+json" set:html={JSON.stringify(entry).replace(/</g, "\\u003c")}></script>
     ))}
+    <style is:global>
+      .jc-analytics-consent { position: fixed; z-index: 1000; right: 1rem; bottom: 1rem; max-width: 26rem; padding: 1rem; border: 1px solid currentColor; border-radius: .75rem; background: Canvas; color: CanvasText; box-shadow: 0 8px 30px rgba(0,0,0,.18); }
+      .jc-analytics-consent[hidden] { display: none; }
+      .jc-analytics-consent div { display: flex; gap: .75rem; justify-content: flex-end; }
+      @media (max-width: 640px) { .jc-analytics-consent { left: .75rem; right: .75rem; bottom: .75rem; max-width: none; } }
+    </style>
   </head>
   <body data-runtime-substrate="cloudflare" data-site-source="vera-solaro" data-locale={locale} class={bodyClass}>
     <slot />
     {builderToolbar ? <BuilderToolbar {...builderToolbar} /> : null}
-    {posthogConfig.enabled ? (
+    <script is:inline type="application/json" data-analytics-config set:html={analyticsConfigJson}></script>
+    {analyticsConfig.enabled ? (
       <>
-        <script is:inline type="application/json" data-posthog-config set:html={posthogConfigJson}></script>
-        <aside
-          data-analytics-consent-banner
-          data-ph-no-capture
-          role="dialog"
-          aria-label={analyticsConsent.title}
-          hidden
-        >
-          <strong {...analyticsConsentEdit("analytics_consent_title")}>{analyticsConsent.title}</strong>
-          <p {...analyticsConsentEdit("analytics_consent_message")}>{analyticsConsent.message}</p>
-          <div data-analytics-consent-actions>
-            <button type="button" data-analytics-consent-decline {...analyticsConsentEdit("analytics_consent_decline")}>
-              {analyticsConsent.declineLabel}
-            </button>
-            <button type="button" data-analytics-consent-accept {...analyticsConsentEdit("analytics_consent_accept")}>
-              {analyticsConsent.acceptLabel}
-            </button>
+        <aside class="jc-analytics-consent" data-analytics-consent-banner hidden>
+          <p>Allow analytics cookies to help improve this site.</p>
+          <div>
+            <button type="button" data-analytics-consent-decline>Decline</button>
+            <button type="button" data-analytics-consent-accept>Allow analytics</button>
           </div>
         </aside>
       </>
     ) : null}
     <script>
-      import "../scripts/posthog-analytics.ts";
+      import "../scripts/visitor-analytics.ts";
     </script>
   </body>
 </html>

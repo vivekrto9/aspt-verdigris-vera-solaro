@@ -45,3 +45,18 @@ PREVIEW_SITE_URL=https://aspt-verdigris-vera-solaro-preview.example.workers.dev
 PRODUCTION_SITE_D1_DATABASE_ID=replace-with-production-d1-id
 PRODUCTION_SITE_SESSION_KV_NAMESPACE_ID=replace-with-production-kv-id
 PRODUCTION_SITE_URL=https://aspt-verdigris-vera-solaro-production.example.workers.dev
+
+# AstroPages chooses exactly one provider in each category. Disabled selections fail closed.
+TRANSACTIONAL_EMAIL_PROVIDER=ses
+ACTIVE_ANALYTICS_PROVIDER=posthog
+ACTIVE_SCHEDULING_PROVIDER=calendly
+GMAIL_SENDER_EMAIL=
+GMAIL_SENDER_NAME=
+GMAIL_OAUTH_CLIENT_ID=
+GMAIL_OAUTH_CLIENT_SECRET=
+GMAIL_OAUTH_REFRESH_TOKEN=
+GOOGLE_CALENDAR_CALENDAR_ID=
+GOOGLE_CALENDAR_DEFAULT_TIMEZONE=
+GOOGLE_CALENDAR_CLIENT_ID=
+GOOGLE_CALENDAR_CLIENT_SECRET=
+GOOGLE_CALENDAR_REFRESH_TOKEN=

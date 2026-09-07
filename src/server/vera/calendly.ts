@@ -1,3 +1,4 @@
+import { createVeraGoogleEvent, cancelVeraGoogleEvent, isVeraGoogleEventReference } from "./google-calendar.ts";
 import { resolveSecretBinding } from "../aggregator/runtime-bindings.ts";
 import {
   all,
@@ -331,7 +332,9 @@ const persistScheduledBooking = async ({
   const providerStart = new Date(result.startAt || safeString(booking.selected_start_at));
   const providerEnd = new Date(result.endAt || safeString(booking.selected_end_at));
   if (
-    !scheduledEventPattern.test(result.eventUri) || !inviteePattern.test(result.inviteeUri) ||
+    !(booking.scheduling_provider === "google_calendar"
+      ? isVeraGoogleEventReference(result.eventUri) && result.inviteeUri === result.eventUri
+      : scheduledEventPattern.test(result.eventUri) && inviteePattern.test(result.inviteeUri)) ||
     !Number.isFinite(providerStart.getTime()) || !Number.isFinite(providerEnd.getTime()) ||
     providerStart.getTime() !== expectedStart.getTime() || providerEnd.getTime() !== expectedEnd.getTime()
   ) {
@@ -347,7 +350,7 @@ const persistScheduledBooking = async ({
       SET status = 'confirmed', selected_start_at = ?, selected_end_at = ?,
         calendly_event_uri = ?, calendly_invitee_uri = ?, calendly_cancel_url = ?,
         calendly_reschedule_url = ?, calendly_meeting_url = ?, scheduling_error = NULL,
-        confirmed_at = COALESCE(confirmed_at, ?), hold_expires_at = NULL, updated_at = ?
+        confirmed_at = COALESCE(confirmed_at, ?), hold_expires_at = NULL, updated_at = ?, scheduling_operation = NULL
       WHERE id = ? AND status IN ('pending_payment', 'payment_action_required')
         AND payment_state IN ('deposit_paid', 'paid') AND cancelled_at IS NULL
         AND (calendly_event_uri IS NULL OR calendly_event_uri = ?)
@@ -407,6 +410,7 @@ export const createCalendlyInviteeForBooking = async ({
   booking: VeraRow;
   startAt: string;
 }) => {
+  if (booking.scheduling_provider === "google_calendar") return createVeraGoogleEvent({ env, booking, startAt });
   const token = await calendlyToken(env);
   if (!token) {
     return {
@@ -493,6 +497,20 @@ export const schedulePaidVeraBooking = async (env: VeraEnv, bookingId: string) =
     WHERE booking_id = ? AND status IN ('pending', 'succeeded') LIMIT 1`, [bookingId]);
   if (activeRefund) {
     return { ok: false as const, status: 409, message: "A booking with an active refund cannot be scheduled." };
+  }
+  if (booking.scheduling_provider === "google_calendar") {
+    const created = await createVeraGoogleEvent({ env, booking, startAt: safeString(booking.selected_start_at) });
+    if (!created.ok) {
+      if (!created.operationClaimed) return created;
+      await run(env, "UPDATE ap_vera_bookings SET scheduling_operation = NULL, scheduling_attempted = ? WHERE id = ? AND scheduling_operation = 'create'", [created.outcomeUnknown ? 1 : 0, bookingId]);
+      await markSchedulingActionRequired({ env, bookingId, expectedBooking: booking, message: created.message, eventType: "google_calendar.schedule_failed" });
+      return created;
+    }
+    const persisted = await persistScheduledBooking({ env, booking, result: created.result, auditEventType: "google_calendar.scheduled" });
+    if (!persisted.ok) {
+      await markSchedulingActionRequired({ env, bookingId, expectedBooking: booking, message: "Google Calendar booking requires reconciliation.", eventType: "google_calendar.reconciliation_required" });
+    }
+    return { ...persisted, result: created.result };
   }
   const token = await calendlyToken(env);
   if (!token) {
@@ -695,6 +713,12 @@ export const retryPaidVeraBookingScheduling = async ({
     if (!payment) {
       return { ok: false as const, status: 409, message: "A verified successful payment is required before retrying scheduling." };
     }
+  }
+  if (booking.scheduling_provider === "google_calendar") {
+    const failure = await first(env, `SELECT id FROM ${tables.bookingEvents} WHERE booking_id = ? AND event_type IN ('google_calendar.schedule_failed', 'google_calendar.reconciliation_required') AND created_at = ? LIMIT 1`, [bookingId, safeString(booking.updated_at)]);
+    if (!failure || booking.calendly_event_uri) return { ok: false as const, status: 409, message: "This booking needs staff reconciliation." };
+    const scheduled = await schedulePaidVeraBooking(env, bookingId);
+    return { ...scheduled, reconciliation: { state: scheduled.ok ? "scheduled" : "action_required", providerCreateAttempted: true } };
   }
   const schedulingError = safeString(booking.scheduling_error);
   if (!schedulingError) {
@@ -1048,6 +1072,7 @@ export const completeElapsedVeraBookings = async (env: VeraEnv, now = new Date()
 };
 
 export const cancelCalendlyEvent = async (env: VeraEnv, eventUri: string, reason: string) => {
+  if (isVeraGoogleEventReference(eventUri)) return cancelVeraGoogleEvent(env, eventUri);
   const token = await calendlyToken(env);
   if (!token) return { ok: false as const, status: 503, message: "Calendly is not configured.", missingSecretNames: ["CALENDLY_API_TOKEN"] };
   if (!scheduledEventPattern.test(eventUri)) return { ok: false as const, status: 409, message: "Scheduled event reference is invalid.", missingSecretNames: [] };
