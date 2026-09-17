@@ -158,11 +158,11 @@ export const resendVeraBookingReceipt = async (
       bookingNumber: safeString(booking.booking_number),
       serviceName: safeString(booking.service_name),
       scheduledDateTime: safeString(booking.selected_start_at),
-      priceAmount: new Intl.NumberFormat("en-US", { style: "currency", currency: safeString(booking.currency) || "USD" })
+      priceAmount: new Intl.NumberFormat(safeString(booking.currency) === "INR" ? "en-IN" : "en-US", { style: "currency", currency: safeString(booking.currency) || "USD" })
         .format(Number(booking.price_cents) / 100),
-      paidAmount: new Intl.NumberFormat("en-US", { style: "currency", currency: safeString(booking.currency) || "USD" })
+      paidAmount: new Intl.NumberFormat(safeString(booking.currency) === "INR" ? "en-IN" : "en-US", { style: "currency", currency: safeString(booking.currency) || "USD" })
         .format(Number(booking.paid_cents) / 100),
-      balanceAmount: new Intl.NumberFormat("en-US", { style: "currency", currency: safeString(booking.currency) || "USD" })
+      balanceAmount: new Intl.NumberFormat(safeString(booking.currency) === "INR" ? "en-IN" : "en-US", { style: "currency", currency: safeString(booking.currency) || "USD" })
         .format(Number(booking.balance_cents) / 100),
       accountUrl: `${origin}/account`,
     },

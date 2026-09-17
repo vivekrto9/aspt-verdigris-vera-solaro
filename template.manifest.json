@@ -140,6 +140,7 @@
       "SES_SENDER_NAME",
       "AWS_REGION",
       "STRIPE_PUBLISHABLE_KEY",
+      "RAZORPAY_KEY_ID",
       "CALENDLY_EVENT_TYPE_URI",
       "POSTHOG_PROJECT_API_KEY",
       "POSTHOG_HOST",
@@ -154,6 +155,8 @@
     "providerCredentials": [
       "STRIPE_SECRET_KEY",
       "STRIPE_WEBHOOK_SECRET",
+      "RAZORPAY_KEY_SECRET",
+      "RAZORPAY_WEBHOOK_SECRET",
       "CALENDLY_API_TOKEN",
       "CALENDLY_WEBHOOK_SIGNING_KEY",
       "AWS_ACCESS_KEY_ID",
@@ -777,12 +780,17 @@
       },
       {
         "key": "live-payments",
-        "label": "Stripe payments",
-        "description": "Stripe PaymentIntents and a signed webhook are required before a Vera sitting can be confirmed.",
+        "label": "Currency-routed payments",
+        "description": "Stripe for USD and Razorpay for INR, with signed webhooks for both, are required before a Vera sitting can be confirmed.",
         "evaluation": "all_of",
         "providers": [
           {
             "providerKey": "stripe",
+            "environment": "both",
+            "credentialMode": "live"
+          },
+          {
+            "providerKey": "razorpay",
             "environment": "both",
             "credentialMode": "live"
           }

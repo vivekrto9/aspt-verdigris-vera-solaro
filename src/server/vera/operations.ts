@@ -339,21 +339,27 @@ const validateCalendlyWebhookRegistration = async ({
 const webhookSetupFingerprint = async ({
   origin,
   stripeSecret,
+  razorpayKeySecret,
   calendlyToken,
   stripeSigningSecret,
+  razorpaySigningSecret,
   calendlySigningKey,
 }: {
   origin: string;
   stripeSecret: string;
+  razorpayKeySecret: string;
   calendlyToken: string;
   stripeSigningSecret: string;
+  razorpaySigningSecret: string;
   calendlySigningKey: string;
 }) => sha256Hex(JSON.stringify({
   version: 1,
   origin,
   stripeAccount: await sha256Hex(stripeSecret),
+  razorpayAccount: await sha256Hex(razorpayKeySecret),
   calendlyAccount: await sha256Hex(calendlyToken),
   stripeSigning: await sha256Hex(stripeSigningSecret),
+  razorpaySigning: await sha256Hex(razorpaySigningSecret),
   calendlySigning: await sha256Hex(calendlySigningKey),
   stripeEvents: stripeWebhookEvents,
   calendlyEvents: calendlyWebhookEvents,
@@ -405,7 +411,7 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
   let schemaReady = false;
   try {
     [services, runtime] = await Promise.all([
-      all(env, `SELECT slug, name, duration_minutes, price_cents, currency, active, sort_order
+      all(env, `SELECT slug, name, duration_minutes, price_cents, currency, price_usd_cents, price_inr_cents, active, sort_order
         FROM ${tables.services} ORDER BY sort_order`),
       all(env, `SELECT key, value, status, updated_at FROM ap_runtime_config
         WHERE status = 'active' ORDER BY key`),
@@ -436,7 +442,8 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
       expected && safeString(row.name) === expected.name &&
       Number(row.duration_minutes) === expected.durationMinutes &&
       Number(row.price_cents) === expected.priceCents &&
-      safeString(row.currency) === "USD" && Number(row.active) === 1
+      safeString(row.currency) === "USD" && Number(row.price_usd_cents) === expected.priceCents &&
+      Number.isInteger(Number(row.price_inr_cents)) && Number(row.price_inr_cents) > 0 && Number(row.active) === 1
     );
   });
 
@@ -459,6 +466,8 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
     platformGooglePlacesKey,
     stripeSecretKey,
     stripeWebhookSecret,
+    razorpayKeySecret,
+    razorpayWebhookSecret,
     calendlyApiToken,
     calendlyWebhookSigningKey,
     awsAccessKeyId,
@@ -469,6 +478,8 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
     resolveRuntimeBinding(env[platformGooglePlacesSecretBinding]),
     resolveSecretBinding(env, "STRIPE_SECRET_KEY"),
     resolveSecretBinding(env, "STRIPE_WEBHOOK_SECRET"),
+    resolveSecretBinding(env, "RAZORPAY_KEY_SECRET"),
+    resolveSecretBinding(env, "RAZORPAY_WEBHOOK_SECRET"),
     resolveSecretBinding(env, "CALENDLY_API_TOKEN"),
     resolveSecretBinding(env, "CALENDLY_WEBHOOK_SIGNING_KEY"),
     resolveSecretBinding(env, "AWS_ACCESS_KEY_ID"),
@@ -483,6 +494,8 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
     ["EMDASH_ENCRYPTION_KEY", encryptionKey],
     ["STRIPE_SECRET_KEY", stripeSecretKey],
     ["STRIPE_WEBHOOK_SECRET", stripeWebhookSecret],
+    ["RAZORPAY_KEY_SECRET", razorpayKeySecret],
+    ["RAZORPAY_WEBHOOK_SECRET", razorpayWebhookSecret],
     ["CALENDLY_API_TOKEN", calendlyApiToken],
     ["CALENDLY_WEBHOOK_SIGNING_KEY", calendlyWebhookSigningKey],
     ["AWS_ACCESS_KEY_ID", awsAccessKeyId],
@@ -503,6 +516,7 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
 
   const runtimeRequirements = [
     "STRIPE_PUBLISHABLE_KEY",
+    "RAZORPAY_KEY_ID",
     ...(usesCalendly ? [SHARED_CALENDLY_RUNTIME_KEY] : []),
     ...(usesGmail ? ["GMAIL_SENDER_EMAIL"] : ["SES_SENDER_EMAIL", "SES_SENDER_NAME", "AWS_REGION"]),
     ...(usesGa4 ? ["GA4_MEASUREMENT_ID"] : []),
@@ -525,6 +539,7 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
   const securityReady = Boolean(encryptionKey) && secretStoreConfigured;
   const origin = siteOrigin(env, generated);
   const stripeConfigured = Boolean(runtimeValue("STRIPE_PUBLISHABLE_KEY") && stripeSecretKey && stripeWebhookSecret);
+  const razorpayConfigured = Boolean(runtimeValue("RAZORPAY_KEY_ID") && razorpayKeySecret && razorpayWebhookSecret);
   const calendlyLiveValidation = usesCalendly && calendlyReady && calendlyApiToken
     ? await validateLiveCalendlyMapping({ env, eventTypeUri: sharedCalendlyUri })
     : { ready: false, checked: false, source: "not-run", checkedMappings: 0 };
@@ -541,12 +556,14 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
       ? validateCalendlyWebhookRegistration({ env, token: calendlyApiToken, origin })
       : notRunWebhookCheck(),
   ]);
-  const expectedProof = origin && stripeSecretKey && stripeWebhookSecret && (!usesCalendly || (calendlyApiToken && calendlyWebhookSigningKey))
+  const expectedProof = origin && stripeSecretKey && stripeWebhookSecret && razorpayKeySecret && razorpayWebhookSecret && (!usesCalendly || (calendlyApiToken && calendlyWebhookSigningKey))
     ? await webhookSetupFingerprint({
       origin,
       stripeSecret: stripeSecretKey,
+      razorpayKeySecret,
       calendlyToken: usesCalendly ? calendlyApiToken : "",
       stripeSigningSecret: stripeWebhookSecret,
+      razorpaySigningSecret: razorpayWebhookSecret,
       calendlySigningKey: usesCalendly ? calendlyWebhookSigningKey : "",
     })
     : "";
@@ -556,6 +573,7 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
     expectedProof && proofFingerprint && timingSafeHexEqual(expectedProof, proofFingerprint)
   );
   const stripeReady = Boolean(stripeConfigured && stripeWebhookRegistration.ready && webhookSetupProofReady);
+  const razorpayReady = Boolean(razorpayConfigured && webhookSetupProofReady);
   const calendlyProviderReady = Boolean(
     calendlyApiToken && calendlyWebhookSigningKey && calendlyReady && calendlyLiveValidation.ready &&
     calendlyWebhookRegistration.ready && webhookSetupProofReady
@@ -574,7 +592,7 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
   const analyticsReady = usesGa4 ? publicAnalytics.enabled && Boolean(requiredSecrets.get("GA4_API_SECRET")) : analyticsProvider === "posthog" && posthogReady;
   const originReady = Boolean(origin);
   const ready = Boolean(
-    cloudflareReady && securityReady && servicesReady && stripeReady && schedulingReady &&
+    cloudflareReady && securityReady && servicesReady && stripeReady && razorpayReady && schedulingReady &&
     googlePlacesReady && emailReady && analyticsReady && originReady &&
     missingRuntimeConfigKeys.length === 0 && missingSecretNames.length === 0
   );
@@ -591,6 +609,13 @@ export const listVeraOperationsReadiness = async (env: VeraEnv) => {
         secretKeyConfigured: Boolean(stripeSecretKey),
         webhookSigningConfigured: Boolean(stripeWebhookSecret),
         webhookRegistration: stripeWebhookRegistration,
+        setupProofReady: webhookSetupProofReady,
+      },
+      razorpay: {
+        ready: razorpayReady,
+        keyIdConfigured: Boolean(runtimeValue("RAZORPAY_KEY_ID")),
+        keySecretConfigured: Boolean(razorpayKeySecret),
+        webhookSigningConfigured: Boolean(razorpayWebhookSecret),
         setupProofReady: webhookSetupProofReady,
       },
       calendly: {
@@ -632,31 +657,38 @@ export const validateVeraProviderWebhookSetup = async (
   const origin = siteOrigin(env, generated);
   const usesCalendly = await selectedVeraSchedulingProvider(env) === "calendly";
   const submittedStripeHash = safeString(input.stripeSigningSecretSha256).toLowerCase();
+  const submittedRazorpayHash = safeString(input.razorpaySigningSecretSha256).toLowerCase();
   const submittedCalendlyHash = safeString(input.calendlySigningKeySha256).toLowerCase();
-  if (!origin || !/^[a-f0-9]{64}$/.test(submittedStripeHash) || (usesCalendly && !/^[a-f0-9]{64}$/.test(submittedCalendlyHash))) {
+  if (!origin || !/^[a-f0-9]{64}$/.test(submittedStripeHash) || !/^[a-f0-9]{64}$/.test(submittedRazorpayHash) || (usesCalendly && !/^[a-f0-9]{64}$/.test(submittedCalendlyHash))) {
     return { ok: false as const, status: 400, message: "Provider webhook setup proof is invalid." };
   }
-  const [stripeSecret, stripeSigningSecret, calendlyToken, calendlySigningKey] = await Promise.all([
+  const [stripeSecret, stripeSigningSecret, razorpayKeySecret, razorpaySigningSecret, calendlyToken, calendlySigningKey] = await Promise.all([
     resolveSecretBinding(env, "STRIPE_SECRET_KEY"),
     resolveSecretBinding(env, "STRIPE_WEBHOOK_SECRET"),
+    resolveSecretBinding(env, "RAZORPAY_KEY_SECRET"),
+    resolveSecretBinding(env, "RAZORPAY_WEBHOOK_SECRET"),
     resolveSecretBinding(env, "CALENDLY_API_TOKEN"),
     resolveSecretBinding(env, "CALENDLY_WEBHOOK_SIGNING_KEY"),
   ]);
   const missingSecretNames = [
     stripeSecret ? "" : "STRIPE_SECRET_KEY",
     stripeSigningSecret ? "" : "STRIPE_WEBHOOK_SECRET",
+    razorpayKeySecret ? "" : "RAZORPAY_KEY_SECRET",
+    razorpaySigningSecret ? "" : "RAZORPAY_WEBHOOK_SECRET",
     !usesCalendly || calendlyToken ? "" : "CALENDLY_API_TOKEN",
     !usesCalendly || calendlySigningKey ? "" : "CALENDLY_WEBHOOK_SIGNING_KEY",
   ].filter(Boolean);
   if (missingSecretNames.length) {
     return { ok: false as const, status: 503, message: "Provider webhook setup is incomplete.", missingSecretNames };
   }
-  const [actualStripeHash, actualCalendlyHash] = await Promise.all([
+  const [actualStripeHash, actualRazorpayHash, actualCalendlyHash] = await Promise.all([
     sha256Hex(stripeSigningSecret),
+    sha256Hex(razorpaySigningSecret),
     sha256Hex(calendlySigningKey),
   ]);
   if (
     !timingSafeHexEqual(actualStripeHash, submittedStripeHash) ||
+    !timingSafeHexEqual(actualRazorpayHash, submittedRazorpayHash) ||
     (usesCalendly && !timingSafeHexEqual(actualCalendlyHash, submittedCalendlyHash))
   ) {
     return { ok: false as const, status: 409, message: "Provider webhook signing proof does not match configured secrets." };
@@ -684,8 +716,10 @@ export const validateVeraProviderWebhookSetup = async (
   const fingerprint = await webhookSetupFingerprint({
     origin,
     stripeSecret,
+    razorpayKeySecret,
     calendlyToken: usesCalendly ? calendlyToken : "",
     stripeSigningSecret,
+    razorpaySigningSecret,
     calendlySigningKey: usesCalendly ? calendlySigningKey : "",
   });
   const validatedAt = nowIso();

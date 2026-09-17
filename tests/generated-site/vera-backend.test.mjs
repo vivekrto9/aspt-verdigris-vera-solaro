@@ -16,7 +16,7 @@ const googleFixture = async () => {
   const control = { loseCreateResponse: false, loseMailResponse: false, busy: [], failCalendar: false };
   const env = { DB, ASTROPAGES_SITE_URL: 'https://vera.test', ASTROPAGES_SITE_ENVIRONMENT: 'preview', EMDASH_ENCRYPTION_KEY: 'contract-encryption-key',
     GOOGLE_CALENDAR_CLIENT_ID: 'contract-id', GOOGLE_CALENDAR_CLIENT_SECRET: 'contract-secret', GOOGLE_CALENDAR_REFRESH_TOKEN: 'contract-refresh',
-    GMAIL_OAUTH_CLIENT_ID: 'contract-id', GMAIL_OAUTH_CLIENT_SECRET: 'contract-secret', GMAIL_OAUTH_REFRESH_TOKEN: 'contract-refresh', GA4_API_SECRET: 'contract-ga4', STRIPE_WEBHOOK_SECRET: 'contract-stripe',
+    GMAIL_OAUTH_CLIENT_ID: 'contract-id', GMAIL_OAUTH_CLIENT_SECRET: 'contract-secret', GMAIL_OAUTH_REFRESH_TOKEN: 'contract-refresh', GA4_API_SECRET: 'contract-ga4', STRIPE_WEBHOOK_SECRET: 'contract-stripe', RAZORPAY_KEY_SECRET: 'contract-razorpay-key', RAZORPAY_WEBHOOK_SECRET: 'contract-razorpay-webhook',
     fetch: async (input, init = {}) => {
       const url = new URL(String(input)); calls.push({ host: url.host, path: url.pathname, method: init.method || 'GET' });
       if (url.host === 'oauth2.googleapis.com') return Response.json({ access_token: 'contract-access' });
@@ -58,19 +58,21 @@ const googleFixture = async () => {
   return { sqlite, DB, env, set, events, purchases, calls, control, rules, startAt, create, pay, request };
 };
 
-test('Google readiness validates Stripe-only webhook proof without requiring Calendly or SES', async () => {
+test('Google readiness validates both currency payment webhook proofs without requiring Calendly or SES', async () => {
   const f = await googleFixture();
   f.set('STRIPE_PUBLISHABLE_KEY', 'pk_test_contract');
+  f.set('RAZORPAY_KEY_ID', 'rzp_test_contract');
   Object.assign(f.env, { STRIPE_SECRET_KEY: 'sk_test_contract', GOOGLE_PLACES_API_KEY: 'contract-places', MEDIA: { get() {}, put() {}, delete() {} }, SESSION: { get() {}, put() {} }, IMAGES: { input() {}, info() {} }, EMAIL_QUEUE: { send() {} } });
   const googleFetch = f.env.fetch;
   f.env.fetch = async (input, init) => new URL(String(input)).host === 'api.stripe.com'
     ? Response.json({ data: [{ id: 'we_test', url: 'https://vera.test/api/astropages/generated-site/vera/webhooks/stripe', status: 'enabled', livemode: false, enabled_events: ['payment_intent.succeeded', 'payment_intent.payment_failed', 'payment_intent.processing', 'payment_intent.canceled', 'refund.created', 'refund.updated', 'refund.failed'] }], has_more: false })
     : googleFetch(input, init);
-  const proof = await validateVeraProviderWebhookSetup(f.env, { stripeSigningSecretSha256: await sha256Hex(f.env.STRIPE_WEBHOOK_SECRET) });
+  const proof = await validateVeraProviderWebhookSetup(f.env, { stripeSigningSecretSha256: await sha256Hex(f.env.STRIPE_WEBHOOK_SECRET), razorpaySigningSecretSha256: await sha256Hex(f.env.RAZORPAY_WEBHOOK_SECRET) });
   assert.equal(proof.ok, true, proof.message);
   const ready = await listVeraOperationsReadiness(f.env);
   assert.equal(ready.ready, true, JSON.stringify(ready));
   assert.equal(ready.checks.stripe.setupProofReady, true);
+  assert.equal(ready.checks.razorpay.ready, true);
   assert.equal(f.calls.some((call) => call.host.includes('calendly')), false);
 });
 
@@ -1532,6 +1534,7 @@ test("Vera operations readiness blocks incomplete runtime and reports ready with
 
   const runtimeConfig = new Map([
     ["STRIPE_PUBLISHABLE_KEY", "pk_live_readiness_contract"],
+    ["RAZORPAY_KEY_ID", "rzp_live_readiness_contract"],
     ["CALENDLY_EVENT_TYPE_URI", "https://api.calendly.com/event_types/NATALCALL"],
     ["SES_SENDER_EMAIL", "vera@example.test"],
     ["SES_SENDER_NAME", "Vera Solaro"],
@@ -1546,6 +1549,8 @@ test("Vera operations readiness blocks incomplete runtime and reports ready with
   const integrationSecrets = {
     STRIPE_SECRET_KEY: "sk_live_secret_must_not_leak",
     STRIPE_WEBHOOK_SECRET: "whsec_secret_must_not_leak",
+    RAZORPAY_KEY_SECRET: "razorpay_key_must_not_leak",
+    RAZORPAY_WEBHOOK_SECRET: "razorpay_webhook_must_not_leak",
     CALENDLY_API_TOKEN: "calendly_token_must_not_leak",
     CALENDLY_WEBHOOK_SIGNING_KEY: "calendly_signing_must_not_leak",
     AWS_ACCESS_KEY_ID: "aws_access_must_not_leak",
@@ -1623,6 +1628,7 @@ test("Vera operations readiness blocks incomplete runtime and reports ready with
       body: JSON.stringify({
         action: "validate_provider_webhooks",
         stripeSigningSecretSha256: await sha256Hex(integrationSecrets.STRIPE_WEBHOOK_SECRET),
+        razorpaySigningSecretSha256: await sha256Hex(integrationSecrets.RAZORPAY_WEBHOOK_SECRET),
         calendlySigningKeySha256: await sha256Hex(integrationSecrets.CALENDLY_WEBHOOK_SIGNING_KEY),
       }),
     }),

@@ -262,6 +262,27 @@ export const verifyRuntimeConfigSyncJwt = async (
   return payload;
 };
 
+export const verifyPaymentSettingsJwt = async (token: string, publicJwkBinding: unknown) => {
+  if (token.split(".").length !== 3) throw new Error("Malformed payment-settings token");
+  const payload = await verifyControlPlaneJwt<Record<string, unknown>>(
+    token,
+    publicJwkBinding,
+    "astropages-generated-site-payment-settings",
+  );
+  const now = Math.floor(Date.now() / 1000);
+  if (typeof payload.sub !== "string" || !payload.sub || typeof payload.jti !== "string" || !payload.jti
+    || !Number.isInteger(payload.iat) || !Number.isInteger(payload.exp) || Number(payload.iat) > now + 5
+    || Number(payload.exp) - Number(payload.iat) > 60 || Number(payload.exp) <= Number(payload.iat)
+    || !["preview", "production"].includes(String(payload.environment))
+    || !["owner", "admin", "member", "viewer"].includes(String(payload.role))
+    || !["GET", "PATCH"].includes(String(payload.method))
+    || typeof payload.path !== "string" || typeof payload.bodyHash !== "string"
+    || !/^[0-9a-f]{64}$/.test(payload.bodyHash)) {
+    throw new Error("Invalid payment-settings token claims");
+  }
+  return payload;
+};
+
 const sameSitePath = (value: string) => {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return "/";
   const parsed = new URL(value, "https://generated-site.local");

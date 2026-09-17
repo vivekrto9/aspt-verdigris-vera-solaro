@@ -22,7 +22,7 @@ const customerSession = await getCustomerSession(env as never, Astro.request);
 const accountCsrfToken = customerSession?.csrfToken ?? "";
 
 // Return query parameters only choose helpful interim copy. The state returned by
-// the server remains authoritative; only Stripe's signed webhook can move payment.
+// the server remains authoritative; only the selected provider's signed webhook can move payment.
 const returnHint = Astro.url.searchParams.get("payment");
 const authoritativeState = String(booking.confirmationState || "awaiting_payment");
 const initialState = authoritativeState === "confirmed" || authoritativeState === "action_required" || authoritativeState === "paid_scheduling"
@@ -59,14 +59,14 @@ const service = catalog.services.find((row) => row.slug === booking.serviceSlug)
 const currency = booking.currency || "USD";
 const money = (cents: number) => {
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(currency === "INR" ? "en-IN" : "en-US", {
       style: "currency",
       currency,
       minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
       maximumFractionDigits: 2,
     }).format(cents / 100);
   } catch {
-    return `$${(cents / 100).toFixed(2)}`;
+    return "";
   }
 };
 const fill = (template: string, values: Record<string, string>) =>
@@ -85,9 +85,15 @@ const summary = {
   serviceName: service?.name ?? "",
   when,
   modeCopy: booking.mode === "in_person" ? content.summary_mode_room : content.summary_mode_call,
+  price: money(Number(booking.priceCents)),
   paid: money(Number(booking.paidCents)),
   balanceCopy: fill(content.confirmed_balance_template, { balance: money(Number(booking.balanceCents)) }),
 };
+const emailLedger = fill(content.confirmed_email_ledger, {
+  reference: booking.bookingNumber,
+  paid: summary.paid,
+  balance: money(Number(booking.balanceCents)),
+});
 const summaryLabels = String(content.summary_labels ?? "").split("\n");
 const paymentCompactCopy = String(content.payment_compact_intro ?? "").split("\n");
 const durationMinutes = Number(service?.durationMinutes ?? 0);
@@ -182,7 +188,7 @@ const confirmationEmailReply = String(content.confirmed_email_reply ?? "").split
                 <div class="vera-booking-email-preview__brand" {...chromeEdit("brand_name")}>{content.brand_name}</div>
                 <p data-booking-confirmed-email-greeting {...builderEdit("confirmed_email_greeting")}>{content.confirmed_email_greeting}</p>
                 <p data-booking-confirmed-email-sitting {...builderEdit("confirmed_email_sitting")}>{content.confirmed_email_sitting}</p>
-                <div class="vera-booking-email-preview__ledger" data-booking-confirmed-email-ledger {...builderEdit("confirmed_email_ledger")}>{content.confirmed_email_ledger}</div>
+                <div class="vera-booking-email-preview__ledger" data-booking-confirmed-email-ledger {...builderEdit("confirmed_email_ledger")}>{emailLedger}</div>
                 <button class="vera-button vera-button--burnt vera-button--small" type="button" data-booking-add-calendar {...builderEdit("confirmed_calendar_cta")}>{content.confirmed_calendar_cta}</button>
                 <p {...builderEdit("confirmed_email_reply")}>{confirmationEmailReply[0]}</p>
                 <div class="vera-booking-email-preview__signature" {...builderEdit("confirmed_email_reply")}>{confirmationEmailReply.slice(1).join("\n")}</div>
@@ -228,6 +234,14 @@ const confirmationEmailReply = String(content.confirmed_email_reply ?? "").split
               <div>
                 <dt>{summaryLabels[1]}</dt>
                 <dd><span data-booking-state-when>{summary.when}</span><small>{summary.modeCopy}</small></dd>
+              </div>
+              <div>
+                <dt>{summaryLabels[3]}</dt>
+                <dd data-booking-state-price>{summary.price}</dd>
+              </div>
+              <div>
+                <dt {...builderEdit("confirmed_paid_label")}>{content.confirmed_paid_label}</dt>
+                <dd data-booking-state-paid>{summary.paid}</dd>
               </div>
               <div>
                 <dt {...builderEdit("confirmation_state_copy")}>{confirmationActions.paymentLabel}</dt>
@@ -290,7 +304,9 @@ const confirmationEmailReply = String(content.confirmed_email_reply ?? "").split
     asRecord,
     asText,
     browserTimezone,
+    formatMoney,
     forgetAccess,
+    openProviderCheckout,
     readAccess,
     requestJson,
     slotDateLabel,
@@ -307,6 +323,8 @@ const confirmationEmailReply = String(content.confirmed_email_reply ?? "").split
   const checkAgainButton = document.querySelector<HTMLButtonElement>("[data-booking-check-again]");
   const checkFeedback = document.querySelector<HTMLElement>("[data-booking-check-feedback]");
   const paymentStatus = document.querySelector<HTMLElement>("[data-booking-payment-status]");
+  const statePrice = document.querySelector<HTMLElement>("[data-booking-state-price]");
+  const statePaid = document.querySelector<HTMLElement>("[data-booking-state-paid]");
   const schedulingStatus = document.querySelector<HTMLElement>("[data-booking-scheduling-status]");
   const retryPaymentButton = document.querySelector<HTMLButtonElement>("[data-booking-retry-payment]");
   const paymentDialog = document.querySelector<HTMLElement>("[data-booking-payment-dialog]");
@@ -378,6 +396,13 @@ const confirmationEmailReply = String(content.confirmed_email_reply ?? "").split
       { headers: mutationHeaders() },
     );
     const booking = asRecord(data.booking);
+    const currency = asText(booking.currency);
+    if (currency === "INR" || currency === "USD") {
+      const price = Number(booking.priceCents);
+      const paid = Number(booking.paidCents);
+      if (statePrice && Number.isSafeInteger(price) && price >= 0) statePrice.textContent = formatMoney(price, currency);
+      if (statePaid && Number.isSafeInteger(paid) && paid >= 0) statePaid.textContent = formatMoney(paid, currency);
+    }
     const state = asText(booking.confirmationState) || "awaiting_payment";
     if (state === "confirmed") {
       window.location.reload();
@@ -516,9 +541,10 @@ const confirmationEmailReply = String(content.confirmed_email_reply ?? "").split
         headers: mutationHeaders(),
         body: JSON.stringify({ manageToken, kind: "full" }),
       });
-      const url = asText(asRecord(data.checkout).url);
-      if (!/^https:\/\//.test(url)) throw new Error("invalid checkout");
-      window.location.assign(url);
+      await openProviderCheckout(
+        asRecord(data.checkout),
+        `/booking/${encodeURIComponent(bookingId)}/confirmation?${manageToken ? `token=${encodeURIComponent(manageToken)}&` : ""}payment=processing`,
+      );
     } catch {
       renderState("failed");
       paymentOpening = false;

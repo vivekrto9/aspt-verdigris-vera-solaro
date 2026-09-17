@@ -55,7 +55,7 @@ const paymentCompactCopy = String(content.payment_compact_intro ?? "").split("\n
                   name="service"
                   value={index === 1 ? "natal-hour" : index === 2 ? "year-ahead" : "two-charts"}
                 />
-                <span {...builderEdit(`service_${index}`)}>{content[`service_${index}`]}</span>
+                <span data-booking-service-label={index === 1 ? "natal-hour" : index === 2 ? "year-ahead" : "two-charts"} {...builderEdit(`service_${index}`)}>{content[`service_${index}`]}</span>
               </label>
             ))}
           </div>
@@ -373,6 +373,7 @@ const paymentCompactCopy = String(content.payment_compact_intro ?? "").split("\n
     formatMoney,
     forgetAccess,
     loadCatalog,
+    openProviderCheckout,
     rememberAccess,
     requestJson,
     RequestFailure,
@@ -1007,10 +1008,11 @@ const paymentCompactCopy = String(content.payment_compact_intro ?? "").split("\n
         body: JSON.stringify({ manageToken, kind: "full" }),
       });
       const checkout = asRecord(checkoutData.checkout);
-      const checkoutUrl = asText(checkout.url);
-      if (!/^https:\/\//.test(checkoutUrl)) throw new RequestFailure(502);
       track("payment_checkout_started", { step: 3, service: selectedService(), mode: selectedMode() });
-      window.location.assign(checkoutUrl);
+      await openProviderCheckout(
+        checkout,
+        `/booking/${encodeURIComponent(bookingId)}/confirmation?token=${encodeURIComponent(manageToken)}&payment=processing`,
+      );
     } catch (error) {
       const failure = error instanceof RequestFailure ? error : new RequestFailure(500);
       track("payment_failed", {
@@ -1087,6 +1089,12 @@ const paymentCompactCopy = String(content.payment_compact_intro ?? "").split("\n
     forgetAccess();
     try {
       catalog = await loadCatalog();
+      document.querySelectorAll<HTMLElement>("[data-booking-service-label]").forEach((label) => {
+        const service = catalogServiceRow(catalog, label.dataset.bookingServiceLabel || "");
+        const amount = asNumber(service.priceCents);
+        const currency = asText(service.currency);
+        if (amount > 0 && currency) label.textContent = `${asText(service.name)} · ${formatMoney(amount, currency)}`;
+      });
     } catch {
       catalog = {};
     }

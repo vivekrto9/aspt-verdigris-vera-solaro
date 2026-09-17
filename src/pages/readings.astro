@@ -2,12 +2,15 @@
 import { loadPublicPageContent } from "../builder/public-page.ts";
 import ReadingsCatalog from "../components/vera/ReadingsCatalog.astro";
 import VeraFrame from "../components/vera/VeraFrame.astro";
+import { listVeraCatalog } from "../server/vera/catalog.ts";
+import { getVeraEnv } from "../server/vera/http.ts";
 
 export const prerender = false;
 
 const page = await loadPublicPageContent(Astro, "readings");
+const catalog = await listVeraCatalog(await getVeraEnv(Astro as never));
 ---
 
 <VeraFrame {...page} currentPath="/readings">
-  <ReadingsCatalog content={page.content} edit={page.builderEdit} />
+  <ReadingsCatalog content={page.content} edit={page.builderEdit} catalogServices={catalog.services} depositCents={catalog.depositCents} catalogCurrency={catalog.currency} />
 </VeraFrame>
