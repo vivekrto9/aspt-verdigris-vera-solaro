@@ -8,11 +8,28 @@ const {
   content,
   edit,
   selected = 0,
+  catalogServices = [],
+  depositCents = 0,
+  catalogCurrency = "USD",
 } = Astro.props as {
   content: Record<string, string>;
   edit: Edit;
   selected?: number;
+  catalogServices?: Array<{ slug: string; priceCents: number; currency: string }>;
+  depositCents?: number;
+  catalogCurrency?: string;
 };
+
+const money = (slug: string) => {
+  const service = catalogServices.find((entry) => entry.slug === slug);
+  if (!service) return "Unavailable";
+  return new Intl.NumberFormat(service.currency === "INR" ? "en-IN" : "en-US", {
+    style: "currency", currency: service.currency, maximumFractionDigits: 2,
+  }).format(service.priceCents / 100);
+};
+const depositMoney = new Intl.NumberFormat(catalogCurrency === "INR" ? "en-IN" : "en-US", {
+  style: "currency", currency: catalogCurrency, maximumFractionDigits: 2,
+}).format(depositCents / 100);
 
 const services = [
   { index: 1, slug: "natal-hour" },
@@ -45,7 +62,7 @@ const detailFaqs = [1, 2, 3, 4, 5].map((index) => {
             {content[`service_${index}_title`].replace(/^The /, "")}
           </span>
           <span aria-hidden="true"> · </span>
-          <span {...edit(`service_${index}_price`)}>{content[`service_${index}_price`]}</span>
+          <span>{money(slug)}</span>
         </a>
       ))}
     </nav>
@@ -130,7 +147,7 @@ const detailFaqs = [1, 2, 3, 4, 5].map((index) => {
         <div class="vera-reading-booking-card__price">
           <div>
             <span {...edit("detail_per_sitting")}>{content.detail_per_sitting}</span>
-            <strong {...edit(`service_${selected}_price`)}>{content[`service_${selected}_price`]}</strong>
+            <strong>{money(selectedService.slug)}</strong>
           </div>
           <p>
             <span {...edit(`service_${selected}_duration`)}>
@@ -155,7 +172,7 @@ const detailFaqs = [1, 2, 3, 4, 5].map((index) => {
             </p>
             <ul class="vera-reading-benefits">
               {[1, 2, 3].map((index) => (
-                <li {...edit(`detail_benefit_${index}`)}>{content[`detail_benefit_${index}`]}</li>
+                <li {...edit(`detail_benefit_${index}`)}>{index === 1 ? `Hold your seat with a ${depositMoney} deposit` : content[`detail_benefit_${index}`]}</li>
               ))}
             </ul>
             <a
@@ -236,8 +253,8 @@ const detailFaqs = [1, 2, 3, 4, 5].map((index) => {
               ))}
             </ul>
             <footer class="vera-reading-card__footer">
-              <span class="vera-price" {...edit(`service_${index}_price`)}>
-                {content[`service_${index}_price`]}
+              <span class="vera-price">
+                {money(slug)}
               </span>
               <a
                 class:list={[

@@ -218,6 +218,7 @@ export const createStripeCheckoutForBooking = async ({
   const amountCents = quoteBookingPayment({
     paymentState: safeString(booking.payment_state),
     balanceCents: Number(booking.balance_cents),
+    depositCents: Number(booking.deposit_cents || 8_000),
     kind,
   });
   if (amountCents < 50) {
@@ -330,6 +331,7 @@ export const createStripePaymentIntent = async ({
   const amountCents = quoteBookingPayment({
     paymentState: safeString(booking.payment_state),
     balanceCents: Number(booking.balance_cents),
+    depositCents: Number(booking.deposit_cents || 8_000),
     kind,
   });
   if (amountCents < 50) {
@@ -447,7 +449,7 @@ export const verifyStripeSignature = async ({
   return signatures.some((signature) => timingSafeHexEqual(expected, signature));
 };
 
-const recordNonSuccessPaymentEvent = async ({
+export const recordNonSuccessPaymentEvent = async ({
   env,
   eventId,
   eventType,
@@ -478,7 +480,7 @@ const recordNonSuccessPaymentEvent = async ({
   ]);
 };
 
-const processPaymentSucceeded = async ({
+export const processPaymentSucceeded = async ({
   env,
   eventId,
   eventType,
@@ -497,7 +499,7 @@ const processPaymentSucceeded = async ({
   const expectedAmount = Number(attempt.amount_cents);
   const currency = safeString(intent.currency).toUpperCase();
   if (amount !== expectedAmount || currency !== safeString(attempt.currency).toUpperCase()) {
-    return { ok: false as const, status: 409, message: "Stripe payment amount did not match the authoritative attempt." };
+    return { ok: false as const, status: 409, message: "Provider payment amount did not match the authoritative attempt." };
   }
   const bookingId = safeString(attempt.booking_id);
   const booking = await first(env, `SELECT * FROM ${tables.bookings} WHERE id = ?`, [bookingId]);
@@ -560,7 +562,7 @@ const processPaymentSucceeded = async ({
     FROM ${tables.bookings} WHERE id = ?`, [bookingId]);
   const terminalStatus = safeString(afterPayment?.status);
   if (paymentApplied && ["cancelled", "expired", "refunded"].includes(terminalStatus)) {
-    const recovery = await createStripeRefund({
+    const recovery = safeString(attempt.provider) === "stripe" ? await createStripeRefund({
       env,
       bookingId,
       paymentAttemptId: safeString(attempt.id),
@@ -571,7 +573,12 @@ const processPaymentSucceeded = async ({
       status: 502,
       message: "Automatic late-payment refund failed.",
       missingSecretNames: [] as string[],
-    }));
+    })) : {
+      ok: false as const,
+      status: 409,
+      message: "Late Razorpay payment requires staff refund action.",
+      missingSecretNames: [] as string[],
+    };
     const recoveryEventType = recovery.ok
       ? "payment.late_terminal_refund_submitted"
       : "payment.late_terminal_action_required";
@@ -642,11 +649,11 @@ const processPaymentSucceeded = async ({
   return {
     ok: true as const,
     status: 200,
-    message: wasTerminal ? "Payment recorded without reopening the completed or terminal booking." : "Stripe payment processed.",
+    message: wasTerminal ? "Payment recorded without reopening the completed or terminal booking." : "Provider payment processed.",
   };
 };
 
-const applySucceededRefundState = async (
+export const applySucceededRefundState = async (
   env: VeraEnv,
   bookingId: string,
   updatedAt = nowIso(),

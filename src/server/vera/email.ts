@@ -274,7 +274,7 @@ export const dispatchDueFollowUps = async ({
   }
   const rows = await all(env, `SELECT follow_up.*, booking.booking_number,
       booking.customer_name, booking.email, booking.mode, booking.status AS booking_status,
-      booking.selected_start_at, booking.balance_cents, booking.calendly_meeting_url,
+      booking.selected_start_at, booking.balance_cents, booking.currency, booking.calendly_meeting_url,
       service.name AS service_name
     FROM ${tables.followUps} follow_up
     JOIN ${tables.bookings} booking ON booking.id = follow_up.booking_id
@@ -298,7 +298,9 @@ export const dispatchDueFollowUps = async ({
       bookingNumber: safeString(row.booking_number),
       serviceName: safeString(row.service_name),
       scheduledDateTime: safeString(row.selected_start_at),
-      balanceAmount: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })
+      balanceAmount: new Intl.NumberFormat(safeString(row.currency) === "INR" ? "en-IN" : "en-US", {
+        style: "currency", currency: safeString(row.currency) || "USD",
+      })
         .format(Number(row.balance_cents) / 100),
       meetingDetails: safeString(row.mode) === "call"
         ? safeString(row.calendly_meeting_url)

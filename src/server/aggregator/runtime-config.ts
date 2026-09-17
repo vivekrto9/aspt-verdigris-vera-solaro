@@ -37,6 +37,7 @@ export const runtimeConfigKeys = [
   "SES_SENDER_NAME",
   "AWS_REGION",
   "STRIPE_PUBLISHABLE_KEY",
+  "RAZORPAY_KEY_ID",
   "CALENDLY_EVENT_TYPE_URI",
   "POSTHOG_PROJECT_API_KEY",
   "POSTHOG_HOST",
@@ -56,6 +57,8 @@ export const sensitiveRuntimeBindingNames = [
   "AWS_ACCESS_KEY_ID",
   "AWS_SECRET_ACCESS_KEY",
   "POSTHOG_PERSONAL_API_KEY",
+  "RAZORPAY_KEY_SECRET",
+  "RAZORPAY_WEBHOOK_SECRET",
 ] as const;
 
 const runtimeConfigKeySet = new Set<string>(runtimeConfigKeys);

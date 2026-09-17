@@ -13,4 +13,4 @@ export const GET: APIRoute = async (context) => jsonResponse({
   feature,
   message: "Vera sitting catalog loaded.",
   data: await listVeraCatalog(await getVeraEnv(context)),
-});
+}, { headers: { "cache-control": "private, no-store" } });

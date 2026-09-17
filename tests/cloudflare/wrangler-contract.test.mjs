@@ -125,6 +125,8 @@ test("runtime provider binding contract is scoped to Vera integrations", () => {
       "GA4_API_SECRET",
       "STRIPE_SECRET_KEY",
       "STRIPE_WEBHOOK_SECRET",
+      "RAZORPAY_KEY_SECRET",
+      "RAZORPAY_WEBHOOK_SECRET",
       "AWS_ACCESS_KEY_ID",
       "AWS_SECRET_ACCESS_KEY",
       "POSTHOG_PERSONAL_API_KEY",
@@ -135,7 +137,7 @@ test("runtime provider binding contract is scoped to Vera integrations", () => {
   );
   assert.equal(
     runtimeContract.optionalProviderBindingNames.some((name) =>
-      /RAZORPAY|GA4_|ZAPIER|GOOGLE_CALENDAR|WATI|MAILCHIMP|X_ASTROLOGYAPI|PAYMENT_PROVIDER/.test(name)
+      /GA4_|ZAPIER|GOOGLE_CALENDAR|WATI|MAILCHIMP|X_ASTROLOGYAPI|PAYMENT_PROVIDER/.test(name)
     ),
     false,
   );

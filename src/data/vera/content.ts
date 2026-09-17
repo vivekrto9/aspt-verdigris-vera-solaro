@@ -357,9 +357,9 @@ export const bookingDefaults: VeraContent = {
   back_cta: "← Back",
   payment_title: "Hold the hour.",
   payment_intro:
-    "Review your sitting, then continue to Stripe’s secure checkout. Your hour is confirmed as soon as payment clears.",
+    "Review your sitting, then continue to secure checkout. Your hour is confirmed as soon as payment clears.",
   payment_compact_intro:
-    "Review your sitting, then continue to Stripe’s secure checkout. Your hour is confirmed as soon as payment clears.\nPayment could not open. Check the setup or connection, then try again — this click will not create a second booking.",
+    "Review your sitting, then continue to secure checkout. Your hour is confirmed as soon as payment clears.\nPayment could not open. Check the setup or connection, then try again — this click will not create a second booking.",
   hold_label: "Seat held",
   summary_kicker: "Your sitting",
   summary_duration_suffix:
@@ -387,7 +387,7 @@ export const bookingDefaults: VeraContent = {
   submit_busy_cta: "Redirecting…",
   secure_note: "Secure · Vera never sees your card",
   confirmation_state_copy:
-    "awaiting_payment|Payment is still due|Your hour is waiting.|Review the sitting, then continue to Stripe when you're ready. The booking is only paid after Vera receives Stripe's signed confirmation.|Check again|Review payment|Contact support|Not confirmed|Not scheduled|Booking reference|Payment|Scheduling|Status checked just now|Checking…\nprocessing|Stripe is checking the ledger|Payment is being verified.|Keep this page open. Vera will confirm the sitting as soon as the signed payment notice arrives.||||Verifying|Not scheduled\nfailed|Payment wasn't completed|Your card was not charged here.|Review the sitting and try Stripe again while the hour is still held, or contact Vera if the hold has expired.||||Not confirmed|Not scheduled\npaid_scheduling|Payment verified|Vera is placing the hour.|Your payment is safe. The Calendly appointment is being created now.||||Paid|Scheduling\naction_required|Payment confirmed · time protected|Calendly needs a human hand.|Your payment is safe and the selected time remains protected. Calendly could not create the appointment automatically; do not pay or book again. Check once more or contact Vera for help.||||Paid|Assistance required\ntimeout|Still checking|This is taking longer than usual.|Your payment status has not been guessed. Check again, retry only if payment is still due, or contact Vera.||||Checking|Not scheduled",
+    "awaiting_payment|Payment is still due|Your hour is waiting.|Review the sitting, then continue to secure checkout when you're ready. The booking is only paid after Vera receives the provider's signed confirmation.|Check again|Review payment|Contact support|Not confirmed|Not scheduled|Booking reference|Payment|Scheduling|Status checked just now|Checking…\nprocessing|The provider is checking the ledger|Payment is being verified.|Keep this page open. Vera will confirm the sitting as soon as the signed payment notice arrives.||||Verifying|Not scheduled\nfailed|Payment wasn't completed|Your account was not charged here.|Review the sitting and try checkout again while the hour is still held, or contact Vera if the hold has expired.||||Not confirmed|Not scheduled\npaid_scheduling|Payment verified|Vera is placing the hour.|Your payment is safe. The Calendly appointment is being created now.||||Paid|Scheduling\naction_required|Payment confirmed · time protected|Calendly needs a human hand.|Your payment is safe and the selected time remains protected. Calendly could not create the appointment automatically; do not pay or book again. Check once more or contact Vera for help.||||Paid|Assistance required\ntimeout|Still checking|This is taking longer than usual.|Your payment status has not been guessed. Check again, retry only if payment is still due, or contact Vera.||||Checking|Not scheduled",
   payment_policy_1:
     "Moving the date.\nFree once, up to 72 hours before. After that your payment holds the hour Vera set aside.",
   payment_policy_2:
@@ -811,7 +811,7 @@ export const legalDefaults: VeraContent = {
   section_5_p1:
     "The site remembers your timezone and analytics choice on your device. If you allow analytics, PostHog receives page and booking-funnel events without your name, email or birth details. Declining it does not affect the site.",
   section_5_p2:
-    "Prices are in US dollars and may change; a booked sitting is held at the price shown when you booked. Governing law is Italian, and the competent court is Trieste — though after fifty-two years nothing has ever gone that far.",
+    "Prices appear in the checkout currency selected for your location and may change; a booked sitting is held at the exact price and currency shown when you booked. Governing law is Italian, and the competent court is Trieste — though after fifty-two years nothing has ever gone that far.",
   legal_contact:
     "Questions about any of this? Write to vera@verasolaro.it and ask plainly. If a term here would stop you booking, say so — Vera would rather change the term than lose the sitting.",
   ...seo(
@@ -1061,7 +1061,7 @@ export const accountDefaults: VeraContent = {
   billing_balance_cta: "Review in My sittings",
   billing_history_title: "Payment history",
   billing_empty_title: "No payments in the ledger yet.",
-  billing_empty_body: "Receipts will appear here after Stripe confirms a payment.",
+  billing_empty_body: "Receipts will appear here after the payment provider confirms a payment.",
   billing_invoice_label: "Receipt",
   billing_booking_label: "Sitting",
   billing_status_paid: "Paid",

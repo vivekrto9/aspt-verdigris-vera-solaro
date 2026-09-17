@@ -3,6 +3,8 @@ import { loadPublicPageContent } from "../../builder/public-page.ts";
 import ReadingsCatalog from "../../components/vera/ReadingsCatalog.astro";
 import VeraFrame from "../../components/vera/VeraFrame.astro";
 import { buildBreadcrumbJsonLd, buildFaqJsonLd } from "../../server/generated-site/seo.ts";
+import { listVeraCatalog } from "../../server/vera/catalog.ts";
+import { getVeraEnv } from "../../server/vera/http.ts";
 
 export const prerender = false;
 
@@ -30,11 +32,13 @@ const detailContent = {
   twitter_description: serviceSeoDescription,
 };
 const detailPage = { ...page, content: detailContent };
+const catalog = await listVeraCatalog(await getVeraEnv(Astro as never));
+const catalogService = catalog.services.find((entry) => entry.slug === serviceSlug);
 const faqItems = [1, 2, 3, 4, 5].map((index) => {
   const [question = "", ...answer] = String(page.content[`detail_faq_${index}`] ?? "").split("\n");
   return { question, answer: answer.join("\n") };
 });
-const servicePrice = String(page.content[`service_${selected}_price`] ?? "").replace(/[^0-9.]/g, "");
+const servicePrice = catalogService ? String(catalogService.priceCents / 100) : "";
 const jsonLd = [
   buildBreadcrumbJsonLd({
     requestUrl: Astro.request.url,
@@ -53,7 +57,7 @@ const jsonLd = [
     offers: {
       "@type": "Offer",
       price: servicePrice,
-      priceCurrency: "USD",
+      priceCurrency: catalogService?.currency || "USD",
       url: new URL(`/booking?service=${serviceSlug}`, Astro.request.url).toString(),
     },
   },
@@ -66,6 +70,9 @@ const jsonLd = [
     content={detailContent}
     edit={page.builderEdit}
     selected={selected}
+    catalogServices={catalog.services}
+    depositCents={catalog.depositCents}
+    catalogCurrency={catalog.currency}
   />
 </VeraFrame>
 

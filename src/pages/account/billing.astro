@@ -28,16 +28,22 @@ const openBalances = accountBookings.filter((booking) =>
   Number(booking.balance_cents) > 0 &&
   !["cancelled", "expired", "refunded", "completed"].includes(String(booking.status)),
 );
+const openBalanceTotals = Array.from(openBalances.reduce((totals, booking) => {
+  const currency = String(booking.currency || "USD");
+  totals.set(currency, (totals.get(currency) || 0) + Number(booking.balance_cents || 0));
+  return totals;
+}, new Map<string, number>()));
 const money = (cents: unknown, currency: unknown) => {
   try {
-    return new Intl.NumberFormat("en-US", {
+    const code = String(currency || "USD");
+    return new Intl.NumberFormat(code === "INR" ? "en-IN" : "en-US", {
       style: "currency",
-      currency: String(currency || "USD"),
+      currency: code,
       minimumFractionDigits: Number(cents) % 100 === 0 ? 0 : 2,
       maximumFractionDigits: 2,
     }).format(Number(cents) / 100);
   } catch {
-    return `$${(Number(cents) / 100).toFixed(2)}`;
+    return "";
   }
 };
 const date = (value: unknown) => value
@@ -67,7 +73,7 @@ const pageHref = (value: number) => value === 1 ? "/account/billing" : `/account
         <article class="vera-billing-balance">
           <div>
             <p class="vera-card-meta" {...builderEdit("billing_balance_title")}>{content.billing_balance_title}</p>
-            <h2>{money(openBalances.reduce((total, booking) => total + Number(booking.balance_cents || 0), 0), openBalances[0]?.currency)}</h2>
+            <h2>{openBalanceTotals.map(([currency, cents]) => <span class="vera-billing-balance__amount">{money(cents, currency)}</span>)}</h2>
             <p {...builderEdit("billing_balance_body")}>{content.billing_balance_body}</p>
           </div>
           <a class="vera-button vera-button--mustard vera-button--small" href="/account#overview" {...builderEdit("billing_balance_cta")}>{content.billing_balance_cta}</a>

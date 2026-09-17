@@ -1,6 +1,6 @@
 # Vera Solaro — Agent Runbook
 
-This site is the complete Vera Solaro AstroPages customer project. It provides the source-authorized 17-route visitor experience, 22-entry EmDash content model, Project Assets, customer authentication and account rooms, consultation booking and Stripe payment, Calendly scheduling, waitlist/contact/newsletter capture, transactional email, reports and private files, operations tooling, PostHog analytics, and generated-site release operations. Use the current project source and tested behavior as implementation truth; do not import branded pages or business flows from another site unless the user explicitly requests them.
+This site is the complete Vera Solaro AstroPages customer project. It provides the source-authorized 17-route visitor experience, 22-entry EmDash content model, Project Assets, customer authentication and account rooms, consultation booking with Stripe for USD and Razorpay for INR, Calendly scheduling, waitlist/contact/newsletter capture, transactional email, reports and private files, operations tooling, PostHog analytics, and generated-site release operations. Use the current project source and tested behavior as implementation truth; do not import branded pages or business flows from another site unless the user explicitly requests them.
 
 ## Authority And Preflight
 
@@ -107,6 +107,17 @@ Never use raw R2 operations, bucket names, storage keys, or signed URLs, and nev
 
 ## Code, Data, And Safety Boundaries
 
+### Payment currency contract
+
+- `ap_business_settings.payment_preference` is the sole project preference and stores `INR`, `USD`, or `AUTO` with schema version and CAS revision. AUTO selects INR only from trusted request-scoped Cloudflare country `IN`; every other or unknown country selects USD.
+- Each service and deposit has independent explicit minor-unit INR and USD values. Never derive, convert, or fall back across currencies. A missing or invalid counterpart blocks that purchase.
+- The booking snapshots its chosen amount, deposit, and currency. Retries, balances, gifts, invoices, refunds, account displays, emails, and historical reads must use that saved denomination. Gift credit can apply only in the booking currency.
+- Saved INR bookings route only to Razorpay; saved USD bookings route only to Stripe. Client callbacks, query strings, and success pages are not settlement authority. Only an authentic signed provider webhook with matching target, provider reference, amount, and currency may change money state.
+- Provider events and refund requests are idempotent. Duplicate, out-of-order, wrong-target, wrong-amount, wrong-currency, and invalid-signature deliveries must fail closed or be harmlessly ignored as defined by the provider contract.
+- The generated-site preference route is `/api/astropages/generated-site/payment-settings/v1`; GET and PATCH require the exact control-plane JWT contract, and PATCH requires the expected revision.
+- Keep catalog responses private/no-store and resolve currency per request. Never cache visitor geography or selected denomination in a process global.
+- For payment changes run `tests/payment-preference.test.mjs`, the complete suite, the actual DEV currency browser matrix, and the built-Worker provider/webhook matrix. See `docs/PAYMENT_CURRENCY.md` for current evidence and production-only limitations.
+
 - Public routes are under `src/pages/`; the 17 manifest-owned visitor routes are `/`, `/about`, `/readings`, `/readings/[service]`, `/booking`, `/writing`, `/writing/[slug]`, `/questions`, `/contact`, `/letters`, `/legal`, `/account`, `/closed`, `/login`, `/signup`, `/forgot-password`, and `/reset-password`.
 - Writing routes `/writing` and `/writing/[slug]` read dynamic EmDash `posts` through `src/data/blog-posts.ts`; `seed/seed.json` defines the collection schema but does not store ordinary articles.
 - Builder ownership is defined by `src/builder/registry.ts`; public content is loaded through `src/builder/public-page.ts`.
@@ -119,7 +130,7 @@ Never use raw R2 operations, bucket names, storage keys, or signed URLs, and nev
 - Generated-site Worker runtime uses `EMDASH_ENCRYPTION_KEY` and `ASTROPAGES_CONTROL_PLANE_CALLBACK_TOKEN`. Generated-site Worker deploys must not require `BUILDER_MCP_TOKEN` or `BUILDER_MCP_PROVISION_SECRET`.
 - Keep `dist/`, `.astro/`, `.wrangler/generated/`, `node_modules/`, and work-package protected paths untouched unless the request explicitly owns them.
 
-Do not bypass or clone the existing Vera booking, Stripe, Calendly, report, private-file, messaging, newsletter, contact, waitlist, or generic lead boundaries. A new business feature must define its server-owned record, validation, authorization, privacy boundary, lead linkage, tests, runtime configuration, and generated-site contract together.
+Do not bypass or clone the existing Vera booking, provider-payment, Calendly, report, private-file, messaging, newsletter, contact, waitlist, or generic lead boundaries. A new business feature must define its server-owned record, validation, authorization, privacy boundary, lead linkage, tests, runtime configuration, and generated-site contract together.
 
 ## Email Preview Workflow
 

@@ -50,7 +50,7 @@ import {
   giftCodeHash,
   veraBookingManageTokenExpiresAt,
 } from "./security.ts";
-import { createStripeRefund } from "./stripe.ts";
+import { createVeraRefund } from "./payments.ts";
 import { deriveVeraBookingConfirmationState } from "./booking-confirmation.ts";
 import type { VeraEnv, VeraRow } from "./types.ts";
 import { VERA_TABLES as tables } from "./types.ts";
@@ -127,6 +127,7 @@ const publicBooking = (row: VeraRow) => ({
   giftAppliedCents: Number(row.gift_applied_cents),
   paidCents: Number(row.paid_cents),
   balanceCents: Number(row.balance_cents),
+  depositCents: Number(row.deposit_cents),
   currency: safeString(row.currency),
   freeRescheduleUsed: Number(row.free_reschedule_used) === 1,
   rescheduleCount: Number(row.reschedule_count),
@@ -256,13 +257,15 @@ export const createVeraBooking = async ({
   const gift = giftHash
     ? await first(env, `SELECT * FROM ${tables.giftCertificates}
         WHERE code_hash = ? AND status = 'active'
-          AND (expires_at IS NULL OR expires_at > ?)`, [giftHash, nowValue])
+          AND currency = ?
+          AND (expires_at IS NULL OR expires_at > ?)`, [giftHash, selection.currency, nowValue])
     : null;
   if (safeString(input.giftCode) && !gift) {
     return { ok: false as const, status: 400, message: "Gift certificate is invalid or unavailable." };
   }
   const quote = quoteInitialPayment({
     priceCents: selection.priceCents,
+    depositCents: selection.depositCents,
     giftAvailableCents: Number(gift?.remaining_amount_cents || 0),
     paymentOption: paymentOption as "deposit" | "full",
   });
@@ -333,18 +336,18 @@ export const createVeraBooking = async ({
     env.DB.prepare(`INSERT INTO ${tables.bookings}
       (id, booking_number, request_idempotency_key, account_id, service_slug, mode,
        status, payment_state, payment_option, customer_name, email, normalized_email,
-       phone, customer_timezone, selected_start_at, selected_end_at, price_cents,
+       phone, customer_timezone, selected_start_at, selected_end_at, price_cents, deposit_cents,
        gift_applied_cents, total_due_cents, paid_cents, balance_cents, currency,
        gift_certificate_id, manage_token_hash, manage_token_expires_at, encrypted_intake,
        calendly_event_type_uri, hold_expires_at, created_at, updated_at,
        scheduling_provider, scheduling_calendar_id, scheduling_timezone, scheduling_rules_json,
        scheduling_buffer_before, scheduling_buffer_after, analytics_client_id, analytics_provider, analytics_session_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(
         bookingId, number, idempotencyKey, accountId, selection.slug, input.mode,
         fullyGifted ? "payment_action_required" : "pending_payment",
         fullyGifted ? "paid" : "unpaid", paymentOption, name, email, email,
-        phone || null, timezone, startAt, endAt, selection.priceCents,
+        phone || null, timezone, startAt, endAt, selection.priceCents, selection.depositCents,
         quote.giftAppliedCents, quote.totalDueCents, quote.balanceCents,
         selection.currency, gift ? safeString(gift.id) : null,
         await sha256Hex(manageToken), manageTokenExpiresAt, encryptedIntake,
@@ -524,7 +527,7 @@ export const updateVeraBookingQuote = async ({
       provider_payment_intent_id IS NOT NULL OR status NOT IN ('failed', 'cancelled')
     ) LIMIT 1`, [bookingId]);
   if (lockedAttempt) {
-    return { ok: false as const, status: 409, message: "Payment details are fixed after Stripe payment preparation begins." };
+    return { ok: false as const, status: 409, message: "Payment details are fixed after provider payment preparation begins." };
   }
   const currentRedemption = await first(env, `SELECT redemption.*, gift.code_hash
     FROM ${tables.giftRedemptions} redemption
@@ -546,7 +549,8 @@ export const updateVeraBookingQuote = async ({
     selectedGift = submittedHash
       ? await first(env, `SELECT * FROM ${tables.giftCertificates}
           WHERE code_hash = ? AND status = 'active'
-            AND (expires_at IS NULL OR expires_at > ?)`, [submittedHash, nowValue])
+            AND currency = ?
+            AND (expires_at IS NULL OR expires_at > ?)`, [submittedHash, safeString(booking.currency), nowValue])
       : null;
     if (!selectedGift && submittedHash === safeString(currentRedemption?.code_hash)) {
       selectedGift = {
@@ -568,6 +572,7 @@ export const updateVeraBookingQuote = async ({
     : Number(selectedGift?.remaining_amount_cents || 0);
   const quote = quoteInitialPayment({
     priceCents: Number(booking.price_cents),
+    depositCents: Number(booking.deposit_cents || 8_000),
     giftAvailableCents,
     paymentOption: paymentOption as "deposit" | "full",
   });
@@ -632,7 +637,7 @@ export const updateVeraBookingQuote = async ({
       ok: false as const,
       status: 409,
       message: message.includes("vera_payment_selection_locked")
-        ? "Payment details are fixed after Stripe payment preparation begins."
+        ? "Payment details are fixed after provider payment preparation begins."
         : message.includes("vera_gift_unavailable")
           ? "Gift certificate is no longer available."
           : "The booking quote changed. Refresh and try again.",
@@ -1113,7 +1118,7 @@ export const cancelVeraBooking = async ({
   let refundState = refundEligible ? "processing" : paid ? "deposit_retained" : "not_applicable";
   let refundId = "";
   if (refundEligible) {
-    const refund = await createStripeRefund({
+    const refund = await createVeraRefund({
       env,
       bookingId,
       amountCents: Number(booking.paid_cents),
