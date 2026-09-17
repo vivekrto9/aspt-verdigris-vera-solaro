@@ -146,3 +146,4 @@ Control Plane extension. This repository intentionally has no checked-in
 3. Promote `develop` to `main` through an approved pull request.
 4. Require PROD `template_ci`, then explicitly deploy to `production`.
 5. Verify the exact release SHA and Admin-managed semantic version in AstroPages Admin.
+
