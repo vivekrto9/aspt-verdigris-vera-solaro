@@ -1,6 +1,6 @@
 {
   "templateKey": "aspt-verdigris-vera-solaro",
-  "displayName": "Vera Solaro — Verdigris Almanac",
+  "displayName": "Vera Solaro \u2014 Verdigris Almanac",
   "repo": {
     "url": "https://github.com/vivekrto9/aspt-verdigris-vera-solaro.git",
     "commitSha": "RESOLVED_AT_TEMPLATE_REGISTRATION"
@@ -150,7 +150,12 @@
       "ACTIVE_SCHEDULING_PROVIDER",
       "GMAIL_SENDER_EMAIL",
       "GMAIL_SENDER_NAME",
-      "GA4_MEASUREMENT_ID"
+      "GA4_MEASUREMENT_ID",
+      "ASTROLOGY_API_BASE_URL",
+      "ASTROLOGY_PDF_API_BASE_URL",
+      "ASTROLOGY_DEFAULT_TIMEZONE",
+      "ASTROLOGY_DEFAULT_LANGUAGE",
+      "ASTROLOGYAPI_CHAT_BASE_URL"
     ],
     "providerCredentials": [
       "STRIPE_SECRET_KEY",
@@ -916,7 +921,8 @@
       "ap_email_deliveries",
       "ap_booking_preview_policy",
       "ap_shared_calendar_settings",
-      "ap_vera_scheduling_reservations"
+      "ap_vera_scheduling_reservations",
+      "ap_workspace_authored_state"
     ]
   }
 }
