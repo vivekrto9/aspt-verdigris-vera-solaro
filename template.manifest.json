@@ -1,5 +1,14 @@
 {
   "templateKey": "aspt-verdigris-vera-solaro",
+  "previewArtifact": {
+    "contractVersion": "preview-artifact.v1",
+    "workspaceContract": "workspace-authored-state.v1",
+    "runtimeTuple": {
+      "wrangler": "4.94.0",
+      "miniflare": "4.20260521.0",
+      "workerd": "1.20260521.1"
+    }
+  },
   "displayName": "Vera Solaro \u2014 Verdigris Almanac",
   "repo": {
     "url": "https://github.com/vivekrto9/aspt-verdigris-vera-solaro.git",

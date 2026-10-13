@@ -197,3 +197,19 @@ test("leads manifest exposes only Vera's supported privacy-safe sources", () => 
   ]);
   assert.doesNotMatch(JSON.stringify(leadsManifest.sources), /birth|message|notes|intake/i);
 });
+
+test("native VM release declaration binds the existing artifact execution tuple", () => {
+  const source = readFileSync(new URL("../scripts/preview-artifacts.mjs", import.meta.url), "utf8");
+  const tupleBody = source.match(/export const runtimeTuple = Object\.freeze\((\{[\s\S]*?\})\);/);
+  assert.ok(tupleBody, "native artifact execution tuple is declared");
+  const tuple = Object.fromEntries([...tupleBody[1].matchAll(/(wrangler|miniflare|workerd):\s*"([^"]+)"/g)].map((match) => [match[1], match[2]]));
+  assert.deepEqual(manifest.previewArtifact, {
+    contractVersion: "preview-artifact.v1",
+    workspaceContract: "workspace-authored-state.v1",
+    runtimeTuple: tuple,
+  });
+  assert.equal(tuple.wrangler, packageJson.devDependencies.wrangler);
+  assert.equal(tuple.miniflare, packageJson.devDependencies.miniflare);
+  const lock = readFileSync(new URL("../pnpm-lock.yaml", import.meta.url), "utf8");
+  assert.ok(lock.includes(`workerd@${tuple.workerd}`), "frozen workerd execution version matches");
+});
