@@ -167,14 +167,14 @@ export const importWorkspaceAuthoredState = async (options: WorkspaceOptions & {
   if (before.state.imported_envelope_digest !== null) fail("Workspace already imported or changed after restoration; use a freshly reconstructed generation, never overwrite newer edits.");
   const statements: Sql[] = [...guards(before),["PRAGMA defer_foreign_keys=ON",[]]];
   // Dependency order matters even with deferred checks (RESTRICT and CASCADE are immediate).
-  const deletionOrder = ["_emdash_content_bylines","_emdash_seo","revisions","content_taxonomies","_emdash_menu_items","_emdash_menus","taxonomies","_emdash_taxonomy_defs",...collections.map((name) => `ec_${name}`),"_emdash_bylines","ap_asset_aliases","ap_asset_revisions","ap_asset_records","media","ap_email_templates","ap_email_event_definitions","ap_email_variable_mappings","ap_business_settings"];
+  const deletionOrder = ["_emdash_content_bylines","_emdash_seo","revisions","content_taxonomies","_emdash_menu_items","_emdash_menus","taxonomies","_emdash_taxonomy_defs",...collections.map((name) => `ec_${name}`),"_emdash_bylines","ap_asset_aliases","ap_asset_revisions","ap_asset_records","media","ap_email_templates","ap_email_events","ap_email_variable_mappings","ap_business_settings","ap_vera_calendly_mappings","ap_vera_services"];
   for (const name of deletionOrder) {
     const spec = tables.find((candidate) => candidate.name === name)!;
     // The media subquery must retain the pre-delete canonical IDs.
     const where = name === "media" ? `id IN (SELECT json_extract(value,'$.id') FROM json_each(?))` : spec.where;
     statements.push([`DELETE FROM ${quote(name)}${where ? ` WHERE ${where}` : ""}`,name === "media" ? [JSON.stringify(before.payloads.assets.tables.media)] : []]);
   }
-  const insertionOrder = ["media","ap_asset_records","ap_asset_revisions","ap_asset_aliases","_emdash_bylines",...collections.map((name) => `ec_${name}`),"revisions","_emdash_seo","_emdash_content_bylines","_emdash_taxonomy_defs","taxonomies","content_taxonomies","_emdash_menus","_emdash_menu_items","ap_email_event_definitions","ap_email_variable_mappings","ap_email_templates","ap_business_settings"];
+  const insertionOrder = ["media","ap_asset_records","ap_asset_revisions","ap_asset_aliases","_emdash_bylines",...collections.map((name) => `ec_${name}`),"revisions","_emdash_seo","_emdash_content_bylines","_emdash_taxonomy_defs","taxonomies","content_taxonomies","_emdash_menus","_emdash_menu_items","ap_email_events","ap_email_variable_mappings","ap_email_templates","ap_business_settings","ap_vera_services","ap_vera_calendly_mappings"];
   for (const name of insertionOrder) {
     const spec = tables.find((candidate) => candidate.name === name)!;
     const domain = domains.find((candidate) => candidate.tables.includes(spec))!;
