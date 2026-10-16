@@ -229,6 +229,11 @@ export function previewArtifactBuildIntegration(
         if (typeof manifest.key !== "string")
           throw new Error("preview_artifact_astro_manifest_shape_changed");
         manifest.key = "";
+        if ("assets" in manifest) {
+          if (!Array.isArray(manifest.assets) || manifest.assets.some(asset => typeof asset !== "string"))
+            throw new Error("preview_artifact_astro_manifest_shape_changed");
+          manifest.assets.sort();
+        }
         for (const key of [
           "rootDir",
           "srcDir",
