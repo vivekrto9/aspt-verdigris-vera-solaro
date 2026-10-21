@@ -778,7 +778,7 @@
         "key": "scheduling",
         "label": "Consultation scheduling",
         "description": "Choose Calendly or Google Calendar. Google Calendar requires writable-calendar selection and working hours.",
-        "evaluation": "any_of",
+        "evaluation": "one_of",
         "providers": [
           {
             "providerKey": "calendly",
@@ -793,6 +793,24 @@
         ]
       },
       {
+        "key": "preview-payments",
+        "label": "Preview currency-routed payments",
+        "description": "Stripe for USD and Razorpay for INR, with signed webhooks for both, use test credentials in preview.",
+        "evaluation": "all_of",
+        "providers": [
+          {
+            "providerKey": "stripe",
+            "environment": "preview",
+            "credentialMode": "sandbox"
+          },
+          {
+            "providerKey": "razorpay",
+            "environment": "preview",
+            "credentialMode": "sandbox"
+          }
+        ]
+      },
+      {
         "key": "live-payments",
         "label": "Currency-routed payments",
         "description": "Stripe for USD and Razorpay for INR, with signed webhooks for both, are required before a Vera sitting can be confirmed.",
@@ -800,12 +818,12 @@
         "providers": [
           {
             "providerKey": "stripe",
-            "environment": "both",
+            "environment": "production",
             "credentialMode": "live"
           },
           {
             "providerKey": "razorpay",
-            "environment": "both",
+            "environment": "production",
             "credentialMode": "live"
           }
         ]
@@ -814,7 +832,7 @@
         "key": "transactional-email",
         "label": "Transactional email",
         "description": "Choose Gmail or Amazon SES for booking, reminder, account, and delivery email.",
-        "evaluation": "any_of",
+        "evaluation": "one_of",
         "providers": [
           {
             "providerKey": "aws_ses",
@@ -834,7 +852,7 @@
         "key": "analytics",
         "label": "Private analytics",
         "description": "Choose GA4 or PostHog for consented, PII-free analytics and verified-payment purchase events.",
-        "evaluation": "any_of",
+        "evaluation": "one_of",
         "providers": [
           {
             "providerKey": "posthog",

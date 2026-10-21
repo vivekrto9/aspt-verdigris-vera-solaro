@@ -213,3 +213,34 @@ test("native VM release declaration binds the existing artifact execution tuple"
   const lock = readFileSync(new URL("../pnpm-lock.yaml", import.meta.url), "utf8");
   assert.ok(lock.includes(`workerd@${tuple.workerd}`), "frozen workerd execution version matches");
 });
+
+
+test("integration requirements use supported evaluations and preserve required scheduling and email", () => {
+  const requirements = manifest.integrationRequirements;
+  for (const group of Object.values(requirements).flat()) {
+    assert.ok(["one_of", "all_of"].includes(group.evaluation), `${group.key} must use a supported evaluation`);
+  }
+  for (const [key, providers] of [
+    ["scheduling", ["calendly", "google_calendar"]],
+    ["transactional-email", ["aws_ses", "gmail"]],
+  ]) {
+    const group = requirements.required.find((item) => item.key === key);
+    assert.equal(group?.evaluation, "one_of");
+    assert.deepEqual(group.providers, providers.map((providerKey) => ({
+      providerKey, environment: "both", credentialMode: "live",
+    })));
+  }
+});
+
+test("currency-routed payments require both providers in normal preview and production modes", () => {
+  for (const [key, environment, credentialMode] of [
+    ["preview-payments", "preview", "sandbox"],
+    ["live-payments", "production", "live"],
+  ]) {
+    const group = manifest.integrationRequirements.required.find((item) => item.key === key);
+    assert.equal(group?.evaluation, "all_of", `${key} must require both currency providers`);
+    assert.deepEqual(group.providers, ["stripe", "razorpay"].map((providerKey) => ({
+      providerKey, environment, credentialMode,
+    })));
+  }
+});
