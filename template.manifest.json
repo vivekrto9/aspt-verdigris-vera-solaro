@@ -237,7 +237,6 @@
         "preview": "template_preview",
         "production": "template_production"
       },
-      "githubSafetyCi": ".github/workflows/ci.yml",
       "catalogScreenshots": "admin-managed"
     },
     "generatedSite": {

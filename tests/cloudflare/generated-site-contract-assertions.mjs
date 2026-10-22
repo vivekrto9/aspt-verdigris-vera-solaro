@@ -230,18 +230,15 @@ const assertProductionCallbackStatusIsVerified = (root, productionPath) => {
 
 export const assertDeploymentWorkflowContract = (root = defaultRoot) => {
   const mode = detectWorkflowMode(root);
-  assertCiWorkflow(root);
-
   if (mode === "template-source") {
+    assert.equal(exists(root, workflowPaths.ci), false, `${workflowPaths.ci} must be absent in template-source mode`);
     for (const path of [
-      workflowPaths.ci,
       workflowPaths.generatedPreviewSeed,
       workflowPaths.generatedProductionSeed,
     ]) {
       assert.equal(exists(root, path), true, `${path} must exist`);
     }
     assertPnpmSetup(root, [
-      workflowPaths.ci,
       workflowPaths.generatedPreviewSeed,
       workflowPaths.generatedProductionSeed,
     ]);
@@ -270,12 +267,13 @@ export const assertDeploymentWorkflowContract = (root = defaultRoot) => {
     return;
   }
 
+  if (exists(root, workflowPaths.ci)) assertCiWorkflow(root);
   assert.equal(exists(root, workflowPaths.templatePreview), false, `${workflowPaths.templatePreview} must not be required in generated-site mode`);
   assert.equal(exists(root, ".astropages/generated-site-workflows"), false, ".astropages/generated-site-workflows must not be required in generated-site mode");
   assert.equal(exists(root, workflowPaths.installedPreview), true, `${workflowPaths.installedPreview} must exist`);
   assert.equal(exists(root, workflowPaths.installedProduction), true, `${workflowPaths.installedProduction} must exist`);
   assertPnpmSetup(root, [
-    workflowPaths.ci,
+    ...(exists(root, workflowPaths.ci) ? [workflowPaths.ci] : []),
     workflowPaths.installedPreview,
     workflowPaths.installedProduction,
   ]);
