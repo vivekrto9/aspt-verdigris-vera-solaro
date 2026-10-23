@@ -4,9 +4,10 @@ import { getRuntimeEnv } from "../generated-site/request.ts";
 import { errorResponse } from "../generated-site/responses.ts";
 import { first, sha256Hex } from "./db.ts";
 import type { VeraEnv } from "./types.ts";
+import { withPaymentRequest } from "../aggregator/payment-pricing.ts";
 
 export const getVeraEnv = async (context: APIContext) =>
-  await getRuntimeEnv(context) as VeraEnv;
+  withPaymentRequest(await getRuntimeEnv(context) as VeraEnv, context.request);
 
 export const requireMethod = (request: Request, method: "GET" | "POST" | "PUT") =>
   request.method === method

@@ -1,8 +1,10 @@
 import { all, first, safeString } from "./db.ts";
 import type { VeraEnv, VeraRow } from "./types.ts";
 import { VERA_TABLES as tables } from "./types.ts";
+import { depositForCurrency, priceCatalogRow } from "../aggregator/payment-pricing.ts";
 
 export const VERA_HOLD_MINUTES = 12;
+/** Historical USD defaults retained only for compatibility with old callers/tests. */
 export const VERA_DEPOSIT_CENTS = 8_000;
 export const VERA_CURRENCY = "USD";
 export const VERA_SERVICE_SLUGS = ["natal-hour", "year-ahead", "two-charts"] as const;
@@ -29,17 +31,22 @@ export const isVeraServiceSlug = (value: unknown): value is VeraServiceSlug =>
 export const isVeraMode = (value: unknown): value is VeraMode =>
   VERA_MODES.includes(safeString(value) as VeraMode);
 
-const rowToService = (row: VeraRow) => ({
-  slug: safeString(row.slug) as VeraServiceSlug,
-  name: safeString(row.name),
-  durationMinutes: Number(row.duration_minutes),
-  priceCents: Number(row.price_cents),
-  currency: safeString(row.currency) || VERA_CURRENCY,
-});
+const rowToService = async (env: VeraEnv, row: VeraRow) => {
+  const priced: Record<string, unknown> = await priceCatalogRow(env, row);
+  return {
+    slug: safeString(priced.slug) as VeraServiceSlug,
+    name: safeString(priced.name),
+    durationMinutes: Number(priced.duration_minutes),
+    priceCents: Number(priced.price_cents),
+    currency: safeString(priced.currency),
+  };
+};
 
 export const listVeraCatalog = async (env: VeraEnv) => {
-  const services = await all(env, `SELECT slug, name, duration_minutes, price_cents, currency
+  const services = await all(env, `SELECT slug, name, duration_minutes, price_cents, currency,
+      price_inr_cents, price_usd_cents
     FROM ${tables.services} WHERE active = 1 AND duration_minutes = 30 ORDER BY sort_order`);
+  const deposit = await depositForCurrency(env);
   const shared = await first(env, `SELECT value FROM ap_runtime_config
     WHERE key = ? AND status = 'active'`, [SHARED_CALENDLY_RUNTIME_KEY]);
   const stripeRow = await first(env, `SELECT value FROM ap_runtime_config
@@ -48,9 +55,10 @@ export const listVeraCatalog = async (env: VeraEnv) => {
     WHERE status = 'active'`);
   const sharedUri = safeString(shared?.value) || safeString(env[SHARED_CALENDLY_RUNTIME_KEY]);
   return {
-    services: services.map(rowToService),
+    services: await Promise.all(services.map((row) => rowToService(env, row))),
     modes: [{ key: "call" }],
-    depositCents: VERA_DEPOSIT_CENTS,
+    depositCents: deposit.amount,
+    currency: deposit.currency,
     holdMinutes: VERA_HOLD_MINUTES,
     stripePublishableKey: safeString(stripeRow?.value) || safeString(env.PUBLIC_STRIPE_PUBLISHABLE_KEY),
     activeWaitlistCount: Number(waitlist?.count || 0),
@@ -69,14 +77,17 @@ export const getVeraSelection = async (
   const normalizedSlug = normalizeVeraServiceSlug(serviceSlug);
   if (!normalizedSlug || safeString(mode) !== "call") return null;
   const row = await first(env, `SELECT
-      service.slug, service.name, service.duration_minutes, service.price_cents, service.currency
+      service.slug, service.name, service.duration_minutes, service.price_cents, service.currency,
+      service.price_inr_cents, service.price_usd_cents
     FROM ${tables.services} service
     WHERE service.slug = ? AND service.active = 1 AND service.duration_minutes = 30`, [normalizedSlug]);
   if (!row) return null;
   const shared = await first(env, `SELECT value FROM ap_runtime_config
     WHERE key = ? AND status = 'active'`, [SHARED_CALENDLY_RUNTIME_KEY]);
+  const [service, deposit] = await Promise.all([rowToService(env, row), depositForCurrency(env)]);
   return {
-    ...rowToService(row),
+    ...service,
+    depositCents: deposit.amount,
     mode: "call" as const,
     eventTypeUri: safeString(shared?.value) || safeString(env[SHARED_CALENDLY_RUNTIME_KEY]),
   };
@@ -84,10 +95,12 @@ export const getVeraSelection = async (
 
 export const quoteInitialPayment = ({
   priceCents,
+  depositCents = 8_000,
   giftAvailableCents = 0,
   paymentOption,
 }: {
   priceCents: number;
+  depositCents?: number;
   giftAvailableCents?: number;
   paymentOption: "deposit" | "full";
 }) => {
@@ -99,24 +112,26 @@ export const quoteInitialPayment = ({
   const totalDueCents = priceCents - giftAppliedCents;
   const payNowCents = paymentOption === "full"
     ? totalDueCents
-    : Math.min(VERA_DEPOSIT_CENTS, totalDueCents);
+    : Math.min(depositCents, totalDueCents);
   return { priceCents, giftAppliedCents, totalDueCents, payNowCents, balanceCents: totalDueCents };
 };
 
 export const quoteBookingPayment = ({
   paymentState,
   balanceCents,
+  depositCents = 8_000,
   kind,
 }: {
   paymentState: string;
   balanceCents: number;
+  depositCents?: number;
   kind: VeraPaymentKind;
 }) => {
   const remaining = Math.max(0, Math.floor(balanceCents));
   if (remaining === 0) return 0;
   if (kind === "deposit") {
     if (paymentState !== "unpaid") return 0;
-    return Math.min(VERA_DEPOSIT_CENTS, remaining);
+    return Math.min(depositCents, remaining);
   }
   if (kind === "full" && paymentState !== "unpaid") return 0;
   if (kind === "balance" && paymentState === "unpaid") return 0;

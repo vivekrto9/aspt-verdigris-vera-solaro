@@ -130,12 +130,27 @@ async function ensureQueue(name, existingQueues) {
 
 async function listAll(path, resultPath) {
   const items = [];
+  const cursorPagination = path.endsWith("/r2/buckets");
+  const seenCursors = new Set();
+  let cursor;
   let page = 1;
   while (true) {
     const separator = path.includes("?") ? "&" : "?";
-    const response = await cloudflare(`${path}${separator}per_page=100&page=${page}`);
+    const query = cursorPagination
+      ? `per_page=100${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`
+      : `per_page=100&page=${page}`;
+    const response = await cloudflare(`${path}${separator}${query}`);
     const pageItems = getPath(response, resultPath);
     items.push(...pageItems);
+    if (cursorPagination) {
+      cursor = response.result_info?.cursor;
+      if (cursor === undefined || cursor === null || cursor === "") break;
+      if (typeof cursor !== "string" || seenCursors.has(cursor)) {
+        throw new Error("Invalid or non-advancing R2 cursor.");
+      }
+      seenCursors.add(cursor);
+      continue;
+    }
     if (!hasNextCloudflarePage(response, pageItems.length)) break;
     page += 1;
   }

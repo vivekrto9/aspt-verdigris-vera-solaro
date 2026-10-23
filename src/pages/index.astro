@@ -6,6 +6,8 @@ import VeraFrame from "../components/vera/VeraFrame.astro";
 import VeraImage from "../components/vera/VeraImage.astro";
 import deskAssetUrl from "../../astropages/assets/ephemeris-pages.webp?url";
 import portraitAssetUrl from "../../astropages/assets/vera-portrait.webp?url";
+import { listVeraCatalog } from "../server/vera/catalog.ts";
+import { getVeraEnv } from "../server/vera/http.ts";
 
 export const prerender = false;
 
@@ -18,6 +20,14 @@ const testimonials = [1, 2, 3];
 const practiceLabels = ["Lineage", "Method", "Practice"];
 const locale = getBlogLocale(Astro.request.url);
 const { posts } = await listBlogPosts(locale);
+const catalog = await listVeraCatalog(await getVeraEnv(Astro as never));
+const money = (index: number) => {
+  const service = catalog.services.find((entry) => entry.slug === readingSlugs[index]);
+  if (!service) return "Unavailable";
+  return new Intl.NumberFormat(service.currency === "INR" ? "en-IN" : "en-US", {
+    style: "currency", currency: service.currency, maximumFractionDigits: 2,
+  }).format(service.priceCents / 100);
+};
 const journal = posts.slice(0, 3).map((post, index) => {
   const image = blogImageAt(post, index);
   return { ...post, src: image.src, imageAlt: image.alt };
@@ -116,7 +126,7 @@ const portraitSrc = import.meta.env.DEV
                 ))}
               </ul>
               <footer>
-                <strong {...builderEdit(`reading_${index}_price`)}>{content[`reading_${index}_price`]}</strong>
+                <strong>{money(index)}</strong>
                 <a class="vera-button vera-button--small" href={`/readings/${readingSlugs[index]}`} {...builderEdit(`reading_${index}_cta`)}>
                   {content[`reading_${index}_cta`]}
                 </a>

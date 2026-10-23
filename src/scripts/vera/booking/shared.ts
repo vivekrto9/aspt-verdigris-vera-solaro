@@ -4,6 +4,46 @@
 
 export type UnknownRecord = Record<string, unknown>;
 
+type RazorpayConstructor = new (options: Record<string, unknown>) => { open: () => void; on: (event: string, callback: () => void) => void };
+
+const loadRazorpay = async () => {
+  const current = (window as typeof window & { Razorpay?: RazorpayConstructor }).Razorpay;
+  if (current) return current;
+  const existing = document.querySelector<HTMLScriptElement>('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+  await new Promise<void>((resolve, reject) => {
+    const script = existing || document.createElement("script");
+    script.addEventListener("load", () => resolve(), { once: true });
+    script.addEventListener("error", () => reject(new Error("Razorpay checkout could not load.")), { once: true });
+    if (!existing) {
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      document.head.append(script);
+    }
+  });
+  const loaded = (window as typeof window & { Razorpay?: RazorpayConstructor }).Razorpay;
+  if (!loaded) throw new Error("Razorpay checkout could not load.");
+  return loaded;
+};
+
+export const openProviderCheckout = async (checkout: UnknownRecord, returnUrl: string) => {
+  const url = asText(checkout.url);
+  if (/^https:\/\//.test(url)) {
+    window.location.assign(url);
+    return;
+  }
+  if (asText(checkout.provider) !== "razorpay") throw new Error("Secure checkout response is invalid.");
+  const Razorpay = await loadRazorpay();
+  const instance = new Razorpay({
+    key: asText(checkout.keyId), order_id: asText(checkout.orderId), amount: asNumber(checkout.amountCents),
+    currency: asText(checkout.currency), name: "Vera Solaro", description: asText(checkout.bookingNumber),
+    prefill: { name: asText(checkout.customerName), email: asText(checkout.customerEmail) },
+    handler: () => window.location.assign(returnUrl),
+    modal: { ondismiss: () => undefined },
+    theme: { color: "#C6491F" },
+  });
+  instance.open();
+};
+
 type ApiEnvelope = {
   status?: string;
   state?: string;
@@ -178,14 +218,14 @@ export const zoneLabel = (zone: string) => {
 
 export const formatMoney = (cents: number, code = "USD") => {
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(code === "INR" ? "en-IN" : "en-US", {
       style: "currency",
       currency: code || "USD",
       minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
       maximumFractionDigits: 2,
     }).format(cents / 100);
   } catch {
-    return `$${(cents / 100).toFixed(2)}`;
+    return "";
   }
 };
 
