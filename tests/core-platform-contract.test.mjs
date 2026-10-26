@@ -45,6 +45,7 @@ const baseTables = new Set([
 const integrationTables = [
   "ap_analytics_deliveries",
   "ap_email_deliveries",
+  "ap_workspace_authored_state",
   "ap_booking_preview_policy"
 ];
 

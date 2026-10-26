@@ -43,6 +43,8 @@ export const runtimeContract = {
     { binding: "GA4_API_SECRET", provider: "GA4" },
     { binding: "STRIPE_SECRET_KEY", provider: "STRIPE" },
     { binding: "STRIPE_WEBHOOK_SECRET", provider: "STRIPE" },
+    { binding: "RAZORPAY_KEY_SECRET", provider: "RAZORPAY" },
+    { binding: "RAZORPAY_WEBHOOK_SECRET", provider: "RAZORPAY" },
     { binding: "AWS_ACCESS_KEY_ID", provider: "AWS_SES" },
     { binding: "AWS_SECRET_ACCESS_KEY", provider: "AWS_SES" },
     { binding: "POSTHOG_PERSONAL_API_KEY", provider: "POSTHOG" },
@@ -53,6 +55,9 @@ export const runtimeContract = {
   optionalProviderBindingNames: [
     "STRIPE_SECRET_KEY",
     "STRIPE_WEBHOOK_SECRET",
+    "RAZORPAY_KEY_ID",
+    "RAZORPAY_KEY_SECRET",
+    "RAZORPAY_WEBHOOK_SECRET",
     "PUBLIC_STRIPE_PUBLISHABLE_KEY",
     "SES_SENDER_EMAIL",
     "SES_SENDER_NAME",

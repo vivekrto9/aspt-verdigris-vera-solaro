@@ -231,6 +231,11 @@ const snapshotItem = (row: AssetSnapshotRow): AssetSnapshotItem => ({
   durationSeconds: row.duration_seconds == null ? null : Number(row.duration_seconds),
 });
 
+export const buildAssetPublicProjectionFromRows = (rows: AssetSnapshotRow[]) => rows
+  .map(snapshotItem)
+  .sort((left, right) => left.assetId.localeCompare(right.assetId))
+  .map(({ storageKey: _storageKey, etag: _etag, ...asset }) => asset);
+
 export const buildAssetSnapshotFromRows = async (input: {
   templateKey: string;
   environment: "preview" | "production";

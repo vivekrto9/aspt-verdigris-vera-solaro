@@ -197,3 +197,50 @@ test("leads manifest exposes only Vera's supported privacy-safe sources", () => 
   ]);
   assert.doesNotMatch(JSON.stringify(leadsManifest.sources), /birth|message|notes|intake/i);
 });
+
+test("native VM release declaration binds the existing artifact execution tuple", () => {
+  const source = readFileSync(new URL("../scripts/preview-artifacts.mjs", import.meta.url), "utf8");
+  const tupleBody = source.match(/export const runtimeTuple = Object\.freeze\((\{[\s\S]*?\})\);/);
+  assert.ok(tupleBody, "native artifact execution tuple is declared");
+  const tuple = Object.fromEntries([...tupleBody[1].matchAll(/(wrangler|miniflare|workerd):\s*"([^"]+)"/g)].map((match) => [match[1], match[2]]));
+  assert.deepEqual(manifest.previewArtifact, {
+    contractVersion: "preview-artifact.v1",
+    workspaceContract: "workspace-authored-state.v1",
+    runtimeTuple: tuple,
+  });
+  assert.equal(tuple.wrangler, packageJson.devDependencies.wrangler);
+  assert.equal(tuple.miniflare, packageJson.devDependencies.miniflare);
+  const lock = readFileSync(new URL("../pnpm-lock.yaml", import.meta.url), "utf8");
+  assert.ok(lock.includes(`workerd@${tuple.workerd}`), "frozen workerd execution version matches");
+});
+
+
+test("integration requirements use supported evaluations and preserve required scheduling and email", () => {
+  const requirements = manifest.integrationRequirements;
+  for (const group of Object.values(requirements).flat()) {
+    assert.ok(["one_of", "all_of"].includes(group.evaluation), `${group.key} must use a supported evaluation`);
+  }
+  for (const [key, providers] of [
+    ["scheduling", ["calendly", "google_calendar"]],
+    ["transactional-email", ["aws_ses", "gmail"]],
+  ]) {
+    const group = requirements.required.find((item) => item.key === key);
+    assert.equal(group?.evaluation, "one_of");
+    assert.deepEqual(group.providers, providers.map((providerKey) => ({
+      providerKey, environment: "both", credentialMode: "live",
+    })));
+  }
+});
+
+test("currency-routed payments require both providers in normal preview and production modes", () => {
+  for (const [key, environment, credentialMode] of [
+    ["preview-payments", "preview", "sandbox"],
+    ["live-payments", "production", "live"],
+  ]) {
+    const group = manifest.integrationRequirements.required.find((item) => item.key === key);
+    assert.equal(group?.evaluation, "all_of", `${key} must require both currency providers`);
+    assert.deepEqual(group.providers, ["stripe", "razorpay"].map((providerKey) => ({
+      providerKey, environment, credentialMode,
+    })));
+  }
+});

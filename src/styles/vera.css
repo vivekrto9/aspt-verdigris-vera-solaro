@@ -4962,6 +4962,10 @@ body:not([data-builder-edit-mode]) [data-calendly-preview][data-live-runtime] {
   font-weight: 400;
 }
 
+.vera-billing-balance__amount {
+  display: block;
+}
+
 .vera-billing-balance p {
   margin: 0;
   color: #dde3d6;

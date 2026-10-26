@@ -1,3 +1,4 @@
+import { previewArtifactBuildIntegration } from "./scripts/preview-artifact-build.mjs";
 import cloudflare from "@astrojs/cloudflare";
 import react from "@astrojs/react";
 import { d1, r2 } from "@emdash-cms/cloudflare";
@@ -57,6 +58,7 @@ export default defineConfig({
 		responsiveStyles: true,
 	},
 	integrations: [
+    ...(process.env.ASTROPAGES_PREVIEW_ARTIFACT_BUILD === "1" ? [previewArtifactBuildIntegration()] : []),
 		react(),
 		emdash({
 			database: d1({ binding: "DB", session: "disabled" }),
@@ -66,6 +68,7 @@ export default defineConfig({
 		}),
 	],
 	vite: {
+    define: { __ASTROPAGES_BUILD_SHA__: JSON.stringify(process.env.ASTROPAGES_COMMIT_SHA?.trim() || null) },
 		build: {
 			// The generated-site Worker includes Astro, EmDash admin/MCP, and the
 			// Cloudflare adapter in one server bundle. Keep this threshold explicit

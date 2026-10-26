@@ -1,6 +1,15 @@
 {
   "templateKey": "aspt-verdigris-vera-solaro",
-  "displayName": "Vera Solaro — Verdigris Almanac",
+  "previewArtifact": {
+    "contractVersion": "preview-artifact.v1",
+    "workspaceContract": "workspace-authored-state.v1",
+    "runtimeTuple": {
+      "wrangler": "4.94.0",
+      "miniflare": "4.20260521.0",
+      "workerd": "1.20260521.1"
+    }
+  },
+  "displayName": "Vera Solaro \u2014 Verdigris Almanac",
   "repo": {
     "url": "https://github.com/vivekrto9/aspt-verdigris-vera-solaro.git",
     "commitSha": "RESOLVED_AT_TEMPLATE_REGISTRATION"
@@ -140,6 +149,7 @@
       "SES_SENDER_NAME",
       "AWS_REGION",
       "STRIPE_PUBLISHABLE_KEY",
+      "RAZORPAY_KEY_ID",
       "CALENDLY_EVENT_TYPE_URI",
       "POSTHOG_PROJECT_API_KEY",
       "POSTHOG_HOST",
@@ -149,11 +159,18 @@
       "ACTIVE_SCHEDULING_PROVIDER",
       "GMAIL_SENDER_EMAIL",
       "GMAIL_SENDER_NAME",
-      "GA4_MEASUREMENT_ID"
+      "GA4_MEASUREMENT_ID",
+      "ASTROLOGY_API_BASE_URL",
+      "ASTROLOGY_PDF_API_BASE_URL",
+      "ASTROLOGY_DEFAULT_TIMEZONE",
+      "ASTROLOGY_DEFAULT_LANGUAGE",
+      "ASTROLOGYAPI_CHAT_BASE_URL"
     ],
     "providerCredentials": [
       "STRIPE_SECRET_KEY",
       "STRIPE_WEBHOOK_SECRET",
+      "RAZORPAY_KEY_SECRET",
+      "RAZORPAY_WEBHOOK_SECRET",
       "CALENDLY_API_TOKEN",
       "CALENDLY_WEBHOOK_SIGNING_KEY",
       "AWS_ACCESS_KEY_ID",
@@ -220,7 +237,6 @@
         "preview": "template_preview",
         "production": "template_production"
       },
-      "githubSafetyCi": ".github/workflows/ci.yml",
       "catalogScreenshots": "admin-managed"
     },
     "generatedSite": {
@@ -761,7 +777,7 @@
         "key": "scheduling",
         "label": "Consultation scheduling",
         "description": "Choose Calendly or Google Calendar. Google Calendar requires writable-calendar selection and working hours.",
-        "evaluation": "any_of",
+        "evaluation": "one_of",
         "providers": [
           {
             "providerKey": "calendly",
@@ -776,14 +792,37 @@
         ]
       },
       {
-        "key": "live-payments",
-        "label": "Stripe payments",
-        "description": "Stripe PaymentIntents and a signed webhook are required before a Vera sitting can be confirmed.",
+        "key": "preview-payments",
+        "label": "Preview currency-routed payments",
+        "description": "Stripe for USD and Razorpay for INR, with signed webhooks for both, use test credentials in preview.",
         "evaluation": "all_of",
         "providers": [
           {
             "providerKey": "stripe",
-            "environment": "both",
+            "environment": "preview",
+            "credentialMode": "sandbox"
+          },
+          {
+            "providerKey": "razorpay",
+            "environment": "preview",
+            "credentialMode": "sandbox"
+          }
+        ]
+      },
+      {
+        "key": "live-payments",
+        "label": "Currency-routed payments",
+        "description": "Stripe for USD and Razorpay for INR, with signed webhooks for both, are required before a Vera sitting can be confirmed.",
+        "evaluation": "all_of",
+        "providers": [
+          {
+            "providerKey": "stripe",
+            "environment": "production",
+            "credentialMode": "live"
+          },
+          {
+            "providerKey": "razorpay",
+            "environment": "production",
             "credentialMode": "live"
           }
         ]
@@ -792,7 +831,7 @@
         "key": "transactional-email",
         "label": "Transactional email",
         "description": "Choose Gmail or Amazon SES for booking, reminder, account, and delivery email.",
-        "evaluation": "any_of",
+        "evaluation": "one_of",
         "providers": [
           {
             "providerKey": "aws_ses",
@@ -812,7 +851,7 @@
         "key": "analytics",
         "label": "Private analytics",
         "description": "Choose GA4 or PostHog for consented, PII-free analytics and verified-payment purchase events.",
-        "evaluation": "any_of",
+        "evaluation": "one_of",
         "providers": [
           {
             "providerKey": "posthog",
@@ -908,7 +947,8 @@
       "ap_email_deliveries",
       "ap_booking_preview_policy",
       "ap_shared_calendar_settings",
-      "ap_vera_scheduling_reservations"
+      "ap_vera_scheduling_reservations",
+      "ap_workspace_authored_state"
     ]
   }
 }

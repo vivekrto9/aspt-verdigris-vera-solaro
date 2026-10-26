@@ -516,7 +516,7 @@ const recordingMeta = String(content.recording_meta ?? "").split("\n");
       ? new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(parsed)
       : "";
   };
-  const formatMoney = (cents: unknown, currency = "USD") => new Intl.NumberFormat(locale, {
+  const formatMoney = (cents: unknown, currency = "USD") => new Intl.NumberFormat(currency === "INR" ? "en-IN" : "en-US", {
     style: "currency",
     currency: currency || "USD",
     minimumFractionDigits: 0,
